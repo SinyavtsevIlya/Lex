@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Nanory.Lecs
+namespace Nanory.Lex
 {
     public struct Buffer<TElement> : IEcsAutoReset<Buffer<TElement>>
     {

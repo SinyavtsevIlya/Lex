@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 #endif
 
-namespace Nanory.Lecs
+namespace Nanory.Lex
 {
 #if ENABLE_IL2CPP
     [Il2CppSetOption (Option.NullChecks, false)]

@@ -1,4 +1,4 @@
-﻿using Nanory.Lecs;
+﻿using Nanory.Lex;
 
 public static class EcsWorldlExtensions
 {

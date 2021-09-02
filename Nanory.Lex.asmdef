@@ -1,6 +1,6 @@
 {
-    "name": "Nanory.Lecs",
-    "rootNamespace": "Nanory.Lecs",
+    "name": "Nanory.Lex",
+    "rootNamespace": "Nanory.Lex",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

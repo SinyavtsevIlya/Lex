@@ -1,19 +1,18 @@
 {
-    "name": "com.leopotam.ecslite",
-    "author": "Leopotam",
-    "displayName": "LeoECS Lite",
-    "description": "LeoECS Lite is lightweight C# Entity Component System framework based on structs. Performance, zero/small memory allocations/footprint, no dependency on fucking Unity engine - main goals of this project.",
+    "name": "com.nanory.lex",
+    "author": "Ilya Sinyavtsev",
+    "displayName": "Lex",
+    "description": "Lex is a high performance c # framework based on LeoEcsLite with a more user-friendly api",
     "unity": "2020.3",
     "version": "2021.5.22-preview",
     "keywords": [
-        "leoecs",
-        "ecslite",
+        "lex",
         "ecs",
-        "performance"
+        "entity component system"
     ],
     "dependencies": {},
     "repository": {
         "type": "git",
-        "url": "https://github.com/Leopotam/ecslite.git"
+        "url": "https://github.com/SinyavtsevIlya/Lex.git"
     }
 }

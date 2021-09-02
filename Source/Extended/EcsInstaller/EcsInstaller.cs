@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nanory.Lecs
+namespace Nanory.Lex
 {
     public class EcsInstallerBase
     {

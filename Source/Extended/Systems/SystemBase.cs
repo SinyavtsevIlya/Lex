@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System;
 
-namespace Nanory.Lecs
+namespace Nanory.Lex
 {
     // TODO: provide cross-runtime stable and predictable implicit system ordering
     public abstract class EcsSystemGroup : IEcsRunSystem
