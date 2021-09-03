@@ -15,7 +15,8 @@ namespace Nanory.Lex
         void InitAutoReset(int entity);
         object GetRaw(int entity);
         void Destroy();
-        void CpyToDst(int entity);
+        void CpyToDstWorld(int entity);
+        void CpyToDstEntity(int src, int dst);
     }
 
     public interface IEcsAutoReset<T> where T : struct
@@ -180,9 +181,14 @@ namespace Nanory.Lex
             }
         }
 
-        public void CpyToDst(int entity)
+        public void CpyToDstWorld(int entity)
         {
             _dstItems[entity] = _items[entity];
+        }
+
+        public void CpyToDstEntity(int src, int dst)
+        {
+            _items[dst] = _items[src];
         }
 
         public struct PoolItem

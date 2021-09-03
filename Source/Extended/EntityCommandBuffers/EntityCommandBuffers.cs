@@ -66,7 +66,7 @@ namespace Nanory.Lex
             foreach (var entity in _ecbSetFilter)
             {
                 ref var setCmd = ref PoolECBSetCommand.Get(entity);
-                PoolsSparse[setCmd.componentIndex].CpyToDst(setCmd.entity);
+                PoolsSparse[setCmd.componentIndex].CpyToDstWorld(setCmd.entity);
 
                 PoolECBSetCommand.Del(entity);
             }
