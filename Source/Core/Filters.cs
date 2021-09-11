@@ -309,6 +309,7 @@ namespace Nanory.Lex
                 {
                     var mask = _poolCount > 0 ? _pool[--_poolCount] : new Mask();
                     mask._world = world;
+                    mask.Without<Prefab>();
                     return mask;
                 }
             }

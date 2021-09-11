@@ -3,21 +3,52 @@ using System;
 
 namespace Nanory.Lex
 {
-    // TODO: provide cross-runtime stable and predictable implicit system ordering
-    public abstract class EcsSystemGroup : IEcsRunSystem
+    public class UpdateBefore : Attribute
     {
-        private List<IEcsRunSystem> _systems;
+        public Type TargetSystemType;
+        public UpdateBefore(Type targetSystemType) => TargetSystemType = targetSystemType;
+    }
 
-        public void Add(IEcsRunSystem system)
+    public class UpdateInGroup : Attribute
+    {
+        public Type TargetGroupType;
+        public UpdateInGroup(Type targetGroupType) => TargetGroupType = targetGroupType;
+    }
+
+    public class SimulationSystemGroup : EcsSystemGroup
+    {
+
+    }
+
+    public abstract class EcsSystemGroup : IEcsRunSystem, IEcsInitSystem
+    {
+        private List<IEcsRunSystem> _runSystems;
+        private List<IEcsInitSystem> _initSystems;
+
+        public void Add(IEcsSystem system)
         {
-            _systems.Add(system);
+            if (system is IEcsRunSystem runSystem)
+                _runSystems.Add(runSystem);
+            if (system is IEcsInitSystem initSystem)
+                _initSystems.Add(initSystem);
+        }
+
+        public void Init(EcsSystems systems)
+        {
+            _initSystems.Sort();
+            _runSystems.Sort();
+
+            for (int i = 0; i < _initSystems.Count; i++)
+            {
+                _initSystems[i].Init(systems);
+            }
         }
 
         public void Run(EcsSystems systems)
         {
-            for (int i = 0; i < _systems.Count; i++)
+            for (int i = 0; i < _runSystems.Count; i++)
             {
-                _systems[i].Run(systems);
+                _runSystems[i].Run(systems);
             }
         }
     }

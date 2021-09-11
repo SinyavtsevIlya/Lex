@@ -81,7 +81,7 @@ namespace Nanory.Lex
             // pools.
             capacity = cfg.Pools > 0 ? cfg.Pools : Config.PoolsDefault;
             Pools = new IEcsPool[capacity];
-            PoolsSparse = new IEcsPool[16];
+            PoolsSparse = new IEcsPool[capacity];
             _filtersByIncludedComponents = new List<EcsFilter>[capacity];
             _filtersByExcludedComponents = new List<EcsFilter>[capacity];
             _poolsCount = 0;

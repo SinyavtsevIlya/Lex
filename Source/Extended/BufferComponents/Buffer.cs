@@ -6,14 +6,10 @@ namespace Nanory.Lex
     {
         public List<TElement> Values;
 
-        public Buffer(int capacity)
-        {
-            Values = Pool.Pop();
-        }
-
         public void AutoReset(ref Buffer<TElement> c)
         {
-            Pool.Push(c.Values);
+            if (c.Values != null)
+                Pool.Push(c.Values);
         }
 
         public static class Pool

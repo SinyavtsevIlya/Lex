@@ -165,7 +165,7 @@ namespace Nanory.Lex
 
         public EcsSystems DelHere<T>(string worldName = null) where T : struct
         {
-            return Add(new DelHereSystem<T>(GetWorld(worldName)));
+            return Add(new OneFrameSystem<T>(GetWorld(worldName)));
         }
 
 #if DEBUG
@@ -188,12 +188,12 @@ namespace Nanory.Lex
     [Il2CppSetOption (Option.NullChecks, false)]
     [Il2CppSetOption (Option.ArrayBoundsChecks, false)]
 #endif
-    sealed class DelHereSystem<T> : IEcsRunSystem where T : struct
+    sealed class OneFrameSystem<T> : IEcsRunSystem where T : struct
     {
         readonly EcsFilter _filter;
         readonly EcsPool<T> _pool;
 
-        public DelHereSystem(EcsWorld world)
+        public OneFrameSystem(EcsWorld world)
         {
             _filter = world.Filter<T>().End();
             _pool = world.GetPool<T>();
