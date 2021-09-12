@@ -33,7 +33,7 @@ namespace Nanory.Lex
 
         public IEnumerable<Type> GetSystemTypesByWorld(Type targetWorldAttributeType)
         {
-            return GetTypesByWorld(typeof(EcsSystemBase), targetWorldAttributeType);
+            return GetTypesByWorld(typeof(IEcsSystem), targetWorldAttributeType);
         }
 
         public List<Type> GetOneFrameSystemTypesGenericArgumentsByWorld(Type worldAttributeType)
@@ -88,7 +88,7 @@ namespace Nanory.Lex
 
         private IEnumerable<Type> GetClientSystemTypes()
         {
-            return GetClientTypes(typeof(EcsSystemBase));
+            return GetClientTypes(typeof(IEcsSystem));
         }
 
         private IEnumerable<Type> GetFrameworkTypes(params Type[] typesToScan)
@@ -99,24 +99,25 @@ namespace Nanory.Lex
         private IEnumerable<Type> GetTypesFromTaggedNamespaces(string namespaceTag, params Type[] typesToScan)
         {
             return AppDomain.CurrentDomain.GetAssembliesByName(_clientAssemblyName, _frameworkAssemblyName)
+                .AssertIsEmpty($"Check your _clientAssemblyName and _frameworkAssemblyName: {_clientAssemblyName}, {_frameworkAssemblyName}")
                 .SelectMany(s => s.GetTypes())
                 .Where(t => t.FullName.Contains(namespaceTag))
-                .Where(p => 
+                .Where(type => 
                 {
-                    if (typesToScan == null) return true;
-                    else if (typesToScan.Length == 0) return true;
-                    else return typesToScan.Any(t => t.IsAssignableFrom(p));
+                    if (typesToScan.Any(t => t == typeof(IComponentMock)))
+                    {
+                        return type.IsValueType && !type.IsPrimitive && !type.Namespace.StartsWith("System") && !type.IsEnum;
+                    }
+
+                    return typesToScan.Any(t => t.IsAssignableFrom(type));
                 })
                 //.Where(t => !t.IsGenericType) // TODO: uncomment this, and refactor generic types filtering
                 ;
         }
 
-        public class SystemOrderHelpers
+        private void Log(string message)
         {
-            public static int GetPriorityBySystemTag(string tag)
-            {
-                throw new NotImplementedException();
-            }
+            UnityEngine.Debug.Log(message);
         }
     }
 
@@ -242,9 +243,35 @@ namespace Nanory.Lex
         {
             foreach (var name in names)
             {
-                yield return AppDomain.CurrentDomain.GetAssemblies().
+                var result = AppDomain.CurrentDomain.GetAssemblies().
                  SingleOrDefault(assembly => assembly.GetName().Name == name);
+
+                if (result != default) 
+                    yield return result;
             }
+        }
+
+        public static IEnumerable<T> AssertIsEmpty<T>(this IEnumerable<T> collection, string assertion)
+        {
+            if (collection == null) LogAssertion(assertion);
+            if (collection.Count() == 0) LogAssertion(assertion);
+            return collection;
+
+            void LogAssertion(string assertion)
+            {
+                throw new Exception(assertion);
+            }
+        }
+
+        public static IEnumerable<T> Log<T>(this IEnumerable<T> collection, string message = null)
+        {
+            UnityEngine.Debug.Log($"{collection}: items are:");
+            var idx = 0;
+            foreach (var item in collection)
+            {
+                UnityEngine.Debug.Log($"{idx}) {item}");
+            }
+            return collection;
         }
     }
 

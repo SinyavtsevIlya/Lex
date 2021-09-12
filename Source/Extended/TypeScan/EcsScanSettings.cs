@@ -1,4 +1,7 @@
 ﻿using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Nanory.Lex
 {
@@ -15,15 +18,24 @@ namespace Nanory.Lex
 
 #if UNITY_EDITOR
                 if (_default == null)
+                {
                     _default = CreateInstance<EcsScanSettings>();
 
-                _default.ClientAssemblyName = "Assembly-CSharp";
-                _default.FrameworkAssemblyName = "Assembly-CSharp-firstpass";
-                _default.FrameworkAssemblyName = "Client";
-                _default.FrameworkNamespaceTag = "Nanory";
+                    _default.ClientAssemblyName = "Assembly-CSharp";
+                    _default.FrameworkAssemblyName = "Assembly-CSharp-firstpass";
+                    _default.ClientNamespaceTag = "Client";
+                    _default.FrameworkNamespaceTag = "Nanory";
 
-                UnityEditor.AssetDatabase.CreateAsset(_default, "Assets/Resources/LexEcsScanSettings.asset");
-                UnityEditor.AssetDatabase.SaveAssets();
+                    var resourcesPath = Application.dataPath + "Assets/Resources/";
+
+                    if (!System.IO.Directory.Exists(resourcesPath))
+                        System.IO.Directory.CreateDirectory(resourcesPath);
+
+                    AssetDatabase.CreateFolder("Assets", "Resources");
+
+                    AssetDatabase.CreateAsset(_default, "Assets/Resources/LexEcsScanSettings.asset");
+                    AssetDatabase.SaveAssets();
+                }
 #endif
                 return _default;
             }

@@ -15,18 +15,25 @@ namespace Nanory.Lex
         public UpdateInGroup(Type targetGroupType) => TargetGroupType = targetGroupType;
     }
 
-    public class SimulationSystemGroup : EcsSystemGroup
-    {
+    public class RootSystemGroup : EcsSystemGroup { }
 
-    }
+    [UpdateBefore(typeof(PresentationSystemGroup))]
+    [UpdateInGroup(typeof(RootSystemGroup))]
+    public class SimulationSystemGroup : EcsSystemGroup { }
+
+    [UpdateInGroup(typeof(RootSystemGroup))]
+    public class PresentationSystemGroup : EcsSystemGroup { }
 
     public abstract class EcsSystemGroup : IEcsRunSystem, IEcsInitSystem
     {
-        private List<IEcsRunSystem> _runSystems;
-        private List<IEcsInitSystem> _initSystems;
+        private List<IEcsRunSystem> _runSystems = new List<IEcsRunSystem>();
+        private List<IEcsInitSystem> _initSystems = new List<IEcsInitSystem>();
+        private List<IEcsSystem> _ecsSystems = new List<IEcsSystem>();
 
         public void Add(IEcsSystem system)
         {
+            _ecsSystems.Add(system);
+
             if (system is IEcsRunSystem runSystem)
                 _runSystems.Add(runSystem);
             if (system is IEcsInitSystem initSystem)
@@ -49,6 +56,20 @@ namespace Nanory.Lex
             for (int i = 0; i < _runSystems.Count; i++)
             {
                 _runSystems[i].Run(systems);
+            }
+        }
+
+        public List<IEcsSystem> Systems
+        {
+            get => _ecsSystems;
+            set
+            {
+                _ecsSystems.Clear();
+                _initSystems.Clear();
+                _runSystems.Clear();
+
+                foreach (var system in value)
+                    Add(system);
             }
         }
     }
@@ -121,6 +142,8 @@ namespace Nanory.Lex
             return EcsFilter.Mask.New(World, _localFilterContainers);
         }
     }
+
+    public class BeginSimulationECBSystem : EntityCommandBufferSystem { }
 
     public class EntityCommandBufferSystem : IEcsRunSystem
     {

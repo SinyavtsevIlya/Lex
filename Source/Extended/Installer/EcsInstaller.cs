@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine.LowLevel;
 using Nanory.Lex;
+using UnityEngine;
 
 namespace Nanory.Lex
 {
@@ -13,37 +14,34 @@ namespace Nanory.Lex
     public class AllWorldAttribute : WorldAttribute { }
     public class NoneWorldAttribute : WorldAttribute { }
 
-    public abstract class EcsInstaller<TWorld> : UnityEngine.MonoBehaviour, IDisposable where TWorld : TargetWorldAttribute
+    public class EcsInstaller<TWorld> : IDisposable where TWorld : TargetWorldAttribute
     {
-        protected EcsWorld _world;
-        protected EcsSystems _systems;
-        protected Dictionary<Type, IEcsSystem> _systemMap = new Dictionary<Type, IEcsSystem>();
-        protected Type[] SystemTypes { get; set; }
+        protected EcsWorld World { get; private set; }
+        protected EcsSystems Systems { get; private set; }
+        protected Dictionary<Type, IEcsSystem> SystemMap { get; private set; }
 
-        #region UnityMessages
-        void Awake()
+        public EcsInstaller(EcsWorld world, EcsSystems systems)
         {
+            World = world;
+            Systems = systems;
+            SystemMap = new Dictionary<Type, IEcsSystem>();
+
             var scanner = new EcsTypesScanner(EcsScanSettings.Default);
 
             SystemTypes = scanner.GetSystemTypesByWorld(typeof(TWorld))
                 .Union(scanner.GetOneFrameSystemTypesByWorldGeneric(typeof(TWorld))).ToArray();
             
-            CreateSystems();
             Install();
+            CreateSystems();
         }
 
-        void OnDestroy()
-        {
-            Dispose();
-        }
-
-        #endregion
-
+        protected Type[] SystemTypes { get; set; }
+       
         protected void CreateSystems()
         {
-            _world = new EcsWorld();
-            _systems = new EcsSystems(_world);
-            _systemMap = new Dictionary<Type, IEcsSystem>();
+            World = new EcsWorld();
+            Systems = new EcsSystems(World);
+            SystemMap = new Dictionary<Type, IEcsSystem>();
 
             foreach (var systemType in SystemTypes)
             {
@@ -51,8 +49,21 @@ namespace Nanory.Lex
             }
 
             // Add a root
-            _systems.Add(_systemMap[typeof(SimulationSystemGroup)]);
-   
+            Systems.Add(GetSystemByType(typeof(RootSystemGroup)));
+
+            var commandBufferSystems = SystemMap.Values.Where(s => s is EntityCommandBufferSystem).Select(s => s as EntityCommandBufferSystem).ToList();
+            var baseSystems = SystemMap.Values.Where(s => s is EcsSystemBase).Select(s => s as EcsSystemBase).ToList();
+            var systemGroups = SystemMap.Values.Where(s => s is EcsSystemGroup).Select(s => s as EcsSystemGroup).ToList();
+
+            baseSystems.ForEach(bs => bs.SetEntityCommandBufferSystemsLookup(commandBufferSystems));
+
+            foreach (var systemGroup in systemGroups)
+            {
+                SortSystemGroup(systemGroup);
+            }
+
+            systemGroups.ForEach(x => x.Systems.ForEach(x => Debug.Log(x)));
+
             IEcsSystem CreateSystemRecursive(Type systemType)
             {
                 var updateInGroup = (UpdateInGroup) Attribute.GetCustomAttribute(systemType, typeof(UpdateInGroup));
@@ -63,31 +74,97 @@ namespace Nanory.Lex
 
                 parentInstance.Add(instance);
 
-                return CreateSystemRecursive(targetGroup);
+                if (updateInGroup != null)
+                    return CreateSystemRecursive(targetGroup);
+
+                return parentInstance;
+            }
+
+            void SortSystemGroup(EcsSystemGroup systemGroup)
+            {
+                var unsorted = new List<IEcsSystem>(systemGroup.Systems);
+
+                var dependencyTable = new List<List<IEcsSystem>>();
+                // Add a root dependency level
+                dependencyTable.Add(new List<IEcsSystem>());
+
+                for (int idx = unsorted.Count - 1; idx >= 0; idx--)
+                {
+                    var currentSystem = unsorted[idx];
+
+                    var updateBefore = (UpdateBefore) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateBefore));
+
+                    if (updateBefore == null)
+                    {
+                        dependencyTable[0].Add(currentSystem);
+                        unsorted.RemoveAt(idx);
+                    }
+                }
+
+                SortRecursive(unsorted, dependencyTable, 1);
+
+                dependencyTable.Reverse();
+                systemGroup.Systems = dependencyTable.SelectMany(layer => layer).ToList();
+
+                void SortRecursive(List<IEcsSystem> unsorted, List<List<IEcsSystem>> dependencyTable, int dependencyLevel)
+                {
+                    var dependencyLayer = new List<IEcsSystem>();
+                    dependencyTable.Add(dependencyLayer);
+
+                    for (int idx = unsorted.Count - 1; idx >= 0; idx--)
+                    {
+                        var currentSystem = unsorted[idx];
+
+                        var updateBefore = (UpdateBefore) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateBefore));
+                        if (updateBefore != null)
+                        {
+                            Debug.Log(currentSystem.GetType());
+                            Debug.Log(updateBefore.TargetSystemType);
+                            if (SystemMap.TryGetValue(updateBefore.TargetSystemType, out var beforeSystem))
+                            {
+                                if (dependencyTable[dependencyLevel - 1].Contains(beforeSystem))
+                                {
+                                    dependencyLayer.Add(currentSystem);
+                                    unsorted.RemoveAt(idx);
+                                }
+                                else
+                                {
+                                    throw new Exception($"System <b>{currentSystem}</b> and <b>{updateBefore.TargetSystemType}</b> that are in different Groups. Only systems are in the same group can be ordered using {nameof(UpdateBefore)} Attribute.");
+                                }
+                            }
+                            else
+                            {
+                                throw new Exception($"<b> {currentSystem}</b> has an {nameof(UpdateBefore)} <b>{updateBefore.TargetSystemType}</b> attribute. But <b>{updateBefore.TargetSystemType}</b> is not exist. Use {nameof(UpdateInGroup)} attribute");
+                            }
+                        }
+                    }
+
+                    if (unsorted.Count > 0)
+                        SortRecursive(unsorted, dependencyTable, dependencyLevel++);
+                }
             }
         }
 
-        protected abstract void Install();
+        protected virtual void Install() { }
 
         protected IEcsSystem GetSystemByType(Type systemType)
         {
-            if (_systemMap.TryGetValue(systemType, out var result))
+            if (SystemMap.TryGetValue(systemType, out var result))
             {
                 return result;
             }
 
             var system = (IEcsSystem) Activator.CreateInstance(systemType);
-            _systemMap[systemType] = system;
+            SystemMap[systemType] = system;
             return system;
         }
 
         public void Dispose() 
         {
-            if(_world != null)
-            {
-                _world.Destroy();
-                _world = null;
-            }
+            World = null;
+            Systems = null;
+            SystemMap = null;
+            SystemTypes = null;
         }
     }
 }

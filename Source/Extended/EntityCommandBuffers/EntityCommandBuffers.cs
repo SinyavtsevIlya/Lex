@@ -119,18 +119,18 @@ namespace Nanory.Lex
 
     public static class EcsBufferWorldExtensions
     {
-        public static ref TComponent Set<TComponent>(this EcsBufferWorld buffer, int entity) where TComponent : struct
+        public static ref TComponent Set<TComponent>(this EcsBufferWorld bufferWorld, int entity) where TComponent : struct
         {
-            if (!buffer.Has<TComponent>(entity))
+            if (!bufferWorld.Has<TComponent>(entity))
             {
-                buffer.Add<TComponent>(entity);
+                bufferWorld.Add<TComponent>(entity);
             }
-            buffer.PoolECBSetCommand.Add(entity) = new EcsBufferWorld.ECBSetCommand()
+            bufferWorld.PoolECBSetCommand.Add(entity) = new EcsBufferWorld.ECBSetCommand()
             {
                 componentIndex = EcsComponent<TComponent>.TypeIndex,
                 entity = entity
             };
-            return ref buffer.GetPool<TComponent>().Add(entity);
+            return ref bufferWorld.GetPool<TComponent>().Add(entity);
         }
 
         public static void Del<TComponent>(this EcsBufferWorld buffer, int entity) where TComponent : struct

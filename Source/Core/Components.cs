@@ -14,6 +14,8 @@ namespace Nanory.Lex
         void Del(int entity);
         void InitAutoReset(int entity);
         object GetRaw(int entity);
+        int GetId();
+        Type GetComponentType();
         void Destroy();
         void CpyToDstWorld(int entity);
         void CpyToDstEntity(int src, int dst);
@@ -30,6 +32,7 @@ namespace Nanory.Lex
 #endif
     public sealed class EcsPool<T> : IEcsPool where T : struct
     {
+        readonly Type _type;
         readonly EcsWorld _world;
         readonly int _id;
         readonly AutoResetHandler _autoReset;
@@ -41,14 +44,14 @@ namespace Nanory.Lex
 
         internal EcsPool(EcsWorld world, int id, int capacity, PoolItem[] dstItems = null)
         {
+            _type = typeof(T);
             _world = world;
             _id = id;
             _items = new PoolItem[capacity];
             _dstItems = dstItems;
-            var type = typeof(T);
-            var isAutoReset = typeof(IEcsAutoReset<T>).IsAssignableFrom(type);
+            var isAutoReset = typeof(IEcsAutoReset<T>).IsAssignableFrom(_type);
 #if DEBUG
-            if (!isAutoReset && type.GetInterface("IEcsAutoReset`1") != null)
+            if (!isAutoReset && _type.GetInterface("IEcsAutoReset`1") != null)
             {
                 throw new Exception($"IEcsAutoReset should have <{typeof(T).Name}> constraint for component \"{typeof(T).Name}\".");
             }
@@ -84,9 +87,15 @@ namespace Nanory.Lex
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal int GetId()
+        public int GetId()
         {
             return _id;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Type GetComponentType()
+        {
+            return _type;
         }
 
         internal PoolItem[] GetItems() => _items;
