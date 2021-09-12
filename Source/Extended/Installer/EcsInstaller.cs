@@ -29,20 +29,22 @@ namespace Nanory.Lex
             var scanner = new EcsTypesScanner(EcsScanSettings.Default);
 
             SystemTypes = scanner.GetSystemTypesByWorld(typeof(TWorld))
-                .Union(scanner.GetOneFrameSystemTypesByWorldGeneric(typeof(TWorld))).ToArray();
+                .Union(scanner.GetOneFrameSystemTypesByWorldGeneric(typeof(TWorld))
+                .Union(new Type[] { typeof(BeginSimulationECBSystem) }))
+                .ToArray();
             
             Install();
             CreateSystems();
+
+#if UNITY_EDITOR
+            LexDebugger.AddEcsSystems(systems);
+#endif
         }
 
         protected Type[] SystemTypes { get; set; }
        
         protected void CreateSystems()
         {
-            World = new EcsWorld();
-            Systems = new EcsSystems(World);
-            SystemMap = new Dictionary<Type, IEcsSystem>();
-
             foreach (var systemType in SystemTypes)
             {
                 CreateSystemRecursive(systemType);
@@ -55,6 +57,8 @@ namespace Nanory.Lex
             var baseSystems = SystemMap.Values.Where(s => s is EcsSystemBase).Select(s => s as EcsSystemBase).ToList();
             var systemGroups = SystemMap.Values.Where(s => s is EcsSystemGroup).Select(s => s as EcsSystemGroup).ToList();
 
+            //SystemTypes.ToList().ForEach(x => Debug.Log(x));
+            commandBufferSystems.ForEach(cbs => cbs.SetDstWorld(World));
             baseSystems.ForEach(bs => bs.SetEntityCommandBufferSystemsLookup(commandBufferSystems));
 
             foreach (var systemGroup in systemGroups)
@@ -62,9 +66,9 @@ namespace Nanory.Lex
                 SortSystemGroup(systemGroup);
             }
 
-            systemGroups.ForEach(x => x.Systems.ForEach(x => Debug.Log(x)));
+            //systemGroups.ForEach(x => x.Systems.ForEach(x => Debug.Log(x)));
 
-            IEcsSystem CreateSystemRecursive(Type systemType)
+            void CreateSystemRecursive(Type systemType)
             {
                 var updateInGroup = (UpdateInGroup) Attribute.GetCustomAttribute(systemType, typeof(UpdateInGroup));
                 var targetGroup = updateInGroup != null ? updateInGroup.TargetGroupType : typeof(SimulationSystemGroup);
@@ -72,12 +76,22 @@ namespace Nanory.Lex
                 var instance = GetSystemByType(systemType);
                 var parentInstance = (EcsSystemGroup)GetSystemByType(targetGroup);
 
+#if DEBUG
+                if (instance is EcsSystemGroup instanceSystemGroup)
+                {
+                    if (instanceSystemGroup.Systems.Contains(parentInstance))
+                        throw new Exception($"<b>{instance}</b> and <b>{parentInstance}</b> have circular dependency. Check your {nameof(UpdateInGroup)} attributes");
+                }
+#endif
+
+
                 parentInstance.Add(instance);
 
-                if (updateInGroup != null)
-                    return CreateSystemRecursive(targetGroup);
+                if (targetGroup == typeof(RootSystemGroup))
+                    return;
 
-                return parentInstance;
+                if (updateInGroup != null)
+                    CreateSystemRecursive(targetGroup);
             }
 
             void SortSystemGroup(EcsSystemGroup systemGroup)
@@ -118,8 +132,6 @@ namespace Nanory.Lex
                         var updateBefore = (UpdateBefore) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateBefore));
                         if (updateBefore != null)
                         {
-                            Debug.Log(currentSystem.GetType());
-                            Debug.Log(updateBefore.TargetSystemType);
                             if (SystemMap.TryGetValue(updateBefore.TargetSystemType, out var beforeSystem))
                             {
                                 if (dependencyTable[dependencyLevel - 1].Contains(beforeSystem))
@@ -161,6 +173,10 @@ namespace Nanory.Lex
 
         public void Dispose() 
         {
+#if UNITY_EDITOR
+            LexDebugger.RemoveEcsSystems(Systems);
+#endif
+
             World = null;
             Systems = null;
             SystemMap = null;

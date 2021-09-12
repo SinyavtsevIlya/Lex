@@ -47,6 +47,8 @@ namespace Nanory.Lex
         IEcsRunSystem[] _runSystems;
         int _runSystemsCount;
 
+        public List<IEcsSystem> AllSystems => _allSystems;
+
         public EcsSystems(EcsWorld defaultWorld, object shared = null)
         {
             _defaultWorld = defaultWorld;

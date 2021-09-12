@@ -3,6 +3,8 @@ using System;
 
 namespace Nanory.Lex
 {
+    public class BeginSimulationECBSystem : EntityCommandBufferSystem { }
+
     public class UpdateBefore : Attribute
     {
         public Type TargetSystemType;
@@ -15,6 +17,7 @@ namespace Nanory.Lex
         public UpdateInGroup(Type targetGroupType) => TargetGroupType = targetGroupType;
     }
 
+    [PreserveAutoCreation]
     public class RootSystemGroup : EcsSystemGroup { }
 
     [UpdateBefore(typeof(PresentationSystemGroup))]
@@ -34,6 +37,9 @@ namespace Nanory.Lex
         {
             _ecsSystems.Add(system);
 
+            if (system == this)
+                throw new Exception("Trying to pass itself to systems list");
+
             if (system is IEcsRunSystem runSystem)
                 _runSystems.Add(runSystem);
             if (system is IEcsInitSystem initSystem)
@@ -42,9 +48,6 @@ namespace Nanory.Lex
 
         public void Init(EcsSystems systems)
         {
-            _initSystems.Sort();
-            _runSystems.Sort();
-
             for (int i = 0; i < _initSystems.Count; i++)
             {
                 _initSystems[i].Init(systems);
@@ -142,8 +145,6 @@ namespace Nanory.Lex
             return EcsFilter.Mask.New(World, _localFilterContainers);
         }
     }
-
-    public class BeginSimulationECBSystem : EntityCommandBufferSystem { }
 
     public class EntityCommandBufferSystem : IEcsRunSystem
     {
