@@ -11,17 +11,23 @@ namespace Nanory.Lex
     public class AllWorldAttribute : WorldAttribute { }
     public class NoneWorldAttribute : WorldAttribute { }
 
+    /// <summary>
+    /// Gathers system types from
+    /// </summary>
+    /// <typeparam name="TWorld"></typeparam>
     public class EcsInstaller<TWorld> : IDisposable where TWorld : TargetWorldAttribute
     {
         protected EcsWorld World { get; private set; }
         protected EcsSystems Systems { get; private set; }
         protected Dictionary<Type, IEcsSystem> SystemMap { get; private set; }
+        protected Func<Type, IEcsSystem> Creator { get; private set; }
 
-        public EcsInstaller(EcsWorld world, EcsSystems systems)
+        public EcsInstaller(EcsWorld world, EcsSystems systems, Func<Type, IEcsSystem> creator = null)
         {
             World = world;
             Systems = systems;
             SystemMap = new Dictionary<Type, IEcsSystem>();
+            Creator = creator;
 
             var scanner = new EcsTypesScanner(EcsScanSettings.Default);
 
@@ -205,7 +211,7 @@ namespace Nanory.Lex
                 return result;
             }
 
-            var system = (IEcsSystem) Activator.CreateInstance(systemType);
+            var system = Creator == null ? (IEcsSystem) Activator.CreateInstance(systemType) : Creator(systemType);
             SystemMap[systemType] = system;
             return system;
         }

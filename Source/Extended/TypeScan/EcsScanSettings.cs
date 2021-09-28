@@ -22,9 +22,7 @@ namespace Nanory.Lex
                     _default = CreateInstance<EcsScanSettings>();
 
                     _default.ClientAssemblyName = "Assembly-CSharp";
-                    _default.FrameworkAssemblyName = "Assembly-CSharp-firstpass";
                     _default.ClientNamespaceTag = "Client";
-                    _default.FrameworkNamespaceTag = "Nanory";
 
                     var resourcesPath = Application.dataPath + "Assets/Resources/";
 
@@ -42,8 +40,6 @@ namespace Nanory.Lex
         }
 
         public string ClientAssemblyName;
-        public string FrameworkAssemblyName;
         public string ClientNamespaceTag;
-        public string FrameworkNamespaceTag;
     }
 }

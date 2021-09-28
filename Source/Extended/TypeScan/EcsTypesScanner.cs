@@ -8,16 +8,12 @@ namespace Nanory.Lex
     public class EcsTypesScanner
     {
         private readonly string _clientAssemblyName;
-        private readonly string _frameworkAssemblyName;
         private readonly string _clientNamespaceTag;
-        private readonly string _frameworkNamespaceTag;
 
         public EcsTypesScanner(EcsScanSettings settings)
         {
             _clientAssemblyName = settings.ClientAssemblyName;
-            _frameworkAssemblyName = settings.FrameworkAssemblyName;
             _clientNamespaceTag = settings.ClientNamespaceTag;
-            _frameworkNamespaceTag = settings.FrameworkNamespaceTag;
         }
 
         public EcsTypesScanner()
@@ -25,9 +21,7 @@ namespace Nanory.Lex
             var settings = EcsScanSettings.Default;
 
             _clientAssemblyName = settings.ClientAssemblyName;
-            _frameworkAssemblyName = settings.FrameworkAssemblyName;
             _clientNamespaceTag = settings.ClientNamespaceTag;
-            _frameworkNamespaceTag = settings.FrameworkNamespaceTag;
         }
 
         public IEnumerable<Type> GetSystemTypesByWorld(Type targetWorldAttributeType)
@@ -37,13 +31,15 @@ namespace Nanory.Lex
 
         public List<Type> GetOneFrameSystemTypesGenericArgumentsByWorld(Type worldAttributeType)
         {
-            var frameworkOneFrameSystemTypes = GetFrameworkTypes()
-                .FilterGenericTypesByAttribute<OneFrame>().ToList();
+            // NOTE: ignore framework scan for now
+            //var frameworkOneFrameSystemTypes = GetFrameworkTypes()
+            //    .FilterGenericTypesByAttribute<OneFrame>().ToList();
 
             return GetClientTypes(typeof(IComponentMock))
                 .FilterGenericTypesByAttribute<OneFrame>()
+                .Log()
                 .FilterTypesByWorld(worldAttributeType)
-                .Union(frameworkOneFrameSystemTypes).ToList();
+                .ToList();
         }
 
         public IEnumerable<Type> GetOneFrameSystemTypesByWorldGeneric(Type worldAttributeType)
@@ -90,15 +86,10 @@ namespace Nanory.Lex
             return GetClientTypes(typeof(IEcsSystem));
         }
 
-        private IEnumerable<Type> GetFrameworkTypes(params Type[] typesToScan)
-        {
-            return GetTypesFromTaggedNamespaces(_frameworkNamespaceTag, typesToScan);
-        }
-
         private IEnumerable<Type> GetTypesFromTaggedNamespaces(string namespaceTag, params Type[] typesToScan)
         {
-            return AppDomain.CurrentDomain.GetAssembliesByName(_clientAssemblyName, _frameworkAssemblyName)
-                .AssertIsEmpty($"Check your _clientAssemblyName and _frameworkAssemblyName: {_clientAssemblyName}, {_frameworkAssemblyName}")
+            return AppDomain.CurrentDomain.GetAssembliesByName(_clientAssemblyName)
+                .AssertIsEmpty($"Check your _clientAssemblyName: {_clientAssemblyName}")
                 .SelectMany(s => s.GetTypes())
                 .Where(t => t.FullName.Contains(namespaceTag))
                 .Where(type => 
