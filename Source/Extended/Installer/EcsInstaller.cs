@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using UnityEngine.LowLevel;
-using Nanory.Lex;
-using UnityEngine;
+using Nanory.Lex.Conversion;
 
 namespace Nanory.Lex
 {
@@ -30,14 +27,21 @@ namespace Nanory.Lex
 
             SystemTypes = scanner.GetSystemTypesByWorld(typeof(TWorld))
                 .Union(scanner.GetOneFrameSystemTypesByWorldGeneric(typeof(TWorld))
-                .Union(new Type[] { typeof(BeginSimulationECBSystem) }))
+                .Union(new Type[] 
+                    { 
+                        typeof(SimulationSystemGroup),
+                        typeof(PresentationSystemGroup),
+                        typeof(BeginSimulationECBSystem),
+                        typeof(GameObjectConversionSystem)
+                    }))
                 .ToArray();
             
             Install();
             CreateSystems();
 
 #if UNITY_EDITOR
-            LexDebugger.AddEcsSystems(systems);
+            var debugger = UnityEditor.EditorWindow.GetWindow<LexDebugger>();
+            LexDebugger.AddEcsSystems(Systems);
 #endif
         }
 
@@ -45,13 +49,16 @@ namespace Nanory.Lex
        
         protected void CreateSystems()
         {
+            var handledSystems = new HashSet<Type>();
+            // Add a root
+            var rootSystemGroup = (EcsSystemGroup)GetSystemByType(typeof(RootSystemGroup));
+            Systems.Add(rootSystemGroup);
+            handledSystems.Add(typeof(RootSystemGroup));
+
             foreach (var systemType in SystemTypes)
             {
-                CreateSystemRecursive(systemType);
+                TryCreateSystemRecursive(systemType);
             }
-
-            // Add a root
-            Systems.Add(GetSystemByType(typeof(RootSystemGroup)));
 
             var commandBufferSystems = SystemMap.Values.Where(s => s is EntityCommandBufferSystem).Select(s => s as EntityCommandBufferSystem).ToList();
             var baseSystems = SystemMap.Values.Where(s => s is EcsSystemBase).Select(s => s as EcsSystemBase).ToList();
@@ -68,8 +75,11 @@ namespace Nanory.Lex
 
             //systemGroups.ForEach(x => x.Systems.ForEach(x => Debug.Log(x)));
 
-            void CreateSystemRecursive(Type systemType)
+            void TryCreateSystemRecursive(Type systemType)
             {
+                if (handledSystems.Contains(systemType))
+                    return;
+
                 var updateInGroup = (UpdateInGroup) Attribute.GetCustomAttribute(systemType, typeof(UpdateInGroup));
                 var targetGroup = updateInGroup != null ? updateInGroup.TargetGroupType : typeof(SimulationSystemGroup);
 
@@ -83,15 +93,11 @@ namespace Nanory.Lex
                         throw new Exception($"<b>{instance}</b> and <b>{parentInstance}</b> have circular dependency. Check your {nameof(UpdateInGroup)} attributes");
                 }
 #endif
-
-
                 parentInstance.Add(instance);
-
-                if (targetGroup == typeof(RootSystemGroup))
-                    return;
+                handledSystems.Add(systemType);
 
                 if (updateInGroup != null)
-                    CreateSystemRecursive(targetGroup);
+                    TryCreateSystemRecursive(targetGroup);
             }
 
             void SortSystemGroup(EcsSystemGroup systemGroup)
@@ -102,6 +108,33 @@ namespace Nanory.Lex
                 // Add a root dependency level
                 dependencyTable.Add(new List<IEcsSystem>());
 
+                var orderLastSystems = new List<IEcsSystem>();
+
+                // Check for special attributes parameters OrderFirst/Last...
+                for (int idx = unsorted.Count - 1; idx >= 0; idx--)
+                {
+                    var currentSystem = unsorted[idx];
+
+                    var updateInGroup = (UpdateInGroup) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateInGroup));
+                    if (updateInGroup != null)
+                    {
+                        // Put a special "OrderFirst" systems to the very beginning 
+                        if (updateInGroup.OrderFirst)
+                        {
+                            dependencyTable[0].Add(currentSystem);
+                            unsorted.RemoveAt(idx);
+                        }
+
+                        // Remove from list special "OrderLast" systems to add them later
+                        if (updateInGroup.OrderLast)
+                        {
+                            orderLastSystems.Add(currentSystem);
+                            unsorted.RemoveAt(idx);
+                        }
+                    }
+                }
+
+                // Order first systems without attributes...
                 for (int idx = unsorted.Count - 1; idx >= 0; idx--)
                 {
                     var currentSystem = unsorted[idx];
@@ -119,6 +152,12 @@ namespace Nanory.Lex
 
                 dependencyTable.Reverse();
                 systemGroup.Systems = dependencyTable.SelectMany(layer => layer).ToList();
+
+                // And in the and add "OrderLast" systems
+                foreach (var lastSystems in orderLastSystems)
+                {
+                    systemGroup.Add(lastSystems);
+                }
 
                 void SortRecursive(List<IEcsSystem> unsorted, List<List<IEcsSystem>> dependencyTable, int dependencyLevel)
                 {
@@ -174,6 +213,7 @@ namespace Nanory.Lex
         public void Dispose() 
         {
 #if UNITY_EDITOR
+            var debugger = UnityEditor.EditorWindow.GetWindow<LexDebugger>();
             LexDebugger.RemoveEcsSystems(Systems);
 #endif
 

@@ -19,6 +19,7 @@ namespace Nanory.Lex
         void Destroy();
         void CpyToDstWorld(int entity);
         void CpyToDstEntity(int src, int dst);
+        void Activate(int entity);
     }
 
     public interface IEcsAutoReset<T> where T : struct
@@ -121,6 +122,7 @@ namespace Nanory.Lex
         public ref T Add(int entity)
         {
 #if DEBUG
+            UnityEngine.Debug.Log($"add {typeof(T).Name} on entity {entity}");
             if (!_world.IsEntityAliveInternal(entity)) { throw new Exception("Cant touch destroyed entity."); }
 #endif
             ref var itemData = ref _items[entity];
@@ -131,7 +133,7 @@ namespace Nanory.Lex
             itemData.Attached = true;
             _world.OnEntityChange(entity, _id, true);
             _world.Entities[entity].ComponentsCount++;
-#if DEBUG || Lecs_WORLD_EVENTS
+#if DEBUG || LEX_WORLD_EVENTS
             _world.RaiseEntityChangeEvent(entity);
 #endif
             return ref itemData.Data;
@@ -178,7 +180,7 @@ namespace Nanory.Lex
                 {
                     itemData.Data = default;
                 }
-#if DEBUG || Lecs_WORLD_EVENTS
+#if DEBUG || LEX_WORLD_EVENTS
                 _world.RaiseEntityChangeEvent(entity);
 #endif
                 ref var entityData = ref _world.Entities[entity];
@@ -198,6 +200,24 @@ namespace Nanory.Lex
         public void CpyToDstEntity(int src, int dst)
         {
             _items[dst] = _items[src];
+        }
+
+        public void Activate(int entity)
+        {
+#if DEBUG
+            if (!_world.IsEntityAliveInternal(entity)) { throw new Exception("Cant touch destroyed entity."); }
+#endif
+            ref var itemData = ref _items[entity];
+#if DEBUG
+            if (_world.GetEntityGen(entity) < 0) { throw new Exception("Cant add component to destroyed entity."); }
+            if (itemData.Attached) { throw new Exception($"{typeof(T).Name} is Already attached to entity {entity}"); }
+#endif
+            itemData.Attached = true;
+            _world.OnEntityChange(entity, _id, true);
+            _world.Entities[entity].ComponentsCount++;
+#if DEBUG || LEX_WORLD_EVENTS
+            _world.RaiseEntityChangeEvent(entity);
+#endif
         }
 
         public struct PoolItem

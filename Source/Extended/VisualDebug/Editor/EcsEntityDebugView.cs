@@ -11,7 +11,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace Nanory.Lex.UnityEditor {
+namespace Nanory.Lex.UnityEditorIntegration {
     [CustomEditor (typeof (EcsEntityDebugView))]
     sealed class EcsEntityDebugViewInspector : Editor {
         const int MaxFieldToStringLength = 128;

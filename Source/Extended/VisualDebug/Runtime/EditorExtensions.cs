@@ -9,7 +9,7 @@
 using System;
 using UnityEngine;
 
-namespace Nanory.Lex.UnityEditor {
+namespace Nanory.Lex.UnityEditorIntegration {
     public static class EditorExtensions {
         public static string GetCleanGenericTypeName (Type type) {
             if (!type.IsGenericType) {

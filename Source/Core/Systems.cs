@@ -160,7 +160,7 @@ namespace Nanory.Lex
                 _runSystems[i].Run(this);
 #if DEBUG
                 var worldName = CheckForLeakedEntities();
-                if (worldName != null) { throw new System.Exception($"Empty entity detected in world \"{worldName}\" after {_runSystems[i].GetType().Name}.Run()."); }
+                //if (worldName != null) { throw new System.Exception($"Empty entity detected in world \"{worldName}\" after {_runSystems[i].GetType().Name}.Run()."); }
 #endif
             }
         }
@@ -190,6 +190,7 @@ namespace Nanory.Lex
     [Il2CppSetOption (Option.NullChecks, false)]
     [Il2CppSetOption (Option.ArrayBoundsChecks, false)]
 #endif
+    [UpdateInGroup(typeof(OneFrameSystemGroup))]
     sealed class OneFrameSystem<T> : IEcsRunSystem, IEcsInitSystem where T : struct
     {
         private EcsFilter _filter;
@@ -205,7 +206,7 @@ namespace Nanory.Lex
 
         public void Run(EcsSystems systems)
         {
-            foreach (var entity in _filter)
+            foreach (var entity in _filter) 
             {
                 _pool.Del(entity);
             }

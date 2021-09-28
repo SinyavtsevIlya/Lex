@@ -21,7 +21,7 @@ namespace Nanory.Lex
         List<EcsFilter>[] _filtersByIncludedComponents;
         List<EcsFilter>[] _filtersByExcludedComponents;
         bool _destroyed;
-#if DEBUG || Lecs_WORLD_EVENTS
+#if DEBUG || LEX_WORLD_EVENTS
         List<IEcsWorldEventListener> _eventListeners;
 
         public void AddEventListener(IEcsWorldEventListener listener)
@@ -88,7 +88,7 @@ namespace Nanory.Lex
             // filters.
             capacity = cfg.Filters > 0 ? cfg.Filters : Config.FiltersDefault;
             _filters = new Dictionary<int, EcsFilter>(capacity);
-#if DEBUG || Lecs_WORLD_EVENTS
+#if DEBUG || LEX_WORLD_EVENTS
             _eventListeners = new List<IEcsWorldEventListener>(4);
 #endif
             _destroyed = false;
@@ -117,7 +117,7 @@ namespace Nanory.Lex
             _filters.Clear();
             _filtersByIncludedComponents = Array.Empty<List<EcsFilter>>();
             _filtersByExcludedComponents = Array.Empty<List<EcsFilter>>();
-#if DEBUG || Lecs_WORLD_EVENTS
+#if DEBUG || LEX_WORLD_EVENTS
             for (var ii = _eventListeners.Count - 1; ii >= 0; ii--)
             {
                 _eventListeners[ii].OnWorldDestroyed(this);
@@ -152,7 +152,7 @@ namespace Nanory.Lex
                     {
                         Pools[i].Resize(newSize);
                     }
-#if DEBUG || Lecs_WORLD_EVENTS
+#if DEBUG || LEX_WORLD_EVENTS
                     for (int ii = 0, iMax = _eventListeners.Count; ii < iMax; ii++)
                     {
                         _eventListeners[ii].OnWorldResized(newSize);
@@ -169,7 +169,7 @@ namespace Nanory.Lex
 #if DEBUG
             _leakedEntities.Add(entity);
 #endif
-#if DEBUG || Lecs_WORLD_EVENTS
+#if DEBUG || LEX_WORLD_EVENTS
             for (int ii = 0, iMax = _eventListeners.Count; ii < iMax; ii++)
             {
                 _eventListeners[ii].OnEntityCreated(entity);
@@ -209,7 +209,7 @@ namespace Nanory.Lex
 #if DEBUG
                 if (entityData.ComponentsCount != 0) { throw new Exception($"Invalid components count on entity {entity} => {entityData.ComponentsCount}."); }
 #endif
-                return;
+                //return;
             }
             entityData.Gen = (short) (entityData.Gen == short.MaxValue ? -1 : -(entityData.Gen + 1));
             if (_recycledEntitiesCount == _recycledEntities.Length)
@@ -217,7 +217,7 @@ namespace Nanory.Lex
                 Array.Resize(ref _recycledEntities, _recycledEntitiesCount << 1);
             }
             _recycledEntities[_recycledEntitiesCount++] = entity;
-#if DEBUG || Lecs_WORLD_EVENTS
+#if DEBUG || LEX_WORLD_EVENTS
             for (int ii = 0, iMax = _eventListeners.Count; ii < iMax; ii++)
             {
                 _eventListeners[ii].OnEntityDestroyed(entity);
@@ -381,7 +381,7 @@ namespace Nanory.Lex
                     filter.AddEntity(i);
                 }
             }
-#if DEBUG || Lecs_WORLD_EVENTS
+#if DEBUG || LEX_WORLD_EVENTS
             for (int ii = 0, iMax = _eventListeners.Count; ii < iMax; ii++)
             {
                 _eventListeners[ii].OnFilterCreated(filter);
@@ -523,7 +523,7 @@ namespace Nanory.Lex
         }
     }
 
-#if DEBUG || Lecs_WORLD_EVENTS
+#if DEBUG || LEX_WORLD_EVENTS
     public interface IEcsWorldEventListener
     {
         void OnEntityCreated(int entity);

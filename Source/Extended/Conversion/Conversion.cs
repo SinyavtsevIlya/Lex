@@ -46,6 +46,7 @@ namespace Nanory.Lex.Conversion
             }
             else
             {
+                Debug.Log($"click", this);
                 world.Add<TComponent>(entity) = _component;
             }
         }
@@ -72,16 +73,10 @@ namespace Nanory.Lex.Conversion
 
     public class GameObjectConversionSystem : IEcsRunSystem, IEcsInitSystem
     {
-        Dictionary<GameObject, int> _conversionMap;
+        Dictionary<GameObject, int> _conversionMap = new Dictionary<GameObject, int>();
         EcsWorld _world;
         EcsPool<ConvertGameObjectRequest> _requestsPool;
         EcsFilter _requestsFilter;
-
-        public GameObjectConversionSystem(EcsWorld world)
-        {
-            _conversionMap = new Dictionary<GameObject, int>();
-            _world = world;
-        }
 
         public EcsWorld World => _world;
 
@@ -108,7 +103,6 @@ namespace Nanory.Lex.Conversion
             foreach (var convertable in gameObject.GetComponents<IConvertGameObjectToEntity>())
             {
                 convertable.Convert(entity, this);
-                Debug.Log("convert");
             }
 
             if (mode == ConversionMode.ConvertAndDestroy)
@@ -119,6 +113,7 @@ namespace Nanory.Lex.Conversion
 
         public void Init(EcsSystems systems)
         {
+            _world = systems.GetWorld();
             _requestsPool = _world.GetPool<ConvertGameObjectRequest>();
             _requestsFilter = _world.Filter<ConvertGameObjectRequest>().End();
         }

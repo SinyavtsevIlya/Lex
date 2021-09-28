@@ -9,7 +9,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace Nanory.Lex.UnityEditor.Inspectors {
+namespace Nanory.Lex.UnityEditorIntegration.Inspectors {
     sealed class Vector3Inspector : IEcsComponentInspector {
         public Type GetFieldType () {
             return typeof (Vector3);

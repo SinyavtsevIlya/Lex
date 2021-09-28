@@ -3,6 +3,7 @@ using System;
 
 namespace Nanory.Lex
 {
+    [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
     public class BeginSimulationECBSystem : EntityCommandBufferSystem { }
 
     public class UpdateBefore : Attribute
@@ -14,8 +15,13 @@ namespace Nanory.Lex
     public class UpdateInGroup : Attribute
     {
         public Type TargetGroupType;
+        public bool OrderLast;
+        public bool OrderFirst;
         public UpdateInGroup(Type targetGroupType) => TargetGroupType = targetGroupType;
     }
+
+    [UpdateInGroup(typeof(SimulationSystemGroup), OrderLast = true)]
+    public class OneFrameSystemGroup : EcsSystemGroup { }
 
     [PreserveAutoCreation]
     public class RootSystemGroup : EcsSystemGroup { }
@@ -35,10 +41,14 @@ namespace Nanory.Lex
 
         public void Add(IEcsSystem system)
         {
-            _ecsSystems.Add(system);
-
+#if DEBUG
             if (system == this)
                 throw new Exception("Trying to pass itself to systems list");
+            if (_ecsSystems.Contains(system))
+                throw new Exception($"Trying to add a duplicate <b>{system.GetType().Name}</b> to a <b>{GetType().Name}</b> ");
+#endif
+
+            _ecsSystems.Add(system);
 
             if (system is IEcsRunSystem runSystem)
                 _runSystems.Add(runSystem);
@@ -104,7 +114,7 @@ namespace Nanory.Lex
 
         protected virtual void OnCreate() { }
 
-        protected EcsBufferWorld GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem
+        protected EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem
         {
             foreach (var system in _entityCommandBufferSystems)
             {
@@ -148,15 +158,15 @@ namespace Nanory.Lex
 
     public class EntityCommandBufferSystem : IEcsRunSystem
     {
-        private EcsBufferWorld _buffer;
+        private EntityCommandBuffer _buffer;
 
         public EntityCommandBufferSystem SetDstWorld(EcsWorld dstWorld)
         {
-            _buffer = new EcsBufferWorld(dstWorld);
+            _buffer = new EntityCommandBuffer(dstWorld);
             return this;
         }
 
-        public EcsBufferWorld GetBuffer() => _buffer;
+        public EntityCommandBuffer GetBuffer() => _buffer;
 
         public void Run(EcsSystems systems)
         {

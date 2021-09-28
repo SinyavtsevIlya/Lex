@@ -10,11 +10,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Nanory.Lex.UnityEditor {
+namespace Nanory.Lex.UnityEditorIntegration {
     public sealed class EcsWorldDebugSystem : IEcsPreInitSystem, IEcsRunSystem, IEcsWorldEventListener {
         readonly string _worldName;
         readonly GameObject _rootGO;
         readonly Transform _entitiesRoot;
+        readonly Transform _pooledEntitiesRoot;
         readonly bool _bakeComponentsInName;
         EcsWorld _world;
         EcsEntityDebugView[] _entities;
@@ -28,8 +29,10 @@ namespace Nanory.Lex.UnityEditor {
             Object.DontDestroyOnLoad (_rootGO);
             _rootGO.hideFlags = HideFlags.NotEditable;
             _entitiesRoot = new GameObject ("Entities").transform;
+            _pooledEntitiesRoot = new GameObject("Recycled Entities").transform;
             _entitiesRoot.gameObject.hideFlags = HideFlags.NotEditable;
             _entitiesRoot.SetParent (_rootGO.transform, false);
+            _pooledEntitiesRoot.SetParent(_rootGO.transform, false);
         }
 
         public void PreInit (EcsSystems systems) {
@@ -74,6 +77,7 @@ namespace Nanory.Lex.UnityEditor {
 
         public void OnEntityDestroyed (int entity) {
             if (_entities[entity]) {
+                _entities[entity].gameObject.transform.SetParent(_pooledEntitiesRoot, false);
                 _entities[entity].gameObject.SetActive (false);
             }
         }

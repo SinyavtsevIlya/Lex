@@ -4,40 +4,66 @@ using Unity.IL2CPP.CompilerServices;
 
 namespace Nanory.Lex
 {
+
+    public class EcsBufferWorld : EcsWorld
+    {
+        private readonly EcsWorld _dstWorld; 
+
+        public EcsBufferWorld(EcsWorld dstWorld, Config cfg) : base (cfg)
+        {
+            _dstWorld = dstWorld;
+        }
+
+        // TODO: Since every GetPool() in BufferWorld implicitly results in GetPool() from DstWorld, 
+        // even internal ECB command pools are created inside DstWorld. 
+        // There are only 4 of them and this is not critical, but it is better to fix it.
+
+        protected override EcsPool<TComponent> CreatePool<TComponent>()
+        {
+            return new EcsPool<TComponent>(this, _poolsCount, Entities.Length, _dstWorld.GetPool<TComponent>().GetItems());
+        }
+    }
+
 #if ENABLE_IL2CPP
     [Il2CppSetOption (Option.NullChecks, false)]
     [Il2CppSetOption (Option.ArrayBoundsChecks, false)]
 #endif
 
-    public class EcsBufferWorld : EcsWorld
+    public class EntityCommandBuffer
     {
+        public EcsWorld BufferWorld;
         public EcsWorld DstWorld;
         int _capacity;
 
         EcsFilter _ecbNewEntityFilter;
         EcsFilter _ecbSetFilter;
+        EcsFilter _ecbAddFilter;
         EcsFilter _ecbDelFilter;
         EcsFilter _ecbDelEntityFilter;
 
         public readonly EcsPool<ECBNewEntityCommand> PoolECBNewEntityCommand;
         public readonly EcsPool<ECBSetCommand> PoolECBSetCommand;
+        public readonly EcsPool<ECBAddCommand> PoolECBAddCommand;
         public readonly EcsPool<ECBDelCommand> PoolECBDelCommand;
         public readonly EcsPool<ECBDelEntityCommand> PoolECBDelEntityCommand;
 
-        public EcsBufferWorld(EcsWorld dstWorld, in Config cfg = default) : base(cfg)
+        public EntityCommandBuffer(EcsWorld dstWorld, in EcsWorld.Config cfg = default)
         {
+            BufferWorld = new EcsBufferWorld(dstWorld, cfg);
             DstWorld = dstWorld;
             CheckGrow();
 
-            _ecbNewEntityFilter = Filter<ECBNewEntityCommand>().End();
-            _ecbSetFilter = Filter<ECBSetCommand>().End();
-            _ecbDelFilter = Filter<ECBDelCommand>().End();
-            _ecbDelEntityFilter = Filter<ECBDelEntityCommand>().End();
+            _ecbNewEntityFilter = BufferWorld.Filter<ECBNewEntityCommand>().End();
+            _ecbSetFilter = BufferWorld.Filter<ECBSetCommand>().End();
+            _ecbAddFilter = BufferWorld.Filter<ECBAddCommand>().End();
+            _ecbDelFilter = BufferWorld.Filter<ECBDelCommand>().End();
+            _ecbDelEntityFilter = BufferWorld.Filter<ECBDelEntityCommand>().End();
 
-            PoolECBNewEntityCommand = GetPool<ECBNewEntityCommand>();
-            PoolECBSetCommand = GetPool<ECBSetCommand>();
-            PoolECBDelCommand = GetPool<ECBDelCommand>();
-            PoolECBDelEntityCommand = GetPool<ECBDelEntityCommand>();
+            PoolECBNewEntityCommand = BufferWorld.GetPool<ECBNewEntityCommand>();
+            PoolECBSetCommand = BufferWorld.GetPool<ECBSetCommand>();
+            PoolECBAddCommand = BufferWorld.GetPool<ECBAddCommand>();
+            PoolECBDelCommand = BufferWorld.GetPool<ECBDelCommand>();
+            PoolECBDelEntityCommand = BufferWorld.GetPool<ECBDelEntityCommand>();
         }
 
         public void CheckGrow()
@@ -46,7 +72,7 @@ namespace Nanory.Lex
             {
                 for (int idx = _capacity; idx < DstWorld.Entities.Length; idx++)
                 {
-                    NewEntity();
+                    BufferWorld.NewEntity();
                 }
 
                 _capacity = DstWorld.Entities.Length;
@@ -66,9 +92,24 @@ namespace Nanory.Lex
             foreach (var entity in _ecbSetFilter)
             {
                 ref var setCmd = ref PoolECBSetCommand.Get(entity);
-                PoolsSparse[setCmd.componentIndex].CpyToDstWorld(setCmd.entity);
+                BufferWorld.PoolsSparse[setCmd.componentIndex].CpyToDstWorld(setCmd.entity);
 
                 PoolECBSetCommand.Del(entity);
+            }
+
+            foreach (var entity in _ecbAddFilter)
+            {
+                ref var addCmd = ref PoolECBAddCommand.Get(entity);
+                var pool = DstWorld.PoolsSparse[addCmd.componentIndex];
+                pool.Activate(addCmd.entity);
+
+                var bufferPool = BufferWorld.PoolsSparse[addCmd.componentIndex];
+                bufferPool.CpyToDstWorld(addCmd.entity);
+                bufferPool.Del(entity);
+                UnityEngine.Debug.Log($"add command execute. on entity {entity} : Component Index is {addCmd.componentIndex}");
+
+                PoolECBAddCommand.Del(entity);
+
             }
             
             foreach (var entity in _ecbDelFilter)
@@ -86,16 +127,13 @@ namespace Nanory.Lex
             }
         }
 
-        // TODO: Since every GetPool() in BufferWorld implicitly results in GetPool() from DstWorld, 
-        // even internal ECB command pools are created inside DstWorld. 
-        // There are only 4 of them and this is not critical, but it is better to fix it.
-
-        protected override EcsPool<TComponent> CreatePool<TComponent>()
+        public struct ECBSetCommand
         {
-            return new EcsPool<TComponent>(this, _poolsCount, Entities.Length, DstWorld.GetPool<TComponent>().GetItems());
+            public int entity;
+            public int componentIndex;
         }
 
-        public struct ECBSetCommand
+        public struct ECBAddCommand
         {
             public int entity;
             public int componentIndex;
@@ -119,47 +157,60 @@ namespace Nanory.Lex
 
     public static class EcsBufferWorldExtensions
     {
-        public static ref TComponent Set<TComponent>(this EcsBufferWorld bufferWorld, int entity) where TComponent : struct
+        public static ref TComponent Add<TComponent>(this EntityCommandBuffer entityCommandBuffer, int entity) where TComponent : struct
         {
-            if (!bufferWorld.Has<TComponent>(entity))
+            entityCommandBuffer.PoolECBAddCommand.Add(entity) = new EntityCommandBuffer.ECBAddCommand()
             {
-                bufferWorld.Add<TComponent>(entity);
+                componentIndex = EcsComponent<TComponent>.TypeIndex,
+                entity = entity
+            };
+            return ref entityCommandBuffer.BufferWorld.GetPool<TComponent>().Add(entity);
+        }
+
+        public static ref TComponent Set<TComponent>(this EntityCommandBuffer entityCommandBuffer, int entity) where TComponent : struct
+        {
+            entityCommandBuffer.PoolECBSetCommand.Add(entity) = new EntityCommandBuffer.ECBSetCommand()
+            {
+                componentIndex = EcsComponent<TComponent>.TypeIndex,
+                entity = entity
+            };
+            if (!entityCommandBuffer.BufferWorld.Has<TComponent>(entity))
+            {
+                return ref entityCommandBuffer.BufferWorld.GetPool<TComponent>().Add(entity);
             }
-            bufferWorld.PoolECBSetCommand.Add(entity) = new EcsBufferWorld.ECBSetCommand()
+            else
+            {
+                return ref entityCommandBuffer.BufferWorld.GetPool<TComponent>().Get(entity);
+            }
+        }
+
+        public static void Del<TComponent>(this EntityCommandBuffer entityCommandBuffer, int entity) where TComponent : struct
+        {
+            entityCommandBuffer.PoolECBDelCommand.Add(entity) = new EntityCommandBuffer.ECBDelCommand()
             {
                 componentIndex = EcsComponent<TComponent>.TypeIndex,
                 entity = entity
             };
-            return ref bufferWorld.GetPool<TComponent>().Add(entity);
         }
 
-        public static void Del<TComponent>(this EcsBufferWorld buffer, int entity) where TComponent : struct
+        public static void DelBuffer<TElement>(this EntityCommandBuffer entityCommandBuffer, int entity) where TElement : struct
         {
-            buffer.PoolECBDelCommand.Add(entity) = new EcsBufferWorld.ECBDelCommand()
-            {
-                componentIndex = EcsComponent<TComponent>.TypeIndex,
-                entity = entity
-            };
-        }
-
-        public static void DelBuffer<TElement>(this EcsBufferWorld buffer, int entity) where TElement : struct
-        {
-            buffer.PoolECBDelCommand.Add(entity) = new EcsBufferWorld.ECBDelCommand()
+            entityCommandBuffer.PoolECBDelCommand.Add(entity) = new EntityCommandBuffer.ECBDelCommand()
             {
                 componentIndex = EcsComponent<Buffer<TElement>>.TypeIndex,
                 entity = entity
             };
         }
 
-        public static void DelEntity<TComponent>(this EcsBufferWorld buffer, int entity) where TComponent : struct
+        public static void DelEntity<TComponent>(this EntityCommandBuffer entityCommandBuffer, int entity) where TComponent : struct
         {
-            buffer.PoolECBDelEntityCommand.Add(entity) = new EcsBufferWorld.ECBDelEntityCommand()
+            entityCommandBuffer.PoolECBDelEntityCommand.Add(entity) = new EntityCommandBuffer.ECBDelEntityCommand()
             {
                 entity = entity
             };
         }
 
-        public static int NewEntity(this EcsBufferWorld buffer)
+        public static int NewEntity(this EntityCommandBuffer buffer)
         {
             var entity = buffer.NewEntity();
             buffer.PoolECBNewEntityCommand.Add(entity);

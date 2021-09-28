@@ -118,9 +118,7 @@ namespace Nanory.Lex
                         return false;
 
                     return typesToScan.Any(t => t.IsAssignableFrom(type));
-                })
-                //.Where(t => !t.IsGenericType) // TODO: uncomment this, and refactor generic types filtering
-                ;
+                });
         }
     }
 

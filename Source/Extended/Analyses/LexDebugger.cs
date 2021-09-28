@@ -9,7 +9,7 @@ using System;
 public class LexDebugger : EditorWindow
 {
     public static List<EcsSystems> _systems = new List<EcsSystems>();
-    public static System.Action SystemsAddedOrRemoved;
+    public static Action SystemsAddedOrRemoved;
 
     public static void AddEcsSystems(EcsSystems systems)
     {
@@ -19,9 +19,7 @@ public class LexDebugger : EditorWindow
 
     public static void RemoveEcsSystems(EcsSystems systems)
     {
-        if (_systems.Contains(systems))
-            _systems.Remove(systems);
-
+        _systems.Remove(systems);
         SystemsAddedOrRemoved?.Invoke();
     }
 
@@ -34,7 +32,7 @@ public class LexDebugger : EditorWindow
 
     private void OnEnable()
     {
-        Draw();
+        SystemsAddedOrRemoved += Draw;
     }
 
     private void Draw()
@@ -45,11 +43,19 @@ public class LexDebugger : EditorWindow
         var scroll = new ScrollView(ScrollViewMode.Vertical);
         root.Add(scroll);
 
-        foreach (var systems in _systems)
+        if (_systems.Count == 0)
         {
-            foreach (var system in systems.AllSystems)
+            var label = new Label("There is no Systems right now");
+            root.Add(label);
+        }
+        else
+        {
+            foreach (var systems in _systems)
             {
-                DrawRecursive(system, scroll);
+                foreach (var system in systems.AllSystems)
+                {
+                    DrawRecursive(system, scroll);
+                }
             }
         }
 
@@ -60,12 +66,14 @@ public class LexDebugger : EditorWindow
             if (system is EcsSystemGroup)
             {
                 element = new Foldout();
-                (element as Foldout).text = name;
+                var foldout = (element as Foldout);
+                foldout.text = name;
             }
             else
             {
                 element = new Label();
                 (element as Label).text = name;
+                (element as Label).style.color = new StyleColor(Color.white);
             }
                 
             

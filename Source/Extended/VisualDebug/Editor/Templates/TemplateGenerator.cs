@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEditor.ProjectWindowCallback;
 using UnityEngine;
 
-namespace Nanory.Lex.UnityEditor.Templates {
+namespace Nanory.Lex.UnityEditorIntegration.Templates {
     sealed class TemplateGenerator : ScriptableObject {
         const string Title = "Lex template generator";
 

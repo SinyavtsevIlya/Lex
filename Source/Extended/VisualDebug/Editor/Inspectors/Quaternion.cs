@@ -9,7 +9,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace Nanory.Lex.UnityEditor.Inspectors {
+namespace Nanory.Lex.UnityEditorIntegration.Inspectors {
     sealed class QuaternionInspector : IEcsComponentInspector {
         public Type GetFieldType () {
             return typeof (Quaternion);
