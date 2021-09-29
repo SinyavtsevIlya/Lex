@@ -106,7 +106,6 @@ namespace Nanory.Lex
                 var bufferPool = BufferWorld.PoolsSparse[addCmd.componentIndex];
                 bufferPool.CpyToDstWorld(addCmd.entity);
                 bufferPool.Del(entity);
-                UnityEngine.Debug.Log($"add command execute. on entity {entity} : Component Index is {addCmd.componentIndex}");
 
                 PoolECBAddCommand.Del(entity);
 

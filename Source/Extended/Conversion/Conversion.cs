@@ -15,43 +15,12 @@ namespace Nanory.Lex.Conversion
 
     public abstract class Authoring<TComponent> : MonoBehaviour, IConvertGameObjectToEntity where TComponent : struct
     {
-        public void Convert(int entity, GameObjectConversionSystem converstionSystem)
-        {
-            if (IsPrefab)
-            {
-                var world = converstionSystem.World;
-                world.SetAsPrefab(entity);
-                world.GetPool<Prefab>().Get(entity).PoolIndeces.Values.Add(EcsComponent<TComponent>.TypeIndex);
-            }
-
-            OnConvert(entity, converstionSystem);
-        }
-
-        protected abstract void OnConvert(int entity, GameObjectConversionSystem converstionSystem);
-
-        private bool IsPrefab => gameObject.scene.name == null;
-    }
-
-    public abstract class AutoAuthoring<TComponent> : MonoBehaviour, IConvertGameObjectToEntity where TComponent : struct
-    {
         [SerializeField] protected TComponent _component;
 
         public void Convert(int entity, GameObjectConversionSystem converstionSystem)
         {
-            var world = converstionSystem.World;
-            if (IsPrefab)
-            {
-                world.SetAsPrefab(entity);
-                world.AddToPrefab<TComponent>(entity) = _component;
-            }
-            else
-            {
-                Debug.Log($"click", this);
-                world.Add<TComponent>(entity) = _component;
-            }
+            converstionSystem.World.Add<TComponent>(entity) = _component;
         }
-
-        private bool IsPrefab => gameObject.scene.name == null;
     }
 
     public enum ConversionMode
@@ -74,11 +43,11 @@ namespace Nanory.Lex.Conversion
     public class GameObjectConversionSystem : IEcsRunSystem, IEcsInitSystem
     {
         Dictionary<GameObject, int> _conversionMap = new Dictionary<GameObject, int>();
-        EcsWorld _world;
+        EcsConversionWorldWrapper _conversionWorldWrapper;
         EcsPool<ConvertGameObjectRequest> _requestsPool;
         EcsFilter _requestsFilter;
 
-        public EcsWorld World => _world;
+        public EcsConversionWorldWrapper World => _conversionWorldWrapper;
 
         public int GetPrimaryEntity(GameObject gameObject)
         {
@@ -87,7 +56,7 @@ namespace Nanory.Lex.Conversion
                 return resolvedEntity;
             }
 
-            var newEntity = _world.NewEntity();
+            var newEntity = _conversionWorldWrapper.NewEntity();
             _conversionMap[gameObject] = newEntity;
 
             return newEntity;
@@ -100,6 +69,14 @@ namespace Nanory.Lex.Conversion
                 throw new System.ArgumentException("Unable to convert. Passed gameObject is null");
 #endif
             var entity = GetPrimaryEntity(gameObject);
+
+            var isPrefab = gameObject.scene.name == null;
+
+            if (isPrefab)
+            {
+                World.Dst.SetAsPrefab(entity);
+            }
+
             foreach (var convertable in gameObject.GetComponents<IConvertGameObjectToEntity>())
             {
                 convertable.Convert(entity, this);
@@ -113,9 +90,9 @@ namespace Nanory.Lex.Conversion
 
         public void Init(EcsSystems systems)
         {
-            _world = systems.GetWorld();
-            _requestsPool = _world.GetPool<ConvertGameObjectRequest>();
-            _requestsFilter = _world.Filter<ConvertGameObjectRequest>().End();
+            _conversionWorldWrapper = new EcsConversionWorldWrapper(systems.GetWorld());
+            _requestsPool = _conversionWorldWrapper.Dst.GetPool<ConvertGameObjectRequest>();
+            _requestsFilter = _conversionWorldWrapper.Dst.Filter<ConvertGameObjectRequest>().End();
         }
 
         public void Run(EcsSystems systems)
@@ -124,8 +101,54 @@ namespace Nanory.Lex.Conversion
             {
                 ref var request = ref _requestsPool.Get(requestEntity);
                 Convert(request.Value, request.Mode);
-                _world.DelEntity(requestEntity);
+                _conversionWorldWrapper.DelEntity(requestEntity);
             }
         }
+    }
+
+    public class EcsConversionWorldWrapper
+    {
+        private readonly EcsWorld _world;
+
+        public EcsConversionWorldWrapper(EcsWorld world)
+        {
+            _world = world;
+        }
+
+        public EcsWorld Dst => _world;
+
+        public void Destroy() => _world.Destroy();
+        public int NewEntity() => _world.NewEntity();
+        public ref TComponent Add<TComponent>(int entity) where TComponent : struct
+        {
+            if (_world.GetPool<Prefab>().Has(entity))
+            {
+                _world.GetPool<Prefab>().Get(entity).PoolIndeces.Values.Add(EcsComponent<TComponent>.TypeIndex);
+            }
+
+            return ref _world.GetPool<TComponent>().Add(entity);
+        }
+
+        public ref TComponent Get<TComponent>(int entity) where TComponent : struct
+        {
+            return ref _world.GetPool<TComponent>().Get(entity);
+        }
+
+        public bool Has<TComponent>(int entity) where TComponent : struct
+        {
+            return _world.GetPool<TComponent>().Has(entity);
+        }
+
+        public void Del<TComponent>(int entity) where TComponent : struct
+        {
+            if (_world.GetPool<Prefab>().Has(entity))
+            {
+                _world.GetPool<Prefab>().Get(entity).PoolIndeces.Values.Remove(EcsComponent<TComponent>.TypeIndex);
+            }
+
+            _world.Del<TComponent>(entity);
+        }
+
+        public void DelEntity(int entity) => _world.DelEntity(entity);
     }
 }

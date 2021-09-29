@@ -122,7 +122,6 @@ namespace Nanory.Lex
         public ref T Add(int entity)
         {
 #if DEBUG
-            UnityEngine.Debug.Log($"add {typeof(T).Name} on entity {entity}");
             if (!_world.IsEntityAliveInternal(entity)) { throw new Exception("Cant touch destroyed entity."); }
 #endif
             ref var itemData = ref _items[entity];
