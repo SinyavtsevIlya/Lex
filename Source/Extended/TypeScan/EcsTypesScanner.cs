@@ -7,12 +7,12 @@ namespace Nanory.Lex
 {
     public class EcsTypesScanner
     {
-        private readonly string _clientAssemblyName;
+        private readonly string[] _clientAssemblyNames;
         private readonly string _clientNamespaceTag;
 
         public EcsTypesScanner(EcsScanSettings settings)
         {
-            _clientAssemblyName = settings.ClientAssemblyName;
+            _clientAssemblyNames = settings.ClientAssemblyNames;
             _clientNamespaceTag = settings.ClientNamespaceTag;
         }
 
@@ -20,7 +20,7 @@ namespace Nanory.Lex
         {
             var settings = EcsScanSettings.Default;
 
-            _clientAssemblyName = settings.ClientAssemblyName;
+            _clientAssemblyNames = settings.ClientAssemblyNames;
             _clientNamespaceTag = settings.ClientNamespaceTag;
         }
 
@@ -88,10 +88,14 @@ namespace Nanory.Lex
 
         private IEnumerable<Type> GetTypesFromTaggedNamespaces(string namespaceTag, params Type[] typesToScan)
         {
-            return AppDomain.CurrentDomain.GetAssembliesByName(_clientAssemblyName)
-                .AssertIsEmpty($"Check your _clientAssemblyName: {_clientAssemblyName}")
+            return AppDomain.CurrentDomain.GetAssembliesByName(_clientAssemblyNames)
+                .AssertIsEmpty($"Check your _clientAssemblyNames: {_clientAssemblyNames}")
                 .SelectMany(s => s.GetTypes())
-                .Where(t => t.FullName.Contains(namespaceTag))
+                .Where(t => 
+                {
+                    if (string.IsNullOrEmpty(namespaceTag)) return true;
+                    return t.FullName.Contains(namespaceTag);
+                })
                 .Where(type => 
                 {
                     if (typesToScan.Any(t => t == typeof(IComponentMock)))

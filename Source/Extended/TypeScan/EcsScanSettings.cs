@@ -1,4 +1,7 @@
 ﻿using UnityEngine;
+using System.Linq;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -8,6 +11,8 @@ namespace Nanory.Lex
     [CreateAssetMenu(fileName = "LexEcsScanSettings", menuName = "Lex/EcsScanSettings")]
     public class EcsScanSettings : ScriptableObject
     {
+        private const string FallbackAssemblyName = "Assembly-CSharp";
+
         private static EcsScanSettings _default;
         public static EcsScanSettings Default
         {
@@ -21,7 +26,7 @@ namespace Nanory.Lex
                 {
                     _default = CreateInstance<EcsScanSettings>();
 
-                    _default.ClientAssemblyName = "Assembly-CSharp";
+                    _default._clientAssemblyNames = new string[] { FallbackAssemblyName };
                     _default.ClientNamespaceTag = "Client";
 
                     var resourcesPath = Application.dataPath + "Assets/Resources/";
@@ -39,7 +44,42 @@ namespace Nanory.Lex
             }
         }
 
-        public string ClientAssemblyName;
+        public string[] ClientAssemblyNames => _clientAssemblyNames;
+
+        private void OnValidate()
+        {
+            if (_assemblyDefinitions?.Length > 0)
+            {
+                var result = new List<string>();
+                for (var idx = 0; idx < _assemblyDefinitions.Length; idx++)
+                {
+                    var asmDefAsset = _assemblyDefinitions[idx];
+
+                    if (asmDefAsset != null)
+                    {
+                        var match = Regex.Match(asmDefAsset.text, "\"name\": \"(.+)\"");
+                        result.Add(match.Groups[1].Captures[0].Value);
+                    }
+                }
+                _clientAssemblyNames = result.ToArray();
+            }
+
+            if (_assemblyDefinitions == null || !_assemblyDefinitions.Any(ad => ad != null))
+            {
+                _clientAssemblyNames = new string[] { FallbackAssemblyName };
+            }
+        }
+
+        [Tooltip("Type here a namespace (or part of a namespace) to filter which code should be scanned. \nIf no namespace tag specified, a whole assembly will be scanned")]
         public string ClientNamespaceTag;
+        [HideInInspector]
+        [SerializeField]
+        private string[] _clientAssemblyNames;
+#if UNITY_EDITOR
+        [Tooltip("Put here asmdefs you want to be scanned. \nIf no asmdef specified " + FallbackAssemblyName + " will be selected")]
+        [SerializeField]
+        private UnityEditorInternal.AssemblyDefinitionAsset[] _assemblyDefinitions;
+#endif
+
     }
 }
