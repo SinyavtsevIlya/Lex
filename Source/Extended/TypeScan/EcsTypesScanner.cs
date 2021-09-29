@@ -37,7 +37,6 @@ namespace Nanory.Lex
 
             return GetClientTypes(typeof(IComponentMock))
                 .FilterGenericTypesByAttribute<OneFrame>()
-                .Log()
                 .FilterTypesByWorld(worldAttributeType)
                 .ToList();
         }

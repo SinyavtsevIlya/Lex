@@ -191,7 +191,7 @@ namespace Nanory.Lex
     [Il2CppSetOption (Option.ArrayBoundsChecks, false)]
 #endif
     [UpdateInGroup(typeof(OneFrameSystemGroup))]
-    sealed class OneFrameSystem<T> : IEcsRunSystem, IEcsInitSystem where T : struct
+    public sealed class OneFrameSystem<T> : IEcsRunSystem, IEcsInitSystem where T : struct
     {
         private EcsFilter _filter;
         private EcsPool<T> _pool;
