@@ -33,11 +33,12 @@ namespace Nanory.Lex
     [UpdateInGroup(typeof(RootSystemGroup))]
     public class PresentationSystemGroup : EcsSystemGroup { }
 
-    public abstract class EcsSystemGroup : IEcsRunSystem, IEcsInitSystem
+    public abstract class EcsSystemGroup : IEcsRunSystem, IEcsInitSystem, IEcsDestroySystem
     {
         private List<IEcsRunSystem> _runSystems = new List<IEcsRunSystem>();
         private List<IEcsInitSystem> _initSystems = new List<IEcsInitSystem>();
         private List<IEcsSystem> _ecsSystems = new List<IEcsSystem>();
+        private List<IEcsDestroySystem> _destroySystems = new List<IEcsDestroySystem>();
 
         public void Add(IEcsSystem system)
         {
@@ -70,6 +71,19 @@ namespace Nanory.Lex
             {
                 _runSystems[i].Run(systems);
             }
+        }
+
+        public void Destroy(EcsSystems systems)
+        {
+            for (int i = 0; i < _destroySystems.Count; i++)
+            {
+                _destroySystems[i].Destroy(systems);
+            }
+
+            _runSystems.Clear();
+            _initSystems.Clear();
+            _ecsSystems.Clear();
+            _destroySystems.Clear();
         }
 
         public List<IEcsSystem> Systems
@@ -133,6 +147,11 @@ namespace Nanory.Lex
         protected ref TComponent Add<TComponent>(int entity) where TComponent : struct
         {
             return ref World.GetPool<TComponent>().Add(entity);
+        }
+
+        protected void Del<TComponent>(int entity) where TComponent : struct
+        {
+            World.GetPool<TComponent>().Del(entity);
         }
 
         protected void RemoveBuffer<TComponent>(int entity) where TComponent : struct

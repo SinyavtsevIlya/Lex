@@ -11,54 +11,40 @@ namespace Nanory.Lex
     public class AllWorldAttribute : WorldAttribute { }
     public class NoneWorldAttribute : WorldAttribute { }
 
-    /// <summary>
-    /// Gathers system types from
-    /// </summary>
-    /// <typeparam name="TWorld"></typeparam>
-    public class EcsInstaller<TWorld> : IDisposable where TWorld : TargetWorldAttribute
+    public class EcsSystemOrderer<TWorld> : IDisposable where TWorld : TargetWorldAttribute
     {
         protected EcsWorld World { get; private set; }
-        protected EcsSystems Systems { get; private set; }
+        protected EcsSystemGroup RootSystemGroup { get; private set; }
         protected Dictionary<Type, IEcsSystem> SystemMap { get; private set; }
         protected Func<Type, IEcsSystem> Creator { get; private set; }
+        protected Type[] SystemTypes { get; set; }
 
-        public EcsInstaller(EcsWorld world, EcsSystems systems, Func<Type, IEcsSystem> creator = null)
+
+        public EcsSystemOrderer(EcsWorld world, Func<Type, IEcsSystem> creator = null, EcsTypesScanner ecsTypesScanner = null)
         {
             World = world;
-            Systems = systems;
             SystemMap = new Dictionary<Type, IEcsSystem>();
             Creator = creator;
 
-            var scanner = new EcsTypesScanner(EcsScanSettings.Default);
+            var scanner = ecsTypesScanner == null ? new EcsTypesScanner(EcsScanSettings.Default) : ecsTypesScanner;
 
-            SystemTypes = scanner.GetSystemTypesByWorld(typeof(TWorld))
-                .Union(scanner.GetOneFrameSystemTypesByWorldGeneric(typeof(TWorld))
-                .Union(new Type[] 
+            SystemTypes = scanner.ScanSystemTypes(typeof(TWorld))
+                .Union
+                (new Type[] 
                     { 
                         typeof(SimulationSystemGroup),
                         typeof(PresentationSystemGroup),
                         typeof(BeginSimulationECBSystem),
                         typeof(GameObjectConversionSystem)
-                    }))
-                .ToArray();
-            
-            Install();
-            CreateSystems();
-
-#if UNITY_EDITOR
-            var debugger = UnityEditor.EditorWindow.GetWindow<LexDebugger>();
-            LexDebugger.AddEcsSystems(Systems);
-#endif
+                    }
+                ).ToArray();
         }
 
-        protected Type[] SystemTypes { get; set; }
-       
-        protected void CreateSystems()
+        public EcsSystemGroup CreateSystemsOrdered()
         {
             var handledSystems = new HashSet<Type>();
             // Add a root
             var rootSystemGroup = (EcsSystemGroup)GetSystemByType(typeof(RootSystemGroup));
-            Systems.Add(rootSystemGroup);
             handledSystems.Add(typeof(RootSystemGroup));
 
             foreach (var systemType in SystemTypes)
@@ -70,7 +56,6 @@ namespace Nanory.Lex
             var baseSystems = SystemMap.Values.Where(s => s is EcsSystemBase).Select(s => s as EcsSystemBase).ToList();
             var systemGroups = SystemMap.Values.Where(s => s is EcsSystemGroup).Select(s => s as EcsSystemGroup).ToList();
 
-            //SystemTypes.ToList().ForEach(x => Debug.Log(x));
             commandBufferSystems.ForEach(cbs => cbs.SetDstWorld(World));
             baseSystems.ForEach(bs => bs.SetEntityCommandBufferSystemsLookup(commandBufferSystems));
 
@@ -78,8 +63,6 @@ namespace Nanory.Lex
             {
                 SortSystemGroup(systemGroup);
             }
-
-            //systemGroups.ForEach(x => x.Systems.ForEach(x => Debug.Log(x)));
 
             void TryCreateSystemRecursive(Type systemType)
             {
@@ -200,9 +183,14 @@ namespace Nanory.Lex
                         SortRecursive(unsorted, dependencyTable, dependencyLevel++);
                 }
             }
-        }
 
-        protected virtual void Install() { }
+#if UNITY_EDITOR
+            var debugger = UnityEditor.EditorWindow.GetWindow<LexSystemsDebugger>();
+            LexSystemsDebugger.AddEcsSystems(rootSystemGroup);
+#endif
+
+            return rootSystemGroup;
+        }
 
         protected IEcsSystem GetSystemByType(Type systemType)
         {
@@ -211,22 +199,36 @@ namespace Nanory.Lex
                 return result;
             }
 
-            var system = Creator == null ? (IEcsSystem) Activator.CreateInstance(systemType) : Creator(systemType);
+            IEcsSystem system = null;
+
+            if (Creator != null)
+            {
+                system = Creator(systemType);
+            }
+
+            // Use Activator as a fall-back for the system creation. 
+            // It gives user an ability to create manually only those systems 
+            // that have dependencies
+            if (system == null)
+            {
+                system = (IEcsSystem) Activator.CreateInstance(systemType);
+            }
+
             SystemMap[systemType] = system;
             return system;
         }
 
         public void Dispose() 
         {
-#if UNITY_EDITOR
-            var debugger = UnityEditor.EditorWindow.GetWindow<LexDebugger>();
-            LexDebugger.RemoveEcsSystems(Systems);
-#endif
-
             World = null;
-            Systems = null;
+            RootSystemGroup = null;
             SystemMap = null;
             SystemTypes = null;
+
+#if UNITY_EDITOR
+            var debugger = UnityEditor.EditorWindow.GetWindow<LexSystemsDebugger>();
+            LexSystemsDebugger.RemoveEcsSystems(RootSystemGroup);
+#endif
         }
     }
 }

@@ -6,27 +6,27 @@ using Nanory.Lex;
 using System.Collections.Generic;
 using System;
 
-public class LexDebugger : EditorWindow
+public class LexSystemsDebugger : EditorWindow
 {
-    public static List<EcsSystems> _systems = new List<EcsSystems>();
+    public static List<EcsSystemGroup> _rootSystemGroups = new List<EcsSystemGroup>();
     public static Action SystemsAddedOrRemoved;
 
-    public static void AddEcsSystems(EcsSystems systems)
+    public static void AddEcsSystems(EcsSystemGroup rootSystemGroup)
     {
-        _systems.Add(systems);
+        _rootSystemGroups.Add(rootSystemGroup);
         SystemsAddedOrRemoved?.Invoke();
     }
 
-    public static void RemoveEcsSystems(EcsSystems systems)
+    public static void RemoveEcsSystems(EcsSystemGroup rootSystemGroup)
     {
-        _systems.Remove(systems);
+        _rootSystemGroups.Remove(rootSystemGroup);
         SystemsAddedOrRemoved?.Invoke();
     }
 
     [MenuItem("Window/UI Toolkit/LexDebugger")]
     public static void ShowExample()
     {
-        LexDebugger wnd = GetWindow<LexDebugger>();
+        LexSystemsDebugger wnd = GetWindow<LexSystemsDebugger>();
         wnd.titleContent = new GUIContent("LexDebugger");
     }
 
@@ -43,16 +43,16 @@ public class LexDebugger : EditorWindow
         var scroll = new ScrollView(ScrollViewMode.Vertical);
         root.Add(scroll);
 
-        if (_systems.Count == 0)
+        if (_rootSystemGroups.Count == 0)
         {
             var label = new Label("There is no Systems right now");
             root.Add(label);
         }
         else
         {
-            foreach (var systems in _systems)
+            foreach (var rootSystemGroup in _rootSystemGroups)
             {
-                foreach (var system in systems.AllSystems)
+                foreach (var system in rootSystemGroup.Systems)
                 {
                     DrawRecursive(system, scroll);
                 }
@@ -65,18 +65,38 @@ public class LexDebugger : EditorWindow
             var name = GetSystemName(system);
             if (system is EcsSystemGroup)
             {
-                element = new Foldout();
-                var foldout = (element as Foldout);
-                foldout.text = name;
+                if (system is RootSystemGroup)
+                {
+                    element = new VisualElement();
+                }
+                else
+                {
+                    element = new Foldout();
+                    var foldout = (element as Foldout);
+                    foldout.text = name;
+                }
             }
             else
             {
                 element = new Label();
-                (element as Label).text = name;
-                (element as Label).style.color = new StyleColor(Color.white);
-            }
+                var label = element as Label;
+                label.text = name;
+                label.style.color = new StyleColor(Color.white);
+                label.style.marginLeft = 15;
                 
-            
+                var thumbnail = new Image();
+                thumbnail.image = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Plugins/Lex/Source/Extended/VisualDebug/Editor/Settings.png");
+                thumbnail.style.width = new StyleLength(12);
+                thumbnail.style.height = new StyleLength(12);
+                thumbnail.style.marginLeft = -15;
+
+                var thumbnailContainer = new VisualElement();
+                thumbnailContainer.Add(thumbnail);
+                thumbnailContainer.style.width = new StyleLength(15);
+                thumbnailContainer.style.height = new StyleLength(15);
+                element.Add(thumbnailContainer);
+            }
+
             parent.Add(element);
 
             if (system is EcsSystemGroup systemGroup)
