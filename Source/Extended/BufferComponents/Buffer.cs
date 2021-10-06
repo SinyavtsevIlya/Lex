@@ -10,6 +10,8 @@ namespace Nanory.Lex
         {
             if (c.Values != null)
                 Pool.Push(c.Values);
+
+            c.Values = null;
         }
 
         public static class Pool

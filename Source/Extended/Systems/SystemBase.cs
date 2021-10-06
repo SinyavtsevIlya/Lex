@@ -35,10 +35,10 @@ namespace Nanory.Lex
 
     public abstract class EcsSystemGroup : IEcsRunSystem, IEcsInitSystem, IEcsDestroySystem
     {
-        private List<IEcsRunSystem> _runSystems = new List<IEcsRunSystem>();
-        private List<IEcsInitSystem> _initSystems = new List<IEcsInitSystem>();
-        private List<IEcsSystem> _ecsSystems = new List<IEcsSystem>();
-        private List<IEcsDestroySystem> _destroySystems = new List<IEcsDestroySystem>();
+        protected List<IEcsRunSystem> _runSystems = new List<IEcsRunSystem>();
+        protected List<IEcsInitSystem> _initSystems = new List<IEcsInitSystem>();
+        protected List<IEcsSystem> _ecsSystems = new List<IEcsSystem>();
+        protected List<IEcsDestroySystem> _destroySystems = new List<IEcsDestroySystem>();
 
         public void Add(IEcsSystem system)
         {
@@ -59,18 +59,12 @@ namespace Nanory.Lex
 
         public void Init(EcsSystems systems)
         {
-            for (int i = 0; i < _initSystems.Count; i++)
-            {
-                _initSystems[i].Init(systems);
-            }
+            OnCreate(systems);
         }
 
         public void Run(EcsSystems systems)
         {
-            for (int i = 0; i < _runSystems.Count; i++)
-            {
-                _runSystems[i].Run(systems);
-            }
+            OnUpdate(systems);
         }
 
         public void Destroy(EcsSystems systems)
@@ -99,14 +93,30 @@ namespace Nanory.Lex
                     Add(system);
             }
         }
+
+        protected virtual void OnUpdate(EcsSystems systems)
+        {
+            for (int i = 0; i < _runSystems.Count; i++)
+            {
+                _runSystems[i].Run(systems);
+            }
+        }
+
+        protected virtual void OnCreate(EcsSystems systems) 
+        {
+            for (int i = 0; i < _initSystems.Count; i++)
+            {
+                _initSystems[i].Init(systems);
+            }
+        }
     }
 
     public abstract class EcsSystemBase : IEcsRunSystem, IEcsInitSystem
     {
         private readonly List<EcsLocalFilterContainer> _localFilterContainers = new List<EcsLocalFilterContainer>(8);
-
         protected List<EntityCommandBufferSystem> _entityCommandBufferSystems;
-        protected EcsWorld World;
+
+        public EcsWorld World;
 
         public void Init(EcsSystems systems)
         {
@@ -124,20 +134,20 @@ namespace Nanory.Lex
             return this;
         }
 
-        protected abstract void OnUpdate();
-
-        protected virtual void OnCreate() { }
-
-        protected EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem
+        public EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem
         {
             foreach (var system in _entityCommandBufferSystems)
             {
-                if (system is TSystem) 
-                    return system.GetBuffer(); 
+                if (system is TSystem)
+                    return system.GetBuffer();
             }
 
             throw new Exception($"no system {typeof(TSystem)} presented in the entityCommandBufferSystems lookup");
         }
+
+        protected abstract void OnUpdate();
+
+        protected virtual void OnCreate() { }
 
         protected ref TComponent Get<TComponent>(int entity) where TComponent : struct
         {

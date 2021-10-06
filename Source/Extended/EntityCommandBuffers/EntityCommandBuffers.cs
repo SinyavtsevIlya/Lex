@@ -192,6 +192,15 @@ namespace Nanory.Lex
             };
         }
 
+        public static void Del(this EntityCommandBuffer entityCommandBuffer, int entity, int componentIndex)
+        {
+            entityCommandBuffer.PoolECBDelCommand.Add(entity) = new EntityCommandBuffer.ECBDelCommand()
+            {
+                componentIndex = componentIndex,
+                entity = entity
+            };
+        }
+
         public static void DelBuffer<TElement>(this EntityCommandBuffer entityCommandBuffer, int entity) where TElement : struct
         {
             entityCommandBuffer.PoolECBDelCommand.Add(entity) = new EntityCommandBuffer.ECBDelCommand()

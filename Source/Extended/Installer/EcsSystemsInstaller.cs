@@ -28,16 +28,24 @@ namespace Nanory.Lex
 
             var scanner = ecsTypesScanner == null ? new EcsTypesScanner(EcsScanSettings.Default) : ecsTypesScanner;
 
-            SystemTypes = scanner.ScanSystemTypes(typeof(TWorld))
-                .Union
-                (new Type[] 
-                    { 
-                        typeof(SimulationSystemGroup),
-                        typeof(PresentationSystemGroup),
-                        typeof(BeginSimulationECBSystem),
-                        typeof(GameObjectConversionSystem)
-                    }
-                ).ToArray();
+            var defaultSystemGroupTypes = new Type[]
+            {
+                typeof(SimulationSystemGroup),
+                typeof(PresentationSystemGroup),
+                typeof(BeginSimulationECBSystem),
+            };
+
+            var conversionSystemTypes = new Type[]
+            {
+                typeof(GameObjectConversionSystem)
+            };
+
+            SystemTypes = scanner
+                .ScanSystemTypes(typeof(TWorld))
+                .Union(defaultSystemGroupTypes)
+                .Union(conversionSystemTypes)
+                .Union(UISystemTypesRegistry.Values)
+                .ToArray();
         }
 
         public EcsSystemGroup CreateSystemsOrdered()
