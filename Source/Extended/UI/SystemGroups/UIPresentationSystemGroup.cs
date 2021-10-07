@@ -21,14 +21,18 @@ namespace Nanory.Lex
             {
                 if (system is EcsSystemGroup systemGroup)
                 {
-                    return CacheEntityCommandBuffer(systemGroup.Systems);
+                    var result = CacheEntityCommandBuffer(systemGroup.Systems);
+                    if (result != null)
+                    {
+                        return result;
+                    }
                 }
                 else if (system is EcsSystemBase systemBase)
                 {
                     return systemBase.GetCommandBufferFrom<WidgetEntityCommandBufferSystem>();
                 }
             }
-            throw new System.Exception($"No SystemBase was found in {typeof(UIPresentationSystemGroup).Name}.");
+            return null;
         }
 
         protected override void OnUpdate(EcsSystems systems)

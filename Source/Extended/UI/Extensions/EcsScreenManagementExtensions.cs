@@ -13,9 +13,8 @@ namespace Nanory.Lex
         /// <param name="system"></param>
         /// <param name="ownerEntity"></param>
         /// <param name="screens"></param>
-        public static void InitializeScreenStorage(this EcsSystemBase system, int ownerEntity, IEnumerable<MonoBehaviour> screens)
+        public static void InitializeScreenStorage(this EcsWorld world, int ownerEntity, IEnumerable<MonoBehaviour> screens)
         {
-            var world = system.World;
             ref var screenStorage = ref world.Add<ScreensStorage>(ownerEntity);
             screenStorage = new ScreensStorage(16);
             foreach (var screen in screens)
@@ -40,17 +39,32 @@ namespace Nanory.Lex
 
             if (hasActiveScreen)
             {
-                DeactivateScreen(ownerEntity, system, screenStorage, screenStorage.ActiveScreen.GetType());
+                DeactivateScreen(ownerEntity, system, ref screenStorage, screenStorage.ActiveScreen.GetType());
             }
-            ActivateScreen<TScreen>(ownerEntity, system, screenStorage);
-        } 
+            ActivateScreen<TScreen>(ownerEntity, system, ref screenStorage);
+        }
+
+        public static TScreen GetScreen<TScreen>(this EcsSystemBase system, int ownerEntity) where TScreen : MonoBehaviour
+        {
+            var world = system.World;
+            ref var screenStorage = ref world.Get<ScreensStorage>(ownerEntity);
+
+            if (screenStorage.ScreenByType.TryGetValue(typeof(TScreen), out var screen))
+            {
+                return screen as TScreen;
+            }
+            else
+            {
+                throw new Exception($"No screen {typeof(TScreen).Name} is registered for entity-{ownerEntity}");
+            }
+        }
         #endregion
 
         #region Private
-        private static void ActivateScreen<TScreen>(int ownerEntity, EcsSystemBase system, ScreensStorage screenStorage) where TScreen : MonoBehaviour
+        private static void ActivateScreen<TScreen>(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage) where TScreen : MonoBehaviour
         {
             var world = system.World;
-            var screen = world.GetScreen<TScreen>(ownerEntity); 
+            var screen = system.GetScreen<TScreen>(ownerEntity); 
             world.Add<MonoScreen<TScreen>>(ownerEntity).Value = screen;
             world.Add<OpenEvent<TScreen>>(ownerEntity).Value = screen;
             screenStorage.ActiveScreen = screen;
@@ -60,7 +74,7 @@ namespace Nanory.Lex
             later.Del<OpenEvent<TScreen>>(ownerEntity);
         }
 
-        private static void DeactivateScreen(int ownerEntity, EcsSystemBase system, ScreensStorage screenStorage, Type screenType)
+        private static void DeactivateScreen(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage, Type screenType)
         {
             var world = system.World;
             var screen = screenStorage.ScreenByType[screenType];
@@ -89,20 +103,6 @@ namespace Nanory.Lex
                 screenStorage.CloseEventComponentIndexByType[typeof(TScreen)] = EcsComponent<CloseEvent<TScreen>>.TypeIndex;
             }
         }
-
-        private static TScreen GetScreen<TScreen>(this EcsWorld world, int ownerEntity) where TScreen : MonoBehaviour
-        {
-            var screenStorage = world.Get<ScreensStorage>(ownerEntity);
-
-            if (screenStorage.ScreenByType.TryGetValue(typeof(TScreen), out var screen))
-            {
-                return screen as TScreen;
-            }
-            else
-            {
-                throw new Exception($"No screen {typeof(TScreen).Name} is registered for entity-{ownerEntity}");
-            }
-        } 
         #endregion
     }
 }

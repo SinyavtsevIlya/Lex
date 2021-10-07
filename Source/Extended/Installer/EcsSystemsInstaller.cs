@@ -30,6 +30,7 @@ namespace Nanory.Lex
 
             var defaultSystemGroupTypes = new Type[]
             {
+                typeof(InitializationSystemGroup),
                 typeof(SimulationSystemGroup),
                 typeof(PresentationSystemGroup),
                 typeof(BeginSimulationECBSystem),
@@ -61,11 +62,11 @@ namespace Nanory.Lex
             }
 
             var commandBufferSystems = SystemMap.Values.Where(s => s is EntityCommandBufferSystem).Select(s => s as EntityCommandBufferSystem).ToList();
-            var baseSystems = SystemMap.Values.Where(s => s is EcsSystemBase).Select(s => s as EcsSystemBase).ToList();
+            var commandBufferLookupSystems = SystemMap.Values.Where(s => s is IEcsEntityCommandBufferLookup).Select(s => s as IEcsEntityCommandBufferLookup).ToList();
             var systemGroups = SystemMap.Values.Where(s => s is EcsSystemGroup).Select(s => s as EcsSystemGroup).ToList();
 
             commandBufferSystems.ForEach(cbs => cbs.SetDstWorld(World));
-            baseSystems.ForEach(bs => bs.SetEntityCommandBufferSystemsLookup(commandBufferSystems));
+            commandBufferLookupSystems.ForEach(bs => bs.SetEntityCommandBufferSystemsLookup(commandBufferSystems));
 
             foreach (var systemGroup in systemGroups)
             {
@@ -150,7 +151,7 @@ namespace Nanory.Lex
                 dependencyTable.Reverse();
                 systemGroup.Systems = dependencyTable.SelectMany(layer => layer).ToList();
 
-                // And in the and add "OrderLast" systems
+                // And in the end add "OrderLast" systems
                 foreach (var lastSystems in orderLastSystems)
                 {
                     systemGroup.Add(lastSystems);
@@ -175,10 +176,12 @@ namespace Nanory.Lex
                                     dependencyLayer.Add(currentSystem);
                                     unsorted.RemoveAt(idx);
                                 }
-                                else
-                                {
-                                    throw new Exception($"System <b>{currentSystem}</b> and <b>{updateBefore.TargetSystemType}</b> that are in different Groups. Only systems are in the same group can be ordered using {nameof(UpdateBefore)} Attribute.");
-                                }
+                                //else
+                                //{
+                                //    var currentSystemParentGroup = ((UpdateInGroup) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateInGroup))).TargetGroupType;
+                                //    var beforeSystemParentGroup = ((UpdateInGroup) Attribute.GetCustomAttribute(beforeSystem.GetType(), typeof(UpdateInGroup))).TargetGroupType;
+                                //    throw new Exception($"System <b>{currentSystem}</b> is in group {currentSystemParentGroup.Name} and <b>{updateBefore.TargetSystemType}</b> is in group {beforeSystemParentGroup.Name}. Only systems are in the same group can be ordered using {nameof(UpdateBefore)} Attribute.");
+                                //}
                             }
                             else
                             {
@@ -188,7 +191,7 @@ namespace Nanory.Lex
                     }
 
                     if (unsorted.Count > 0)
-                        SortRecursive(unsorted, dependencyTable, dependencyLevel++);
+                        SortRecursive(unsorted, dependencyTable, ++dependencyLevel);
                 }
             }
 

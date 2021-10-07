@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 namespace Nanory.Lex.Conversion
 {
@@ -40,12 +41,13 @@ namespace Nanory.Lex.Conversion
         void Convert(int entity, GameObjectConversionSystem converstionSystem);
     }
 
-    public class GameObjectConversionSystem : IEcsRunSystem, IEcsInitSystem
+    public class GameObjectConversionSystem : IEcsRunSystem, IEcsInitSystem, IEcsEntityCommandBufferLookup
     {
-        Dictionary<GameObject, int> _conversionMap = new Dictionary<GameObject, int>();
-        EcsConversionWorldWrapper _conversionWorldWrapper;
-        EcsPool<ConvertGameObjectRequest> _requestsPool;
-        EcsFilter _requestsFilter;
+        private Dictionary<GameObject, int> _conversionMap = new Dictionary<GameObject, int>();
+        private EcsConversionWorldWrapper _conversionWorldWrapper;
+        private EcsPool<ConvertGameObjectRequest> _requestsPool;
+        private EcsFilter _requestsFilter;
+        protected List<EntityCommandBufferSystem> _entityCommandBufferSystems;
 
         public EcsConversionWorldWrapper World => _conversionWorldWrapper;
 
@@ -83,7 +85,7 @@ namespace Nanory.Lex.Conversion
             }
 
             if (mode == ConversionMode.ConvertAndDestroy)
-                Object.Destroy(gameObject);
+                GameObject.Destroy(gameObject);
 
             return entity;
         }
@@ -103,6 +105,23 @@ namespace Nanory.Lex.Conversion
                 Convert(request.Value, request.Mode);
                 _conversionWorldWrapper.DelEntity(requestEntity);
             }
+        }
+
+        public IEcsEntityCommandBufferLookup SetEntityCommandBufferSystemsLookup(List<EntityCommandBufferSystem> systems)
+        {
+            _entityCommandBufferSystems = systems;
+            return this;
+        }
+
+        public EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem
+        {
+            foreach (var system in _entityCommandBufferSystems)
+            {
+                if (system is TSystem)
+                    return system.GetBuffer();
+            }
+
+            throw new Exception($"no system {typeof(TSystem)} presented in the entityCommandBufferSystems lookup");
         }
     }
 

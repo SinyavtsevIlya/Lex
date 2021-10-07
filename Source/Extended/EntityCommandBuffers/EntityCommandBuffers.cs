@@ -220,7 +220,7 @@ namespace Nanory.Lex
 
         public static int NewEntity(this EntityCommandBuffer buffer)
         {
-            var entity = buffer.NewEntity();
+            var entity = buffer.BufferWorld.NewEntity();
             buffer.PoolECBNewEntityCommand.Add(entity);
             return entity;
         }

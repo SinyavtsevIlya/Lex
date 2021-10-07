@@ -20,14 +20,16 @@ namespace Nanory.Lex
         public UpdateInGroup(Type targetGroupType) => TargetGroupType = targetGroupType;
     }
 
-    [UpdateInGroup(typeof(SimulationSystemGroup), OrderLast = true)]
+    [UpdateInGroup(typeof(RootSystemGroup), OrderLast = true)]
     public class OneFrameSystemGroup : EcsSystemGroup { }
 
-    [PreserveAutoCreation]
     public class RootSystemGroup : EcsSystemGroup { }
 
-    [UpdateBefore(typeof(PresentationSystemGroup))]
+    [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
+    public class InitializationSystemGroup : EcsSystemGroup { }
+
     [UpdateInGroup(typeof(RootSystemGroup))]
+    [UpdateBefore(typeof(PresentationSystemGroup))]
     public class SimulationSystemGroup : EcsSystemGroup { }
 
     [UpdateInGroup(typeof(RootSystemGroup))]
@@ -44,7 +46,7 @@ namespace Nanory.Lex
         {
 #if DEBUG
             if (system == this)
-                throw new Exception("Trying to pass itself to systems list");
+                throw new Exception($"<b>{system.GetType().Name}</b> Trying to pass itself to systems list");
             if (_ecsSystems.Contains(system))
                 throw new Exception($"Trying to add a duplicate <b>{system.GetType().Name}</b> to a <b>{GetType().Name}</b> ");
 #endif
@@ -111,7 +113,13 @@ namespace Nanory.Lex
         }
     }
 
-    public abstract class EcsSystemBase : IEcsRunSystem, IEcsInitSystem
+    public interface IEcsEntityCommandBufferLookup
+    {
+        IEcsEntityCommandBufferLookup SetEntityCommandBufferSystemsLookup(List<EntityCommandBufferSystem> systems);
+        EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem;
+    }
+
+    public abstract class EcsSystemBase : IEcsRunSystem, IEcsInitSystem, IEcsEntityCommandBufferLookup
     {
         private readonly List<EcsLocalFilterContainer> _localFilterContainers = new List<EcsLocalFilterContainer>(8);
         protected List<EntityCommandBufferSystem> _entityCommandBufferSystems;
@@ -128,7 +136,7 @@ namespace Nanory.Lex
         {
             OnUpdate();
         }
-        public EcsSystemBase SetEntityCommandBufferSystemsLookup(List<EntityCommandBufferSystem> systems)
+        public IEcsEntityCommandBufferLookup SetEntityCommandBufferSystemsLookup(List<EntityCommandBufferSystem> systems)
         {
             _entityCommandBufferSystems = systems;
             return this;
