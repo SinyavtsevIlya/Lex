@@ -46,6 +46,7 @@ namespace Nanory.Lex
 
         public string[] ClientAssemblyNames => _clientAssemblyNames;
 
+        #if UNITY_EDITOR
         private void OnValidate()
         {
             if (_assemblyDefinitions?.Length > 0)
@@ -68,7 +69,8 @@ namespace Nanory.Lex
             {
                 _clientAssemblyNames = new string[] { FallbackAssemblyName };
             }
-        }
+        } 
+        #endif
 
         [Tooltip("Type here a namespace (or part of a namespace) to filter which code should be scanned. \nIf no namespace tag specified, a whole assembly will be scanned")]
         public string ClientNamespaceTag;

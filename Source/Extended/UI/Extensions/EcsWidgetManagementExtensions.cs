@@ -21,7 +21,7 @@ namespace Nanory.Lex
             // Thats why we schedule the add operation using AddWidgetRequest. 
 
             var widgetSyncPoint = system.GetCommandBufferFrom<WidgetEntityCommandBufferSystem>();
-            widgetSyncPoint.Add<Mono<TWidget>>(ownerEntity);
+            widgetSyncPoint.Add<Mono<TWidget>>(ownerEntity).Value = widget;
 
             later.Del<BindEvent<TWidget>>(ownerEntity);
         }

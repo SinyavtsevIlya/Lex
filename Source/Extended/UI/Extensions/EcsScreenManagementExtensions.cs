@@ -69,7 +69,7 @@ namespace Nanory.Lex
             world.Add<OpenEvent<TScreen>>(ownerEntity).Value = screen;
             screenStorage.ActiveScreen = screen;
             screen.gameObject.SetActive(true);
-            world.TryRegisterComponentIndeces(ownerEntity, screen);
+            world.TryCacheComponentData(ownerEntity, screen);
             var later = system.GetCommandBufferFrom<EndPresentationEntityCommandBufferSystem>();
             later.Del<OpenEvent<TScreen>>(ownerEntity);
         }
@@ -91,7 +91,7 @@ namespace Nanory.Lex
         // There is no way to get Component Index without explicit Generic declaration.
         // And we don't want to enforce user to type screen types manually. 
         // Thats why we fill Component-Indeces map in a lazy manner.
-        private static void TryRegisterComponentIndeces<TScreen>(this EcsWorld world, int ownerEntity, TScreen screen) where TScreen : MonoBehaviour
+        private static void TryCacheComponentData<TScreen>(this EcsWorld world, int ownerEntity, TScreen screen) where TScreen : MonoBehaviour
         {
             ref var screenStorage = ref world.Get<ScreensStorage>(ownerEntity);
             var areComponentIndecesRegistered = screenStorage.ComponentIndexByType.TryGetValue(typeof(TScreen), out var _);
@@ -101,6 +101,13 @@ namespace Nanory.Lex
                 screenStorage.ComponentIndexByType[typeof(TScreen)] = EcsComponent<MonoScreen<TScreen>>.TypeIndex;
                 screenStorage.OpenEventComponentIndexByType[typeof(TScreen)] = EcsComponent<OpenEvent<TScreen>>.TypeIndex;
                 screenStorage.CloseEventComponentIndexByType[typeof(TScreen)] = EcsComponent<CloseEvent<TScreen>>.TypeIndex;
+
+                // We have to somehow pass a "screen" value into the CloseEvent component
+                // and the easiest way is to add and immediately delete the component.
+                // even when the component is removed it's value is still inside it, 
+                // because we have overridden the AutoReset.
+                world.Add<CloseEvent<TScreen>>(ownerEntity).Value = screen;
+                world.Del<CloseEvent<TScreen>>(ownerEntity);
             }
         }
         #endregion

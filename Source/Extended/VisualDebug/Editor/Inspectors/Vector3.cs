@@ -1,22 +1,21 @@
-// ----------------------------------------------------------------------------
-// The MIT License
-// UnityEditor integration https://github.com/Leopotam/ecslite-unityeditor
-// for LeoECS Lite https://github.com/Leopotam/ecslite
-// Copyright (c) 2021 Leopotam <leopotam@gmail.com>
-// ----------------------------------------------------------------------------
-
+#if UNITY_EDITOR
 using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace Nanory.Lex.UnityEditorIntegration.Inspectors {
-    sealed class Vector3Inspector : IEcsComponentInspector {
-        public Type GetFieldType () {
-            return typeof (Vector3);
+namespace Nanory.Lex.UnityEditorIntegration.Inspectors
+{
+    sealed class Vector3Inspector : IEcsComponentInspector
+    {
+        public Type GetFieldType()
+        {
+            return typeof(Vector3);
         }
 
-        public void OnGUI (string label, object value, EcsWorld world, int entityId) {
-            EditorGUILayout.Vector3Field (label, (Vector3) value);
+        public void OnGUI(string label, object value, EcsWorld world, int entityId)
+        {
+            EditorGUILayout.Vector3Field(label, (Vector3) value);
         }
     }
-}
+} 
+#endif

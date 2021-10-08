@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR && ENABLE_IL2CPP
+﻿#if UNITY_EDITOR
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;

@@ -1,7 +1,7 @@
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using UnityEditor.UIElements;
 using Nanory.Lex;
 using System.Collections.Generic;
 using System;
@@ -83,7 +83,7 @@ public class LexSystemsDebugger : EditorWindow
                 label.text = name;
                 label.style.color = new StyleColor(Color.white);
                 label.style.marginLeft = 15;
-                
+
                 var thumbnail = new Image();
                 thumbnail.image = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Plugins/Lex/Source/Extended/VisualDebug/Editor/Settings.png");
                 thumbnail.style.width = new StyleLength(12);
@@ -117,4 +117,5 @@ public class LexSystemsDebugger : EditorWindow
             return type.Name;
         }
     }
-}
+} 
+#endif

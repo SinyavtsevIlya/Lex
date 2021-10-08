@@ -4,24 +4,29 @@ using System.Collections.Generic;
 
 namespace Nanory.Lex
 {
-    public struct BindEvent<T> where T : MonoBehaviour
+    public struct BindEvent<TWidget> where TWidget : MonoBehaviour
     {
-        public T Value;
+        public TWidget Value;
     }
 
-    public struct UnbindEvent<T> where T : MonoBehaviour
+    public struct UnbindEvent<TWidget> where TWidget : MonoBehaviour
     {
-        public T Value;
+        public TWidget Value;
     }
 
-    public struct OpenEvent<T> where T : MonoBehaviour 
+    public struct OpenEvent<TScreen> where TScreen : MonoBehaviour 
     {
-        public T Value;
+        public TScreen Value;
     }
 
-    public struct CloseEvent<T> where T : MonoBehaviour 
+    public struct CloseEvent<TScreen> : IEcsAutoReset<CloseEvent<TScreen>> where TScreen : MonoBehaviour
     {
-        public T Value;
+        public TScreen Value;
+
+        public void AutoReset(ref CloseEvent<TScreen> c)
+        {
+            // do not clear the value
+        }
     }
 
     public struct MonoScreen<TMonoComponent> where TMonoComponent : Component

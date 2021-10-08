@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR && ENABLE_IL2CPP
+﻿#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -100,7 +100,7 @@ public static class {worldName}SystemTypesLookup
             var namespacesHashSet = new HashSet<string>();
             worldSystemTypes
                 .Union(oneFrameSystemTypes)
-                .SelectMany(t => scanner.GetNamespacesRecursive(t))
+                .SelectMany(t => GetNamespacesRecursive(t))
                 .Where(n => n != null).ToList()
                 .ForEach(ns => namespacesHashSet.Add(ns));
 
@@ -118,6 +118,25 @@ public static class {worldName}SystemTypesLookup
                 .Replace("{worldName}", worldName)
                 .Replace("{namespaces}", namespacesSeq)
                 .Replace("{systemTypes}", systemsSeq);
+
+            return result;
+        }
+
+        private static IEnumerable<string> GetNamespacesRecursive(Type type)
+        {
+            var result = new List<string>();
+
+            if (type.GetGenericArguments().Count() > 0)
+            {
+                foreach (var arg in type.GetGenericArguments())
+                {
+                    result.AddRange(GetNamespacesRecursive(arg));
+                }
+            }
+            else
+            {
+                result.Add(type.Namespace);
+            }
 
             return result;
         }
