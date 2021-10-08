@@ -17,7 +17,7 @@ namespace Nanory.Lex
         int GetId();
         Type GetComponentType();
         void Destroy();
-        void CpyToDstWorld(int entity);
+        void CpyToDstWorld(int src, int dst);
         void CpyToDstEntity(int src, int dst);
         void Activate(int entity);
     }
@@ -37,7 +37,7 @@ namespace Nanory.Lex
         readonly EcsWorld _world;
         readonly int _id;
         readonly AutoResetHandler _autoReset;
-        PoolItem[] _items;
+        public PoolItem[] Items;
         PoolItem[] _dstItems;
 #if ENABLE_IL2CPP && !UNITY_EDITOR
         T _autoresetFakeInstance;
@@ -48,7 +48,7 @@ namespace Nanory.Lex
             _type = typeof(T);
             _world = world;
             _id = id;
-            _items = new PoolItem[capacity];
+            Items = new PoolItem[capacity];
             _dstItems = dstItems;
             var isAutoReset = typeof(IEcsAutoReset<T>).IsAssignableFrom(_type);
 #if DEBUG
@@ -99,21 +99,21 @@ namespace Nanory.Lex
             return _type;
         }
 
-        internal PoolItem[] GetItems() => _items;
+        internal PoolItem[] GetItems() => Items;
 
         void IEcsPool.Resize(int capacity)
         {
-            Array.Resize(ref _items, capacity);
+            Array.Resize(ref Items, capacity);
         }
 
         void IEcsPool.InitAutoReset(int entity)
         {
-            _autoReset?.Invoke(ref _items[entity].Data);
+            _autoReset?.Invoke(ref Items[entity].Data);
         }
 
         object IEcsPool.GetRaw(int entity)
         {
-            return _items[entity].Data;
+            return Items[entity].Data;
         }
 
         void IEcsPool.Destroy() { }
@@ -121,10 +121,11 @@ namespace Nanory.Lex
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref T Add(int entity)
         {
+            UnityEngine.Debug.Log($"add {typeof(T).Name} on entity {entity}");
 #if DEBUG
             if (!_world.IsEntityAliveInternal(entity)) { throw new Exception("Cant touch destroyed entity."); }
 #endif
-            ref var itemData = ref _items[entity];
+            ref var itemData = ref Items[entity];
 #if DEBUG
             if (_world.GetEntityGen(entity) < 0) { throw new Exception("Cant add component to destroyed entity."); }
             if (itemData.Attached) { throw new Exception($"{typeof(T).Name} is Already attached to entity {entity}"); }
@@ -146,9 +147,9 @@ namespace Nanory.Lex
 #endif
 #if DEBUG
             if (_world.GetEntityGen(entity) < 0) { throw new Exception("Cant get component from destroyed entity."); }
-            if (!_items[entity].Attached) { throw new Exception("Not attached."); }
+            if (!Items[entity].Attached) { throw new Exception("Not attached."); }
 #endif
-            return ref _items[entity].Data;
+            return ref Items[entity].Data;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -157,7 +158,7 @@ namespace Nanory.Lex
 #if DEBUG
             if (!_world.IsEntityAliveInternal(entity)) { throw new Exception("Cant touch destroyed entity."); }
 #endif
-            return _items[entity].Attached;
+            return Items[entity].Attached;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -166,14 +167,14 @@ namespace Nanory.Lex
 #if DEBUG
             if (!_world.IsEntityAliveInternal(entity)) { throw new Exception("Cant touch destroyed entity."); }
 #endif
-            ref var itemData = ref _items[entity];
+            ref var itemData = ref Items[entity];
             if (itemData.Attached)
             {
                 _world.OnEntityChange(entity, _id, false);
                 itemData.Attached = false;
                 if (_autoReset != null)
                 {
-                    _autoReset.Invoke(ref _items[entity].Data);
+                    _autoReset.Invoke(ref Items[entity].Data);
                 }
                 else
                 {
@@ -186,19 +187,19 @@ namespace Nanory.Lex
                 entityData.ComponentsCount--;
                 if (entityData.ComponentsCount == 0)
                 {
-                    //_world.DelEntity (entity);
+                    _world.DelEntity (entity);
                 }
             }
         }
 
-        public void CpyToDstWorld(int entity)
+        public void CpyToDstWorld(int src, int dst)
         {
-            _dstItems[entity] = _items[entity];
+            _dstItems[dst] = Items[src];
         }
 
         public void CpyToDstEntity(int src, int dst)
         {
-            _items[dst] = _items[src];
+            Items[dst] = Items[src];
         }
 
         public void Activate(int entity)
@@ -206,7 +207,7 @@ namespace Nanory.Lex
 #if DEBUG
             if (!_world.IsEntityAliveInternal(entity)) { throw new Exception("Cant touch destroyed entity."); }
 #endif
-            ref var itemData = ref _items[entity];
+            ref var itemData = ref Items[entity];
 #if DEBUG
             if (_world.GetEntityGen(entity) < 0) { throw new Exception("Cant add component to destroyed entity."); }
             if (itemData.Attached) { throw new Exception($"{typeof(T).Name} is Already attached to entity {entity}"); }

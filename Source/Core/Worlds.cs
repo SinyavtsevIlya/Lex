@@ -201,7 +201,7 @@ namespace Nanory.Lex
                     {
                         if (Pools[idx].Has(entity))
                         {
-                            Pools[idx++].Del(entity);
+                            Pools[idx++].Del(entity);   
                             break;
                         }
                     }
@@ -209,7 +209,7 @@ namespace Nanory.Lex
 #if DEBUG
                 if (entityData.ComponentsCount != 0) { throw new Exception($"Invalid components count on entity {entity} => {entityData.ComponentsCount}."); }
 #endif
-                //return;
+                return;
             }
             entityData.Gen = (short) (entityData.Gen == short.MaxValue ? -1 : -(entityData.Gen + 1));
             if (_recycledEntitiesCount == _recycledEntities.Length)
