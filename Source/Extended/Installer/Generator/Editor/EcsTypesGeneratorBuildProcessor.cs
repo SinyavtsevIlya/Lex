@@ -13,7 +13,7 @@ namespace Nanory.Lex.Generation
 
         public void OnPreprocessBuild(BuildReport report)
         {
-            _generator = new EcsTypesGenerator(generationPath: "Assets");
+            _generator = new EcsTypesGenerator(generationPath: "Assets/");
             _generator.Generate();
             Debug.Log("Nanory.Lex.Generator : SystemTypes code generated.");
         }

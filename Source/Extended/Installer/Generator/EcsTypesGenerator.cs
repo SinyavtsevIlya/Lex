@@ -28,7 +28,7 @@ public static class {worldName}SystemTypesLookup
 ";
         public EcsTypesGenerator(string generationPath)
         {
-            _generationPath = generationPath;
+            _generationPath = Path.Combine(generationPath, "GeneratedCode/");
         }
 
         public void Generate()
@@ -66,7 +66,11 @@ public static class {worldName}SystemTypesLookup
 
         public void Clear()
         {
-            Directory.Delete(_generationPath.ToGlobalPath(), true);
+            var path = _generationPath.ToGlobalPath();
+            var meta = path.Substring(0, path.Length - 1) + ".meta";
+            FileUtil.DeleteFileOrDirectory(path);
+            FileUtil.DeleteFileOrDirectory(meta);
+            AssetDatabase.Refresh();
         }
 
         private void WriteOnDisk(string content, string name)
