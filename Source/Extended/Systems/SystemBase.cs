@@ -162,9 +162,25 @@ namespace Nanory.Lex
             return ref World.GetPool<TComponent>().Get(entity);
         }
 
+        protected bool TryGet<T>(int entity, out T component) where T : struct
+        {
+            if (World.GetPool<T>().Has(entity))
+            {
+                component = World.GetPool<T>().Get(entity);
+                return true;
+            }
+            component = default;
+            return false;
+        }
+
         protected ref TComponent Add<TComponent>(int entity) where TComponent : struct
         {
             return ref World.GetPool<TComponent>().Add(entity);
+        }
+
+        protected bool Has<TComponent>(int entity) where TComponent : struct
+        {
+            return World.GetPool<TComponent>().Has(entity);
         }
 
         protected void Del<TComponent>(int entity) where TComponent : struct

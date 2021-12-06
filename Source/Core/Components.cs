@@ -121,7 +121,6 @@ namespace Nanory.Lex
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref T Add(int entity)
         {
-            UnityEngine.Debug.Log($"add {typeof(T).Name} on entity {entity}");
 #if DEBUG
             if (!_world.IsEntityAliveInternal(entity)) { throw new Exception("Cant touch destroyed entity."); }
 #endif

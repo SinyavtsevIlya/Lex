@@ -11,7 +11,12 @@ namespace Nanory.Lex
     public class AllWorldAttribute : WorldAttribute { }
     public class NoneWorldAttribute : WorldAttribute { }
 
-    public class EcsSystemOrderer<TWorld> : IDisposable where TWorld : TargetWorldAttribute
+    /// <summary>
+    /// Sorts systems in a hierarchical manner based on special Ordering attributes
+    /// (<see cref="UpdateInGroup"/> and <see cref="UpdateBefore"/>). 
+    /// </summary>
+    /// <typeparam name="TWorld">Target world attribute for scan</typeparam>
+    public class EcsSystemSorter<TWorld> : IDisposable where TWorld : TargetWorldAttribute
     {
         protected EcsWorld World { get; private set; }
         protected EcsSystemGroup RootSystemGroup { get; private set; }
@@ -20,7 +25,7 @@ namespace Nanory.Lex
         protected Type[] SystemTypes { get; set; }
 
 
-        public EcsSystemOrderer(EcsWorld world, Func<Type, IEcsSystem> creator = null, EcsTypesScanner ecsTypesScanner = null)
+        public EcsSystemSorter(EcsWorld world, Func<Type, IEcsSystem> creator = null, EcsTypesScanner ecsTypesScanner = null)
         {
             World = world;
             SystemMap = new Dictionary<Type, IEcsSystem>();
@@ -49,7 +54,7 @@ namespace Nanory.Lex
                 .ToArray();
         }
 
-        public EcsSystemGroup CreateSystemsOrdered()
+        public EcsSystemGroup GetSortedSystems()
         {
             var handledSystems = new HashSet<Type>();
             // Add a root
@@ -156,7 +161,7 @@ namespace Nanory.Lex
                 {
                     systemGroup.Add(lastSystems);
                 }
-
+                // TODO: Add cycle dependencies check, valid cast check (to not mess UpdateBefore and Update in Group)
                 void SortRecursive(List<IEcsSystem> unsorted, List<List<IEcsSystem>> dependencyTable, int dependencyLevel)
                 {
                     var dependencyLayer = new List<IEcsSystem>();
@@ -232,7 +237,7 @@ namespace Nanory.Lex
         public void Dispose() 
         {
             World = null;
-            RootSystemGroup = null;
+            RootSystemGroup = null; 
             SystemMap = null;
             SystemTypes = null;
 
