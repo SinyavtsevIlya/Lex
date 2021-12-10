@@ -6,6 +6,9 @@ namespace Nanory.Lex
     [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
     public class BeginSimulationECBSystem : EntityCommandBufferSystem { }
 
+    [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
+    public class BeginSimulationDestructionECBSystem : EntityCommandBufferSystem { }
+
     public class UpdateBefore : Attribute
     {
         public Type TargetSystemType;

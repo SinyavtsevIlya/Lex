@@ -84,6 +84,7 @@ namespace Nanory.Lex
             {
                 ref var addCmd = ref PoolECBAddCommand.Get(bufferEntity);
                 var pool = DstWorld.PoolsSparse[addCmd.componentIndex];
+                UnityEngine.Debug.Log(pool);
                 pool.Activate(addCmd.entity);
                 var bufferPool = BufferWorld.PoolsSparse[addCmd.componentIndex];
                 bufferPool.CpyToDstWorld(bufferEntity, addCmd.entity);
@@ -99,7 +100,7 @@ namespace Nanory.Lex
 
             foreach (var bufferEntity in _ecbDelEntityFilter)
             {
-                ref var delEntityCmd = ref PoolECBDelCommand.Get(bufferEntity);
+                ref var delEntityCmd = ref PoolECBDelEntityCommand.Get(bufferEntity);
                 DstWorld.DelEntity(delEntityCmd.entity);
                 BufferWorld.DelEntity(bufferEntity);
             }
@@ -186,6 +187,17 @@ namespace Nanory.Lex
             };
         }
 
+        public static void Add(this EntityCommandBuffer entityCommandBuffer, int entity, int componentIndex)
+        {
+            var bufferEntity = entityCommandBuffer.BufferWorld.NewEntity();
+            entityCommandBuffer.PoolECBAddCommand.Add(bufferEntity) = new EntityCommandBuffer.AddCommand()
+            {
+                componentIndex = componentIndex,
+                entity = entity
+            };
+            entityCommandBuffer.BufferWorld.PoolsSparse[componentIndex].Activate(bufferEntity);
+        }
+
         public static void DelBuffer<TElement>(this EntityCommandBuffer entityCommandBuffer, int entity) where TElement : struct
         {
             var bufferEntity = entityCommandBuffer.BufferWorld.NewEntity();
@@ -196,7 +208,7 @@ namespace Nanory.Lex
             };
         }
 
-        public static void DelEntity<TComponent>(this EntityCommandBuffer entityCommandBuffer, int entity) where TComponent : struct
+        public static void DelEntity(this EntityCommandBuffer entityCommandBuffer, int entity)
         {
             var bufferEntity = entityCommandBuffer.BufferWorld.NewEntity();
             entityCommandBuffer.PoolECBDelEntityCommand.Add(bufferEntity) = new EntityCommandBuffer.DelEntityCommand()

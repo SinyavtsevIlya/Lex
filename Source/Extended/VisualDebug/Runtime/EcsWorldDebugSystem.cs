@@ -46,7 +46,7 @@ namespace Nanory.Lex.UnityEditorIntegration
             foreach (var pair in _dirtyEntities)
             {
                 var entity = pair.Key;
-                var entityName = entity.ToString("X8");
+                var entityName = entity.ToString();
                 if (_world.GetEntityGen(entity) > 0)
                 {
                     var count = _world.GetComponentTypes(entity, ref _typesCache);

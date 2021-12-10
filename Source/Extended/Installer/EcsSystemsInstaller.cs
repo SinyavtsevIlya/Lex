@@ -38,6 +38,7 @@ namespace Nanory.Lex
                 typeof(InitializationSystemGroup),
                 typeof(SimulationSystemGroup),
                 typeof(PresentationSystemGroup),
+                typeof(BeginSimulationDestructionECBSystem),
                 typeof(BeginSimulationECBSystem),
             };
 

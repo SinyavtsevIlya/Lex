@@ -17,5 +17,7 @@ namespace Nanory.Lex.UnityEditorIntegration.Inspectors
             EditorGUILayout.Vector3Field(label, ((Quaternion) value).eulerAngles);
         }
     }
+
+
 } 
 #endif

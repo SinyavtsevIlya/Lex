@@ -6,7 +6,7 @@ namespace Nanory.Lex.Conversion
 {
     public static class GameObjectConversionExtensions
     {
-        public static void Convert(this EcsWorld world, GameObject gameObject, ConversionMode mode = ConversionMode.ConvertAndDestroy)
+        public static void Convert(this EcsWorld world, GameObject gameObject, ConversionMode mode = ConversionMode.Convert)
         {
             ref var requestEntity = ref world.Add<ConvertGameObjectRequest>(world.NewEntity());
             requestEntity.Value = gameObject;
@@ -64,7 +64,7 @@ namespace Nanory.Lex.Conversion
             return newEntity;
         }
 
-        public int Convert(GameObject gameObject, ConversionMode mode)
+        public int Convert(GameObject gameObject, ConversionMode mode = ConversionMode.Convert)
         {
 #if DEBUG
             if (gameObject == null)
