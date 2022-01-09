@@ -84,7 +84,6 @@ namespace Nanory.Lex
             {
                 ref var addCmd = ref PoolECBAddCommand.Get(bufferEntity);
                 var pool = DstWorld.PoolsSparse[addCmd.componentIndex];
-                UnityEngine.Debug.Log(pool);
                 pool.Activate(addCmd.entity);
                 var bufferPool = BufferWorld.PoolsSparse[addCmd.componentIndex];
                 bufferPool.CpyToDstWorld(bufferEntity, addCmd.entity);

@@ -112,6 +112,7 @@ namespace Nanory.Lex
                 // Add a root dependency level
                 dependencyTable.Add(new List<IEcsSystem>());
 
+                var orderFirstSystems = new List<IEcsSystem>();
                 var orderLastSystems = new List<IEcsSystem>();
 
                 // Check for special attributes parameters OrderFirst/Last...
@@ -122,14 +123,14 @@ namespace Nanory.Lex
                     var updateInGroup = (UpdateInGroup) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateInGroup));
                     if (updateInGroup != null)
                     {
-                        // Put a special "OrderFirst" systems to the very beginning 
+                        // exclude special "OrderFirst" systems to insert them later to the very beginning 
                         if (updateInGroup.OrderFirst)
                         {
-                            dependencyTable[0].Add(currentSystem);
+                            orderFirstSystems.Add(currentSystem);
                             unsorted.RemoveAt(idx);
                         }
 
-                        // Remove from list special "OrderLast" systems to add them later
+                        // exclude special "OrderLast" systems to add them later to the very end
                         if (updateInGroup.OrderLast)
                         {
                             orderLastSystems.Add(currentSystem);
@@ -155,6 +156,12 @@ namespace Nanory.Lex
                 SortRecursive(unsorted, dependencyTable, 1);
 
                 dependencyTable.Reverse();
+
+                // insert "OrderFirst" systems
+                foreach (var firstSystem in orderFirstSystems)
+                {
+                    dependencyTable[0].Insert(0, firstSystem);
+                }
                 systemGroup.Systems = dependencyTable.SelectMany(layer => layer).ToList();
 
                 // And in the end add "OrderLast" systems
@@ -162,43 +169,7 @@ namespace Nanory.Lex
                 {
                     systemGroup.Add(lastSystems);
                 }
-                // TODO: Add cycle dependencies check, valid cast check (to not mess UpdateBefore and Update in Group)
-                void SortRecursive(List<IEcsSystem> unsorted, List<List<IEcsSystem>> dependencyTable, int dependencyLevel)
-                {
-                    var dependencyLayer = new List<IEcsSystem>();
-                    dependencyTable.Add(dependencyLayer);
 
-                    for (int idx = unsorted.Count - 1; idx >= 0; idx--)
-                    {
-                        var currentSystem = unsorted[idx];
-
-                        var updateBefore = (UpdateBefore) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateBefore));
-                        if (updateBefore != null)
-                        {
-                            if (SystemMap.TryGetValue(updateBefore.TargetSystemType, out var beforeSystem))
-                            {
-                                if (dependencyTable[dependencyLevel - 1].Contains(beforeSystem))
-                                {
-                                    dependencyLayer.Add(currentSystem);
-                                    unsorted.RemoveAt(idx);
-                                }
-                                //else
-                                //{
-                                //    var currentSystemParentGroup = ((UpdateInGroup) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateInGroup))).TargetGroupType;
-                                //    var beforeSystemParentGroup = ((UpdateInGroup) Attribute.GetCustomAttribute(beforeSystem.GetType(), typeof(UpdateInGroup))).TargetGroupType;
-                                //    throw new Exception($"System <b>{currentSystem}</b> is in group {currentSystemParentGroup.Name} and <b>{updateBefore.TargetSystemType}</b> is in group {beforeSystemParentGroup.Name}. Only systems are in the same group can be ordered using {nameof(UpdateBefore)} Attribute.");
-                                //}
-                            }
-                            else
-                            {
-                                throw new Exception($"<b> {currentSystem}</b> has an {nameof(UpdateBefore)} <b>{updateBefore.TargetSystemType}</b> attribute. But <b>{updateBefore.TargetSystemType}</b> is not exist. Use {nameof(UpdateInGroup)} attribute");
-                            }
-                        }
-                    }
-
-                    if (unsorted.Count > 0)
-                        SortRecursive(unsorted, dependencyTable, ++dependencyLevel);
-                }
             }
 
 #if UNITY_EDITOR
@@ -207,6 +178,44 @@ namespace Nanory.Lex
 #endif
 
             return rootSystemGroup;
+        }
+
+        // TODO: Add cycle dependencies check, valid cast check (to not mess UpdateBefore and Update in Group)
+        private void SortRecursive(List<IEcsSystem> unsorted, List<List<IEcsSystem>> dependencyTable, int dependencyLevel)
+        {
+            var dependencyLayer = new List<IEcsSystem>();
+            dependencyTable.Add(dependencyLayer);
+
+            for (int idx = unsorted.Count - 1; idx >= 0; idx--)
+            {
+                var currentSystem = unsorted[idx];
+
+                var updateBefore = (UpdateBefore)Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateBefore));
+                if (updateBefore != null)
+                {
+                    if (SystemMap.TryGetValue(updateBefore.TargetSystemType, out var beforeSystem))
+                    {
+                        if (dependencyTable[dependencyLevel - 1].Contains(beforeSystem))
+                        {
+                            dependencyLayer.Add(currentSystem);
+                            unsorted.RemoveAt(idx);
+                        }
+                        //else
+                        //{
+                        //    var currentSystemParentGroup = ((UpdateInGroup) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateInGroup))).TargetGroupType;
+                        //    var beforeSystemParentGroup = ((UpdateInGroup) Attribute.GetCustomAttribute(beforeSystem.GetType(), typeof(UpdateInGroup))).TargetGroupType;
+                        //    throw new Exception($"System <b>{currentSystem}</b> is in group {currentSystemParentGroup.Name} and <b>{updateBefore.TargetSystemType}</b> is in group {beforeSystemParentGroup.Name}. Only systems are in the same group can be ordered using {nameof(UpdateBefore)} Attribute.");
+                        //}
+                    }
+                    else
+                    {
+                        throw new Exception($"<b> {currentSystem}</b> has an {nameof(UpdateBefore)} <b>{updateBefore.TargetSystemType}</b> attribute. But <b>{updateBefore.TargetSystemType}</b> is not exist. Use {nameof(UpdateInGroup)} attribute");
+                    }
+                }
+            }
+
+            if (unsorted.Count > 0)
+                SortRecursive(unsorted, dependencyTable, ++dependencyLevel);
         }
 
         protected IEcsSystem GetSystemByType(Type systemType)

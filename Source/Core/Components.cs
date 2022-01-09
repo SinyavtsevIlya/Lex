@@ -146,7 +146,7 @@ namespace Nanory.Lex
 #endif
 #if DEBUG
             if (_world.GetEntityGen(entity) < 0) { throw new Exception("Cant get component from destroyed entity."); }
-            if (!Items[entity].Attached) { throw new Exception("Not attached."); }
+            if (!Items[entity].Attached) { throw new Exception($"Component {_type} is not attached to entity {entity}."); }
 #endif
             return ref Items[entity].Data;
         }
@@ -198,6 +198,8 @@ namespace Nanory.Lex
 
         public void CpyToDstEntity(int src, int dst)
         {
+            _world.OnEntityChange(dst, _id, true);
+            _world.Entities[dst].ComponentsCount++;
             Items[dst] = Items[src];
         }
 

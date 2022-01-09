@@ -49,6 +49,9 @@ namespace Nanory.Lex.Conversion
         private EcsFilter _requestsFilter;
         protected List<EntityCommandBufferSystem> _entityCommandBufferSystems;
 
+        private EcsSystems _ecsSystems;
+        public EcsSystems EcsSystems => _ecsSystems;
+
         public EcsConversionWorldWrapper World => _conversionWorldWrapper;
 
         public int GetPrimaryEntity(GameObject gameObject)
@@ -92,6 +95,7 @@ namespace Nanory.Lex.Conversion
 
         public void Init(EcsSystems systems)
         {
+            _ecsSystems = systems;
             _conversionWorldWrapper = new EcsConversionWorldWrapper(systems.GetWorld());
             _requestsPool = _conversionWorldWrapper.Dst.GetPool<ConvertGameObjectRequest>();
             _requestsFilter = _conversionWorldWrapper.Dst.Filter<ConvertGameObjectRequest>().End();

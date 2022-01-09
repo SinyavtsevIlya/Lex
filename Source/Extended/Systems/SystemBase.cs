@@ -23,7 +23,7 @@ namespace Nanory.Lex
         public UpdateInGroup(Type targetGroupType) => TargetGroupType = targetGroupType;
     }
 
-    [UpdateInGroup(typeof(RootSystemGroup), OrderLast = true)]
+    [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
     public class OneFrameSystemGroup : EcsSystemGroup { }
 
     public class RootSystemGroup : EcsSystemGroup { }
@@ -128,9 +128,11 @@ namespace Nanory.Lex
         protected List<EntityCommandBufferSystem> _entityCommandBufferSystems;
 
         public EcsWorld World;
+        public EcsSystems EcsSystems;
 
         public void Init(EcsSystems systems)
         {
+            EcsSystems = systems;
             World = systems.GetWorld();
             OnCreate();
         }
@@ -163,6 +165,20 @@ namespace Nanory.Lex
         protected ref TComponent Get<TComponent>(int entity) where TComponent : struct
         {
             return ref World.GetPool<TComponent>().Get(entity);
+        }
+
+        protected ref TComponent GetOrAdd<TComponent>(int entity) where TComponent : struct
+        {
+            var pool = World.GetPool<TComponent>();
+
+            if (pool.Has(entity))
+            {
+                return ref pool.Get(entity);
+            }
+            else
+            {
+                return ref pool.Add(entity);
+            }
         }
 
         protected bool TryGet<T>(int entity, out T component) where T : struct

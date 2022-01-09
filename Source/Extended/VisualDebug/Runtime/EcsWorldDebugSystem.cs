@@ -111,6 +111,8 @@ namespace Nanory.Lex.UnityEditorIntegration
             _world.RemoveEventListener(this);
             Object.Destroy(_rootGO);
         }
+
+        public EcsEntityDebugView GetEntityDebugView(int id) => _entities[id];
     }
 } 
 #endif

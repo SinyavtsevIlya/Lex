@@ -5,7 +5,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 
 
-namespace Nanory.Lex
+namespace Nanory.Lex.UnityEditorIntegration
 {
     public struct EcsDebugGameobjectLink
     {
@@ -14,9 +14,17 @@ namespace Nanory.Lex
 
     public static class EcsDebugExtensions
     {
-        public static void LinkDebugGameobject(this EcsWorld world, int entity, GameObject gameObject)
+        public static void LinkDebugGameobject(this EcsSystems ecsSystems, EcsWorld world, int entity, GameObject gameObject)
         {
             world.Add<EcsDebugGameobjectLink>(entity).Value = gameObject;
+            foreach (var system in ecsSystems.AllSystems)
+            {
+                if (system is EcsWorldDebugSystem ecsWorldDebugSystem)
+                {
+                    gameObject.AddComponent<EcsDubugEntityLink>().Value = ecsWorldDebugSystem.GetEntityDebugView(entity);
+                    break;
+                }
+            }
         }
     }
 }
