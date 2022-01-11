@@ -3,11 +3,14 @@ using System;
 
 namespace Nanory.Lex
 {
-    [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
+    [UpdateInGroup(typeof(BeginSimulationSystemGroup), OrderFirst = true)]
     public class BeginSimulationECBSystem : EntityCommandBufferSystem { }
 
-    [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
+    [UpdateInGroup(typeof(BeginSimulationSystemGroup))]
     public class BeginSimulationDestructionECBSystem : EntityCommandBufferSystem { }
+
+    [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
+    public class BeginSimulationSystemGroup : EcsSystemGroup { }
 
     public class UpdateBefore : Attribute
     {
@@ -45,6 +48,8 @@ namespace Nanory.Lex
         protected List<IEcsSystem> _ecsSystems = new List<IEcsSystem>();
         protected List<IEcsDestroySystem> _destroySystems = new List<IEcsDestroySystem>();
 
+        public bool IsEnabled { get; set; } = true;
+
         public void Add(IEcsSystem system)
         {
 #if DEBUG
@@ -69,7 +74,10 @@ namespace Nanory.Lex
 
         public void Run(EcsSystems systems)
         {
-            OnUpdate(systems);
+            if (IsEnabled)
+            {
+                OnUpdate(systems);
+            }
         }
 
         public void Destroy(EcsSystems systems)
@@ -165,6 +173,30 @@ namespace Nanory.Lex
         protected ref TComponent Get<TComponent>(int entity) where TComponent : struct
         {
             return ref World.GetPool<TComponent>().Get(entity);
+        }
+
+        protected void Swap<TComponent>(int a, int b) where TComponent : struct
+        {
+            var componentA = Get<TComponent>(a);
+            var componentB = Get<TComponent>(b);
+
+            Get<TComponent>(a) = componentB;
+            Get<TComponent>(b) = componentA;
+        }
+
+        protected void SwapTag<TComponent>(int a, int b) where TComponent : struct
+        {
+            var hasTagA = Has<TComponent>(a);
+            var hasTagB = Has<TComponent>(b);
+
+            if (hasTagA != hasTagB)
+            {
+                var aa = hasTagA ? a : b;
+                var bb = hasTagA ? b : a;
+
+                Del<TComponent>(aa);
+                Add<TComponent>(bb);
+            }
         }
 
         protected ref TComponent GetOrAdd<TComponent>(int entity) where TComponent : struct

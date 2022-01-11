@@ -206,11 +206,11 @@ namespace Nanory.Lex
         public void Activate(int entity)
         {
 #if DEBUG
-            if (!_world.IsEntityAliveInternal(entity)) { throw new Exception("Cant touch destroyed entity."); }
+            if (!_world.IsEntityAliveInternal(entity)) { throw new Exception($"Unable to activate {typeof(T).Name} on {entity}."); }
 #endif
             ref var itemData = ref Items[entity];
 #if DEBUG
-            if (_world.GetEntityGen(entity) < 0) { throw new Exception("Cant add component to destroyed entity."); }
+            if (_world.GetEntityGen(entity) < 0) { throw new Exception($"Cant add {typeof(T).Name} to destroyed entity {entity}."); }
             if (itemData.Attached) { throw new Exception($"{typeof(T).Name} is Already attached to entity {entity}"); }
 #endif
             itemData.Attached = true;

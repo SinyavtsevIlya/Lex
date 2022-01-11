@@ -257,4 +257,28 @@ namespace Nanory.Lex
 #endif
         }
     }
+
+    public static class EcsSystemsExtensions
+    {
+        public static TTargetSystem FindSystem<TTargetSystem>(this List<IEcsSystem> systems) where TTargetSystem : IEcsSystem
+        {
+            foreach (var system in systems)
+            {
+                if (system is TTargetSystem targetSystem)
+                {
+                    return targetSystem;
+                }
+
+                if (system is EcsSystemGroup systemGroup)
+                {
+                    var result = FindSystem<TTargetSystem>(systemGroup.Systems);
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+            }
+            return default;
+        }
+    }
 }

@@ -434,7 +434,10 @@ namespace Nanory.Lex
                         if (IsMaskCompatible(filter.GetMask(), entity))
                         {
 #if DEBUG
-                            if (!filter.EntitiesMap.ContainsKey(entity)) { throw new Exception("Entity not in filter."); }
+                            if (!filter.EntitiesMap.ContainsKey(entity)) 
+                            { 
+                                throw new Exception("Entity not in filter."); 
+                            }
 #endif
                             filter.RemoveEntity(entity);
                         }
