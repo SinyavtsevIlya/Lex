@@ -198,8 +198,7 @@ namespace Nanory.Lex
 
         public void CpyToDstEntity(int src, int dst)
         {
-            _world.OnEntityChange(dst, _id, true);
-            _world.Entities[dst].ComponentsCount++;
+            Activate(dst);
             Items[dst] = Items[src];
         }
 

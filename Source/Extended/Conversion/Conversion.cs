@@ -41,6 +41,7 @@ namespace Nanory.Lex.Conversion
         void Convert(int entity, GameObjectConversionSystem converstionSystem);
     }
 
+    [UpdateInGroup(typeof(PresentationSystemGroup))]
     public class GameObjectConversionSystem : IEcsRunSystem, IEcsInitSystem, IEcsEntityCommandBufferLookup
     {
         private Dictionary<GameObject, int> _conversionMap = new Dictionary<GameObject, int>();

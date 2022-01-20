@@ -48,6 +48,10 @@ namespace Nanory.Lex
         protected List<IEcsSystem> _ecsSystems = new List<IEcsSystem>();
         protected List<IEcsDestroySystem> _destroySystems = new List<IEcsDestroySystem>();
 
+#if DEBUG
+        public event Action<IEcsRunSystem> Stepped;
+#endif
+
         public bool IsEnabled { get; set; } = true;
 
         public void Add(IEcsSystem system)
@@ -69,7 +73,10 @@ namespace Nanory.Lex
 
         public void Init(EcsSystems systems)
         {
-            OnCreate(systems);
+            if (IsEnabled)
+            {
+                OnCreate(systems);
+            }
         }
 
         public void Run(EcsSystems systems)
@@ -112,6 +119,9 @@ namespace Nanory.Lex
             for (int i = 0; i < _runSystems.Count; i++)
             {
                 _runSystems[i].Run(systems);
+#if DEBUG
+                Stepped?.Invoke(_runSystems[i]);
+#endif
             }
         }
 

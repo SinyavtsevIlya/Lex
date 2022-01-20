@@ -38,8 +38,8 @@ namespace Nanory.Lex
                 typeof(InitializationSystemGroup),
                 typeof(SimulationSystemGroup),
                 typeof(PresentationSystemGroup),
-                typeof(BeginSimulationDestructionECBSystem),
-                typeof(BeginSimulationECBSystem),
+                typeof(BeginSimulationDestructionECBSystem), // TODO: can be avoided
+                typeof(BeginSimulationECBSystem), // TODO: already in the list 
             };
 
             var conversionSystemTypes = new Type[]
@@ -279,6 +279,22 @@ namespace Nanory.Lex
                 }
             }
             return default;
+        }
+
+        public static void FindAllSystemsNonAlloc<TTargetSystem>(this List<IEcsSystem> inputSystems, List<TTargetSystem> outputSystems)
+        {
+            foreach (var system in inputSystems)
+            {
+                if (system is TTargetSystem targetSystem)
+                {
+                    outputSystems.Add(targetSystem);
+                }
+
+                if (system is EcsSystemGroup systemGroup)
+                {
+                    FindAllSystemsNonAlloc(systemGroup.Systems, outputSystems);
+                }
+            }
         }
     }
 }
