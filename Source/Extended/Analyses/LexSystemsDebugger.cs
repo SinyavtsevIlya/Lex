@@ -8,19 +8,27 @@ using System;
 
 public class LexSystemsDebugger : EditorWindow
 {
+    static LexSystemsDebugger()
+    {
+        EditorApplication.playModeStateChanged += (state) => 
+        {
+            if (HasOpenInstances<LexSystemsDebugger>()) 
+            {
+                GetWindow<LexSystemsDebugger>().Draw();
+            }
+        };
+    }
+
     public static List<EcsSystemGroup> _rootSystemGroups = new List<EcsSystemGroup>();
-    public static Action SystemsAddedOrRemoved;
 
     public static void AddEcsSystems(EcsSystemGroup rootSystemGroup)
     {
         _rootSystemGroups.Add(rootSystemGroup);
-        SystemsAddedOrRemoved?.Invoke();
     }
 
     public static void RemoveEcsSystems(EcsSystemGroup rootSystemGroup)
     {
         _rootSystemGroups.Remove(rootSystemGroup);
-        SystemsAddedOrRemoved?.Invoke();
     }
 
     [MenuItem("Window/UI Toolkit/LexDebugger")]
@@ -32,7 +40,17 @@ public class LexSystemsDebugger : EditorWindow
 
     private void OnEnable()
     {
-        SystemsAddedOrRemoved += Draw;
+        Draw();
+    }
+
+    private void OnDisable()
+    {
+        Draw();
+    }
+
+    private void Awake()
+    {
+        Draw();
     }
 
     private void Draw()

@@ -24,14 +24,14 @@ namespace Nanory.Lex
         protected Func<Type, IEcsSystem> Creator { get; private set; }
         protected Type[] SystemTypes { get; set; }
 
+        public EcsSystemSorter(EcsWorld world, Func<Type, IEcsSystem> creator = null, EcsTypesScanner ecsTypesScanner = null) 
+            : this (world, GetTypesByScanner(ecsTypesScanner), creator) { }
 
-        public EcsSystemSorter(EcsWorld world, Func<Type, IEcsSystem> creator = null, EcsTypesScanner ecsTypesScanner = null)
+        public EcsSystemSorter(EcsWorld world, IEnumerable<Type> systemTypes, Func<Type,IEcsSystem> creator = null)
         {
             World = world;
             SystemMap = new Dictionary<Type, IEcsSystem>();
             Creator = creator;
-
-            var scanner = ecsTypesScanner == null ? new EcsTypesScanner(EcsScanSettings.Default) : ecsTypesScanner;
 
             var defaultSystemGroupTypes = new Type[]
             {
@@ -47,8 +47,7 @@ namespace Nanory.Lex
                 typeof(GameObjectConversionSystem)
             };
 
-            SystemTypes = scanner
-                .ScanSystemTypes(typeof(TWorld))
+            SystemTypes = systemTypes
                 .Union(defaultSystemGroupTypes)
                 .Union(conversionSystemTypes)
                 .Union(UISystemTypesRegistry.Values)
@@ -173,7 +172,6 @@ namespace Nanory.Lex
             }
 
 #if UNITY_EDITOR
-            var debugger = UnityEditor.EditorWindow.GetWindow<LexSystemsDebugger>();
             LexSystemsDebugger.AddEcsSystems(rootSystemGroup);
 #endif
 
@@ -244,6 +242,13 @@ namespace Nanory.Lex
             return system;
         }
 
+
+        private static IEnumerable<Type> GetTypesByScanner(EcsTypesScanner ecsTypesScanner)
+        {
+            var scanner = ecsTypesScanner == null ? new EcsTypesScanner(EcsScanSettings.Default) : ecsTypesScanner;
+            return scanner.ScanSystemTypes(typeof(TWorld));
+        }
+
         public void Dispose() 
         {
             World = null;
@@ -252,7 +257,6 @@ namespace Nanory.Lex
             SystemTypes = null;
 
 #if UNITY_EDITOR
-            var debugger = UnityEditor.EditorWindow.GetWindow<LexSystemsDebugger>();
             LexSystemsDebugger.RemoveEcsSystems(RootSystemGroup);
 #endif
         }
@@ -295,6 +299,18 @@ namespace Nanory.Lex
                     FindAllSystemsNonAlloc(systemGroup.Systems, outputSystems);
                 }
             }
+        }
+
+        public static bool TryGetSourceHyperLink(this IEcsSystem system, out string result)
+        {
+            var results = UnityEditor.AssetDatabase.FindAssets(system.GetType().Name);
+            foreach (var guid in results)
+            {
+                result = $"<a href=\"{UnityEditor.AssetDatabase.GUIDToAssetPath(guid)}\" line=\"7\">{UnityEditor.AssetDatabase.GUIDToAssetPath(guid)}:7</a>";
+                return true;
+            }
+            result = string.Empty;
+            return false;
         }
     }
 }
