@@ -9,7 +9,6 @@ namespace Nanory.Lex.Timer
         protected override void OnUpdate()
         {
             var beginSim_ECB = GetCommandBufferFrom<BeginSimulationECBSystem>();
-            var beginSimDestructionECB = GetCommandBufferFrom<BeginSimulationDestructionECBSystem>();
 
             foreach (var timerEntity in Filter()
             .With<Timer>()
@@ -30,7 +29,7 @@ namespace Nanory.Lex.Timer
                         
                     if (timer.IsInfinity == 0)
                     {
-                        beginSimDestructionECB.DelEntity(timerEntity);
+                        beginSim_ECB.DelEntity(timerEntity);
                     }
                     else
                     {

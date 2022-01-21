@@ -38,8 +38,7 @@ namespace Nanory.Lex
                 typeof(InitializationSystemGroup),
                 typeof(SimulationSystemGroup),
                 typeof(PresentationSystemGroup),
-                typeof(BeginSimulationDestructionECBSystem), // TODO: can be avoided
-                typeof(BeginSimulationECBSystem), // TODO: already in the list 
+                typeof(BeginSimulationECBSystem),
             };
 
             var conversionSystemTypes = new Type[]
