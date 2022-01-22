@@ -8,6 +8,9 @@ using System;
 
 public class LexSystemsDebugger : EditorWindow
 {
+    [SerializeField]
+    private Texture2D Texture;
+
     static LexSystemsDebugger()
     {
         EditorApplication.playModeStateChanged += (state) => 
@@ -92,6 +95,10 @@ public class LexSystemsDebugger : EditorWindow
                     element = new Foldout();
                     var foldout = (element as Foldout);
                     foldout.text = name;
+                    foldout.style.unityFontStyleAndWeight = FontStyle.Bold;
+                    foldout.transform.position = new Vector3(10, 0);
+                    //var toggle = new Toggle();
+                    //foldout.Add(toggle);
                 }
             }
             else
@@ -99,19 +106,21 @@ public class LexSystemsDebugger : EditorWindow
                 element = new Label();
                 var label = element as Label;
                 label.text = name;
-                label.style.color = new StyleColor(Color.white);
-                label.style.marginLeft = 15;
+                element.style.color = new StyleColor(Color.white);
+                element.style.marginLeft = 17;
 
                 var thumbnail = new Image();
-                thumbnail.image = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Plugins/Lex/Source/Extended/VisualDebug/Editor/Settings.png");
-                thumbnail.style.width = new StyleLength(12);
-                thumbnail.style.height = new StyleLength(12);
-                thumbnail.style.marginLeft = -15;
+                var thumbnailName = system is EntityCommandBufferSystem ? "CommandBufferThumbnail" : "SystemThumbnail";
+                var systemsThumbnail = GetTexture(thumbnailName);
+                thumbnail.image = systemsThumbnail;
+                thumbnail.style.width = new StyleLength(16);
+                thumbnail.style.height = new StyleLength(16);
+                thumbnail.style.marginLeft = -17;
 
                 var thumbnailContainer = new VisualElement();
                 thumbnailContainer.Add(thumbnail);
-                thumbnailContainer.style.width = new StyleLength(15);
-                thumbnailContainer.style.height = new StyleLength(15);
+                thumbnailContainer.style.width = new StyleLength(16);
+                thumbnailContainer.style.height = new StyleLength(16);
                 element.Add(thumbnailContainer);
             }
 
@@ -134,6 +143,28 @@ public class LexSystemsDebugger : EditorWindow
 
             return type.Name;
         }
+    }
+
+    private Texture2D GetTexture(string name, string format = ".png")
+    {
+        var texture = AssetDatabase.LoadAssetAtPath<Texture2D>($"Packages/com.nanory.lex/Source/Extended/VisualDebug/Editor/{name}{format}");
+        if (texture == null)
+        {
+            texture = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/Plugins/Lex/Source/Extended/Analyses/{name}{format}");
+        }
+        if (texture == null)
+        {
+            var filePath = $"D:/Frameworks/LexUnity/Assets/Plugins/Lex/Source/Extended/Analyses/{name}{format}";
+            byte[] fileData;
+
+            if (System.IO.File.Exists(filePath))
+            {
+                fileData = System.IO.File.ReadAllBytes(filePath);
+                texture = new Texture2D(2, 2);
+                texture.LoadImage(fileData); 
+            }
+        }
+        return texture;
     }
 } 
 #endif
