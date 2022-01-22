@@ -5,18 +5,11 @@ using Nanory.Lex.Conversion;
 
 namespace Nanory.Lex
 {
-    public interface IDefaultWorldAttribute { }
-    public abstract class WorldAttribute : Attribute { }
-    public class TargetWorldAttribute : WorldAttribute { }
-    public class AllWorldAttribute : WorldAttribute { }
-    public class NoneWorldAttribute : WorldAttribute { }
-
     /// <summary>
     /// Sorts systems in a hierarchical manner based on special Ordering attributes
     /// (<see cref="UpdateInGroup"/> and <see cref="UpdateBefore"/>). 
     /// </summary>
-    /// <typeparam name="TWorld">Target world attribute for scan</typeparam>
-    public class EcsSystemSorter<TWorld> : IDisposable where TWorld : TargetWorldAttribute
+    public class EcsSystemSorter : IDisposable
     {
         protected EcsWorld World { get; private set; }
         protected EcsSystemGroup RootSystemGroup { get; private set; }
@@ -24,8 +17,8 @@ namespace Nanory.Lex
         protected Func<Type, IEcsSystem> Creator { get; private set; }
         protected Type[] SystemTypes { get; set; }
 
-        public EcsSystemSorter(EcsWorld world, Func<Type, IEcsSystem> creator = null, EcsTypesScanner ecsTypesScanner = null) 
-            : this (world, GetTypesByScanner(ecsTypesScanner), creator) { }
+        public EcsSystemSorter(EcsWorld world, IEnumerable<Type> featureTypes, Func<Type, IEcsSystem> creator = null, EcsTypesScanner ecsTypesScanner = null) 
+            : this (world, GetTypesByScanner(ecsTypesScanner, featureTypes.ToArray()), creator) { }
 
         public EcsSystemSorter(EcsWorld world, IEnumerable<Type> systemTypes, Func<Type,IEcsSystem> creator = null)
         {
@@ -242,10 +235,10 @@ namespace Nanory.Lex
         }
 
 
-        private static IEnumerable<Type> GetTypesByScanner(EcsTypesScanner ecsTypesScanner)
+        private static IEnumerable<Type> GetTypesByScanner(EcsTypesScanner ecsTypesScanner, Type[] featureTypes)
         {
             var scanner = ecsTypesScanner == null ? new EcsTypesScanner(EcsScanSettings.Default) : ecsTypesScanner;
-            return scanner.ScanSystemTypes(typeof(TWorld));
+            return scanner.ScanSystemTypes(featureTypes);
         }
 
         public void Dispose() 

@@ -24,31 +24,31 @@ namespace Nanory.Lex
             _clientNamespaceTag = settings.ClientNamespaceTag;
         }
 
-        public IEnumerable<Type> ScanSystemTypes(Type targetWorldAttributeType)
+        public IEnumerable<Type> ScanSystemTypes(params Type[] targetFeatureTypes)
         {
-            return GetSystemTypesByWorld(targetWorldAttributeType)
-                .Union(GetOneFrameSystemTypesByWorldGeneric(targetWorldAttributeType));
+            return GetSystemTypesByFeature(targetFeatureTypes)
+                .Union(GetOneFrameSystemTypesByWorldGeneric(targetFeatureTypes));
         }
 
-        public IEnumerable<Type> GetSystemTypesByWorld(Type targetWorldAttributeType)
+        public IEnumerable<Type> GetSystemTypesByFeature(IEnumerable<Type> featureTypes)
         {
-            return GetTypesByWorld(typeof(IEcsSystem), targetWorldAttributeType);
+            return GetTypesByFeature(typeof(IEcsSystem), featureTypes);
         }
 
-        public IEnumerable<Type> GetOneFrameSystemTypesByWorldGeneric(Type worldAttributeType)
+        public IEnumerable<Type> GetOneFrameSystemTypesByWorldGeneric(IEnumerable<Type> featureTypes)
         {
-            return GetOneFrameSystemTypesGenericArgumentsByWorld(worldAttributeType).Select(t =>
+            return GetOneFrameSystemTypesGenericArgumentsByFeature(featureTypes).Select(t =>
             {
                 var genericSystemType = typeof(OneFrameSystem<>);
                 return genericSystemType.MakeGenericType(t);
             });
         }
 
-        public List<Type> GetOneFrameSystemTypesGenericArgumentsByWorld(Type worldAttributeType)
+        public List<Type> GetOneFrameSystemTypesGenericArgumentsByFeature(IEnumerable<Type> featureTypes)
         {
             return GetClientTypes(typeof(IComponentMock))
                 .FilterGenericTypesByAttribute<OneFrame>()
-                .FilterTypesByWorld(worldAttributeType)
+                .FilterTypesByFeature(featureTypes)
                 .ToList();
         }
 
@@ -57,10 +57,10 @@ namespace Nanory.Lex
             return GetTypesFromTaggedNamespaces(_clientNamespaceTag, typesToScan);
         }
 
-        private IEnumerable<Type> GetTypesByWorld(Type typeToScan, Type targetWorldAttributeType)
+        private IEnumerable<Type> GetTypesByFeature(Type typeToScan, IEnumerable<Type> targetFeatureTypes)
         {
             var customTypes = GetClientTypes(typeToScan);
-            return customTypes.FilterTypesByWorld(targetWorldAttributeType);
+            return customTypes.FilterTypesByFeature(targetFeatureTypes);
         }
 
         private IEnumerable<Type> GetTypesFromTaggedNamespaces(string namespaceTag, params Type[] typesToScan)

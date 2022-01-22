@@ -82,10 +82,10 @@ public static class {worldName}SystemTypesLookup
             AssetDatabase.Refresh();
         }
 
-        private static string GenerateSystemTypes(Type worldAttributeType, EcsTypesScanner scanner)
+        private static string GenerateSystemTypes(IEnumerable<Type> featureTypes, EcsTypesScanner scanner)
         {
-            var worldSystemTypes = scanner.GetSystemTypesByWorld(worldAttributeType);
-            var oneFrameSystemTypes = scanner.GetOneFrameSystemTypesGenericArgumentsByWorld(worldAttributeType);
+            var worldSystemTypes = scanner.GetSystemTypesByFeature(featureTypes);
+            var oneFrameSystemTypes = scanner.GetOneFrameSystemTypesGenericArgumentsByFeature(featureTypes);
 
             var baseSystemsSeq = worldSystemTypes.Count() == 0 ? null : $"// Base Systems{Format.NewLine(2)}" + worldSystemTypes
                 .Select(type => $"typeof({type.Name})")
@@ -110,7 +110,7 @@ public static class {worldName}SystemTypesLookup
 
             var namespacesSeq = namespacesHashSet.Count == 0 ? string.Empty : namespacesHashSet.Select(t => $"using {t};").Aggregate((a, b) => $"{a}{Format.NewLine(1)}{b}");
 
-            var worldName = worldAttributeType.Name.Replace("WorldAttribute", "");
+            var worldName = featureType.Name.Replace("WorldAttribute", "");
 
             var systems = new string[] { baseSystemsSeq, cleanupSystemsSeq }
             .Where(s => s != null);

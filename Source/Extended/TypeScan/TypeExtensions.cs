@@ -7,15 +7,21 @@ namespace Nanory.Lex
 {
     public static class TypeExtensions
     {
-        public static IEnumerable<Type> FilterTypesByWorld(this IEnumerable<Type> inputTypes, Type targetWorldAttributeType)
+        public static IEnumerable<Type> FilterTypesByFeature(this IEnumerable<Type> inputTypes, IEnumerable<Type> featureTypes)
         {
-            var noneWorldTypes = FilterTypesByAttribute<NoneWorldAttribute>(inputTypes);
-            inputTypes = inputTypes.Except(noneWorldTypes);
+            return inputTypes.FilterTypesByNamespace(featureTypes.Select(feature => feature.Namespace));
+        }
 
-            var allWorldTypes = FilterTypesByAttribute<AllWorldAttribute>(inputTypes);
-            var targetWorldTypes = FilterWorldTypes(targetWorldAttributeType, inputTypes);
-
-            return targetWorldTypes.Union(allWorldTypes);
+        private static IEnumerable<Type> FilterTypesByNamespace(this IEnumerable<Type> types, IEnumerable<string> namespaces)
+        {
+            foreach (var namespaceName in namespaces)
+            {
+                foreach (var type in types)
+                {
+                    if (type.Namespace == namespaceName)
+                        yield return type;
+                }
+            }
         }
 
         private static IEnumerable<Type> FilterTypesByAttribute<AttributeType>(this IEnumerable<Type> types) where AttributeType : Attribute
@@ -23,6 +29,8 @@ namespace Nanory.Lex
             return types
                 .Where(s => s.CustomAttributes.Select(a => a.AttributeType).Contains(typeof(AttributeType)));
         }
+
+
 
         /// <summary>
         /// 
