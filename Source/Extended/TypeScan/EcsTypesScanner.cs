@@ -27,7 +27,7 @@ namespace Nanory.Lex
         public IEnumerable<Type> ScanSystemTypes(params Type[] targetFeatureTypes)
         {
             return GetSystemTypesByFeature(targetFeatureTypes)
-                .Union(GetOneFrameSystemTypesByWorldGeneric(targetFeatureTypes));
+                .Union(GetOneFrameSystemTypesFeaturesGeneric(targetFeatureTypes));
         }
 
         public IEnumerable<Type> GetSystemTypesByFeature(IEnumerable<Type> featureTypes)
@@ -35,7 +35,7 @@ namespace Nanory.Lex
             return GetTypesByFeature(typeof(IEcsSystem), featureTypes);
         }
 
-        public IEnumerable<Type> GetOneFrameSystemTypesByWorldGeneric(IEnumerable<Type> featureTypes)
+        public IEnumerable<Type> GetOneFrameSystemTypesFeaturesGeneric(IEnumerable<Type> featureTypes)
         {
             return GetOneFrameSystemTypesGenericArgumentsByFeature(featureTypes).Select(t =>
             {
@@ -48,7 +48,9 @@ namespace Nanory.Lex
         {
             return GetClientTypes(typeof(IComponentMock))
                 .FilterGenericTypesByAttribute<OneFrame>()
+                .Log("oneframe systems: ")
                 .FilterTypesByFeature(featureTypes)
+                .Log("oneframe sytems filtered: ")
                 .ToList();
         }
 

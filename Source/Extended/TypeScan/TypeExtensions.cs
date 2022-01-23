@@ -30,41 +30,6 @@ namespace Nanory.Lex
                 .Where(s => s.CustomAttributes.Select(a => a.AttributeType).Contains(typeof(AttributeType)));
         }
 
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private static IEnumerable<Type> FilterWorldTypes(Type worldAttribute, IEnumerable<Type> types)
-        {
-            var isDefaultWorld = typeof(IDefaultWorldAttribute).IsAssignableFrom(worldAttribute);
-
-            return types
-                .Where(t =>
-                {
-                    var worldAttributes = t.CustomAttributes.Select(a => a.AttributeType).Where(a => a.IsWorldAttribute());
-
-                    var hasNoneWorldAttribute = worldAttributes.Contains(typeof(NoneWorldAttribute));
-
-                    if (hasNoneWorldAttribute)
-                        return false;
-
-                    if (isDefaultWorld)
-                    {
-                        if (worldAttributes.Count() == 0)
-                            return true;
-                        if (worldAttributes.Any(a => a.IsDefaultWorldAttribute()))
-                            return true;
-
-                        return false;
-                    }
-                    else
-                    {
-                        return worldAttributes.Contains(worldAttribute);
-                    }
-                });
-        }
-
         public static IEnumerable<Type> FilterGenericTypesByAttribute<TAttribute>(this IEnumerable<Type> inputTypes) where TAttribute : Attribute
         {
             inputTypes = inputTypes
@@ -101,21 +66,6 @@ namespace Nanory.Lex
         public static bool IsUpdateInGroupAttribute(this Type attributeType)
         {
             return typeof(UpdateInGroup).IsAssignableFrom(attributeType);
-        }
-
-        public static bool IsTargetWorldAttribute(this Type attributeType)
-        {
-            return typeof(TargetWorldAttribute).IsAssignableFrom(attributeType);
-        }
-
-        public static bool IsWorldAttribute(this Type attributeType)
-        {
-            return typeof(WorldAttribute).IsAssignableFrom(attributeType);
-        }
-
-        public static bool IsDefaultWorldAttribute(this Type attributeType)
-        {
-            return typeof(IDefaultWorldAttribute).IsAssignableFrom(attributeType);
         }
 
         public static string ToGenericTypeString(this Type t)

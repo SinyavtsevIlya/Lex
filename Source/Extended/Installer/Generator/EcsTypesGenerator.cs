@@ -11,12 +11,12 @@ namespace Nanory.Lex.Generation
     public class EcsTypesGenerator
     {
         private readonly string _generationPath;
-        private static string _worldTemplate =
+        private static string _fatureTemplate =
 @"using System;
 using Nanory.Lex;
 {namespaces}    
 
-public static class {worldName}SystemTypesLookup
+public static class {featureName}SystemTypesLookup
 {
     private static Type[] _types = 
     {
@@ -38,23 +38,23 @@ public static class {worldName}SystemTypesLookup
 
             var scanner = new EcsTypesScanner();
 
-            scanner.GetClientTypes(typeof(TargetWorldAttribute))
-                .Where(type => typeof(TargetWorldAttribute).IsAssignableFrom(type))
-                .Where(type => type != typeof(TargetWorldAttribute))
-                .SelectMany(worldAttribute => (
+            scanner.GetClientTypes(typeof(FeatureBase))
+                .Where(type => typeof(FeatureBase).IsAssignableFrom(type))
+                .Where(type => type != typeof(FeatureBase))
+                .SelectMany(featureType => (
                     new GeneratedFile[]
                     {
-                        GetSystemTypesLookup(worldAttribute)
+                        GetSystemTypesLookup(featureType)
                     }
                 ))
                 .ToList()
                 .ForEach(file => WriteOnDisk(file.Content, file.Name));
 
-            GeneratedFile GetSystemTypesLookup(Type worldAttribute) =>
+            GeneratedFile GetSystemTypesLookup(Type featureType) =>
                 new GeneratedFile()
                 {
-                    Name = worldAttribute.Name.Replace("Attribute", "SystemTypesLookup"),
-                    Content = GenerateSystemTypes(worldAttribute, scanner)
+                    Name = featureType.Name.Replace("Attribute", "SystemTypesLookup"),
+                    Content = GenerateSystemTypes(featureType, scanner)
                 };
         }
 
@@ -82,10 +82,10 @@ public static class {worldName}SystemTypesLookup
             AssetDatabase.Refresh();
         }
 
-        private static string GenerateSystemTypes(IEnumerable<Type> featureTypes, EcsTypesScanner scanner)
+        private static string GenerateSystemTypes(Type featureType, EcsTypesScanner scanner)
         {
-            var worldSystemTypes = scanner.GetSystemTypesByFeature(featureTypes);
-            var oneFrameSystemTypes = scanner.GetOneFrameSystemTypesGenericArgumentsByFeature(featureTypes);
+            var worldSystemTypes = scanner.GetSystemTypesByFeature(new Type[] { featureType });
+            var oneFrameSystemTypes = scanner.GetOneFrameSystemTypesGenericArgumentsByFeature(new Type[] { featureType });
 
             var baseSystemsSeq = worldSystemTypes.Count() == 0 ? null : $"// Base Systems{Format.NewLine(2)}" + worldSystemTypes
                 .Select(type => $"typeof({type.Name})")
@@ -110,7 +110,7 @@ public static class {worldName}SystemTypesLookup
 
             var namespacesSeq = namespacesHashSet.Count == 0 ? string.Empty : namespacesHashSet.Select(t => $"using {t};").Aggregate((a, b) => $"{a}{Format.NewLine(1)}{b}");
 
-            var worldName = featureType.Name.Replace("WorldAttribute", "");
+            var featureName = featureType.Name.Replace("WorldAttribute", "");
 
             var systems = new string[] { baseSystemsSeq, cleanupSystemsSeq }
             .Where(s => s != null);
@@ -118,8 +118,8 @@ public static class {worldName}SystemTypesLookup
             var systemsSeq = systems.Count() == 0 ? null : systems
             .Aggregate((a, b) => $"{a},{Format.NewLine(2)}{b}");
 
-            var result = _worldTemplate
-                .Replace("{worldName}", worldName)
+            var result = _fatureTemplate
+                .Replace("{featureName}", featureName)
                 .Replace("{namespaces}", namespacesSeq)
                 .Replace("{systemTypes}", systemsSeq);
 

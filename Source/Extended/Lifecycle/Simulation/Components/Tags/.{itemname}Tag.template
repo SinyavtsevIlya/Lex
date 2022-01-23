@@ -1,0 +1,4 @@
+namespace Client
+{
+    public struct {itemname}Tag { }
+}

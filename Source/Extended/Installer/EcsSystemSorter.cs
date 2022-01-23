@@ -5,6 +5,8 @@ using Nanory.Lex.Conversion;
 
 namespace Nanory.Lex
 {
+    public class FeatureBase { }
+
     /// <summary>
     /// Sorts systems in a hierarchical manner based on special Ordering attributes
     /// (<see cref="UpdateInGroup"/> and <see cref="UpdateBefore"/>). 
@@ -17,15 +19,31 @@ namespace Nanory.Lex
         protected Func<Type, IEcsSystem> Creator { get; private set; }
         protected Type[] SystemTypes { get; set; }
 
-        public EcsSystemSorter(EcsWorld world, IEnumerable<Type> featureTypes, Func<Type, IEcsSystem> creator = null, EcsTypesScanner ecsTypesScanner = null) 
-            : this (world, GetTypesByScanner(ecsTypesScanner, featureTypes.ToArray()), creator) { }
-
-        public EcsSystemSorter(EcsWorld world, IEnumerable<Type> systemTypes, Func<Type,IEcsSystem> creator = null)
+        public EcsSystemSorter(EcsWorld world, Func<Type,IEcsSystem> creator = null)
         {
             World = world;
             SystemMap = new Dictionary<Type, IEcsSystem>();
             Creator = creator;
+        }
 
+        public EcsSystemGroup GetSortedSystems<TFeature1>(EcsTypesScanner ecsTypesScanner = null) 
+            where TFeature1 : FeatureBase
+        {
+            return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[] { typeof(TFeature1) }));
+        }
+
+        public EcsSystemGroup GetSortedSystems<TFeature1, TFeature2>(EcsTypesScanner ecsTypesScanner = null)
+            where TFeature1 : FeatureBase
+            where TFeature2 : FeatureBase
+        {
+            return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[] 
+            {
+                typeof(TFeature1) 
+            }));
+        }
+
+        public EcsSystemGroup GetSortedSystems(IEnumerable<Type> systemTypes)
+        {
             var defaultSystemGroupTypes = new Type[]
             {
                 typeof(InitializationSystemGroup),
@@ -44,10 +62,8 @@ namespace Nanory.Lex
                 .Union(conversionSystemTypes)
                 .Union(UISystemTypesRegistry.Values)
                 .ToArray();
-        }
 
-        public EcsSystemGroup GetSortedSystems()
-        {
+
             var handledSystems = new HashSet<Type>();
             // Add a root
             var rootSystemGroup = (EcsSystemGroup)GetSystemByType(typeof(RootSystemGroup));

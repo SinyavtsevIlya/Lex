@@ -1,0 +1,9 @@
+using Nanory.Lex;
+
+namespace Client
+{
+    public struct {itemname}Link
+    {
+        public int Value;
+    }
+}
