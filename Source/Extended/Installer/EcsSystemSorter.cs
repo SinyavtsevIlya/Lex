@@ -38,7 +38,8 @@ namespace Nanory.Lex
         {
             return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[] 
             {
-                typeof(TFeature1) 
+                typeof(TFeature1),
+                typeof(TFeature2)
             }));
         }
 

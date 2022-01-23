@@ -107,7 +107,7 @@ namespace Nanory.Lex
 
         public static IEnumerable<T> Log<T>(this IEnumerable<T> collection, string message = null)
         {
-            UnityEngine.Debug.Log($"{collection}: items are:");
+            UnityEngine.Debug.Log($"{message}: items are:");
             var idx = 0;
             foreach (var item in collection)
             {

@@ -38,7 +38,7 @@ public static class {featureName}SystemTypesLookup
 
             var scanner = new EcsTypesScanner();
 
-            scanner.GetClientTypes(typeof(FeatureBase))
+            scanner.GetAssignableTypes(typeof(FeatureBase))
                 .Where(type => typeof(FeatureBase).IsAssignableFrom(type))
                 .Where(type => type != typeof(FeatureBase))
                 .SelectMany(featureType => (

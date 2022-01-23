@@ -2,18 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using Nanory.Lex;
+using UnityEngine.Assertions;
 
 namespace Nanory.Lex
 {
     public class EcsTypesScanner
     {
         private readonly string[] _clientAssemblyNames;
-        private readonly string _clientNamespaceTag;
 
         public EcsTypesScanner(EcsScanSettings settings)
         {
             _clientAssemblyNames = settings.ClientAssemblyNames;
-            _clientNamespaceTag = settings.ClientNamespaceTag;
         }
 
         public EcsTypesScanner()
@@ -21,7 +20,6 @@ namespace Nanory.Lex
             var settings = EcsScanSettings.Default;
 
             _clientAssemblyNames = settings.ClientAssemblyNames;
-            _clientNamespaceTag = settings.ClientNamespaceTag;
         }
 
         public IEnumerable<Type> ScanSystemTypes(params Type[] targetFeatureTypes)
@@ -46,40 +44,33 @@ namespace Nanory.Lex
 
         public List<Type> GetOneFrameSystemTypesGenericArgumentsByFeature(IEnumerable<Type> featureTypes)
         {
-            return GetClientTypes(typeof(IComponentMock))
+            return GetAssignableTypes(typeof(IComponentMock))
                 .FilterGenericTypesByAttribute<OneFrame>()
-                .Log("oneframe systems: ")
                 .FilterTypesByFeature(featureTypes)
-                .Log("oneframe sytems filtered: ")
                 .ToList();
         }
 
-        public IEnumerable<Type> GetClientTypes(params Type[] typesToScan)
+        private IEnumerable<Type> GetTypesByFeature(Type ecsType, IEnumerable<Type> targetFeatureTypes)
         {
-            return GetTypesFromTaggedNamespaces(_clientNamespaceTag, typesToScan);
-        }
-
-        private IEnumerable<Type> GetTypesByFeature(Type typeToScan, IEnumerable<Type> targetFeatureTypes)
-        {
-            var customTypes = GetClientTypes(typeToScan);
+            var customTypes = GetAssignableTypes(ecsType);
             return customTypes.FilterTypesByFeature(targetFeatureTypes);
         }
 
-        private IEnumerable<Type> GetTypesFromTaggedNamespaces(string namespaceTag, params Type[] typesToScan)
+        public IEnumerable<Type> GetAssignableTypes(params Type[] typesToScan)
         {
             return AppDomain.CurrentDomain.GetAssembliesByName(_clientAssemblyNames)
                 .AssertIsEmpty($"Check your _clientAssemblyNames: {_clientAssemblyNames}")
                 .SelectMany(s => s.GetTypes())
-                .Where(t => 
-                {
-                    if (string.IsNullOrEmpty(namespaceTag)) return true;
-                    return t.FullName.Contains(namespaceTag);
-                })
                 .Where(type => 
                 {
+                    if (type.Namespace == null)
+                    {
+                        UnityEngine.Debug.LogWarning($"{type} has no namespace.");
+                    }
+
                     if (typesToScan.Any(t => t == typeof(IComponentMock)))
                     {
-                        return type.IsValueType && !type.IsPrimitive && !type.Namespace.StartsWith("System") && !type.IsEnum;
+                        return type.IsValueType && !type.IsPrimitive && type.Namespace != null && !type.Namespace.StartsWith("System") && !type.IsEnum;
                     }
 
                     if (type.IsGenericTypeDefinition || type.IsInterface)

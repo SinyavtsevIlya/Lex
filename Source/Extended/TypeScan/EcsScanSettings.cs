@@ -27,7 +27,6 @@ namespace Nanory.Lex
                     _default = CreateInstance<EcsScanSettings>();
 
                     _default._clientAssemblyNames = new string[] { FallbackAssemblyName };
-                    _default.ClientNamespaceTag = "Client";
 
                     var resourcesPath = Application.dataPath + "Assets/Resources/";
 
@@ -71,9 +70,6 @@ namespace Nanory.Lex
             }
         } 
         #endif
-
-        [Tooltip("Type here a namespace (or part of a namespace) to filter which code should be scanned. \nIf no namespace tag specified, a whole assembly will be scanned")]
-        public string ClientNamespaceTag;
         [HideInInspector]
         [SerializeField]
         private string[] _clientAssemblyNames;
