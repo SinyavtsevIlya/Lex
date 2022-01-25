@@ -5,6 +5,7 @@ using UnityEngine;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using Nanory.Lex.AssetsManagement;
 
 namespace Nanory.Lex.Generation
 {
@@ -53,7 +54,7 @@ public static class {featureName}SystemTypesLookup
             GeneratedFile GetSystemTypesLookup(Type featureType) =>
                 new GeneratedFile()
                 {
-                    Name = featureType.Name.Replace("Attribute", "SystemTypesLookup"),
+                    Name = featureType.Namespace.SolidifyNamespace(),
                     Content = GenerateSystemTypes(featureType, scanner)
                 };
         }
@@ -102,6 +103,7 @@ public static class {featureName}SystemTypesLookup
                 .Aggregate((a, b) => $"{a},{Format.NewLine(2)}{b}");
 
             var namespacesHashSet = new HashSet<string>();
+
             worldSystemTypes
                 .Union(oneFrameSystemTypes)
                 .SelectMany(t => GetNamespacesRecursive(t))
@@ -110,7 +112,7 @@ public static class {featureName}SystemTypesLookup
 
             var namespacesSeq = namespacesHashSet.Count == 0 ? string.Empty : namespacesHashSet.Select(t => $"using {t};").Aggregate((a, b) => $"{a}{Format.NewLine(1)}{b}");
 
-            var featureName = featureType.Name.Replace("WorldAttribute", "");
+            var featureName = featureType.Namespace.SolidifyNamespace();
 
             var systems = new string[] { baseSystemsSeq, cleanupSystemsSeq }
             .Where(s => s != null);
@@ -146,18 +148,11 @@ public static class {featureName}SystemTypesLookup
         }
     }
 
-    public static class AssetManagementExtensions
-    {
-        public static string ToGlobalPath(this string localPath)
-        {
-            var global = Application.dataPath.Substring(0, Application.dataPath.Length - "/Assets".Length);
-            return global + "/" + localPath;
-        }
-    }
-
     public static class Format
     {
         private const int TabLength = 4;
+
+        public static string SolidifyNamespace(this string namespaceName) => namespaceName.Replace(".", "");
 
         public static string NewLine(int tabs = 0)
         {
@@ -183,4 +178,17 @@ public static class {featureName}SystemTypesLookup
         }
     }
 }
+
+namespace Nanory.Lex.AssetsManagement
+{
+    public static class AssetManagementExtensions
+    {
+        public static string ToGlobalPath(this string localPath)
+        {
+            var global = Application.dataPath.Substring(0, Application.dataPath.Length - "/Assets".Length);
+            return global + "/" + localPath;
+        }
+    }
+}
+
 #endif

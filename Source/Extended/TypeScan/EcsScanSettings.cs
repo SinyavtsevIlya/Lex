@@ -3,49 +3,54 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 #if UNITY_EDITOR
-using UnityEditor;
 #endif
 
 namespace Nanory.Lex
 {
+    [CreateAssetMenu(fileName = "LexEcsProjectStructureSettings", menuName = "Lex/LexEcsProjectStructureSettings")]
+    public class LexEcsProjectStructureSettings : LexSettingsBase<LexEcsProjectStructureSettings>
+    {
+        [SerializeField] GameObject _projectStructurePrefab;
+
+        public GameObject ProjectStructurePrefab => _projectStructurePrefab;
+
+        public override void OnCreate()
+        {
+#if UNITY_EDITOR
+            var guid = UnityEditor.AssetDatabase.FindAssets("Feature t:prefab").First();
+            var assetPath = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+            var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+
+            _projectStructurePrefab = asset;
+#endif
+        }
+    }
+
     [CreateAssetMenu(fileName = "LexEcsScanSettings", menuName = "Lex/EcsScanSettings")]
-    public class EcsScanSettings : ScriptableObject
+    public class EcsScanSettings : LexSettingsBase<EcsScanSettings>
     {
         private const string FallbackAssemblyName = "Assembly-CSharp";
-
-        private static EcsScanSettings _default;
-        public static EcsScanSettings Default
-        {
-            get
-            {
-                if (_default == null)
-                    _default = Resources.Load<EcsScanSettings>("LexEcsScanSettings");
-
-#if UNITY_EDITOR
-                if (_default == null)
-                {
-                    _default = CreateInstance<EcsScanSettings>();
-
-                    _default._clientAssemblyNames = new string[] { FallbackAssemblyName };
-
-                    var resourcesPath = Application.dataPath + "Assets/Resources/";
-
-                    if (!System.IO.Directory.Exists(resourcesPath))
-                        System.IO.Directory.CreateDirectory(resourcesPath);
-
-                    AssetDatabase.CreateFolder("Assets", "Resources");
-
-                    AssetDatabase.CreateAsset(_default, "Assets/Resources/LexEcsScanSettings.asset");
-                    AssetDatabase.SaveAssets();
-                }
-#endif
-                return _default;
-            }
-        }
+        private const string NanoryLex = "Nanory.Lex";
 
         public string[] ClientAssemblyNames => _clientAssemblyNames;
 
-        #if UNITY_EDITOR
+        public override void OnCreate()
+        {
+#if UNITY_EDITOR
+            var guid = UnityEditor.AssetDatabase.FindAssets(typeof(EcsScanSettings).Assembly.GetName().Name).First();
+            var assetPath = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+            var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEditorInternal.AssemblyDefinitionAsset>(assetPath);
+
+            _assemblyDefinitions = new UnityEditorInternal.AssemblyDefinitionAsset[] { asset };
+#endif
+            _clientAssemblyNames = new string[] 
+            { 
+                FallbackAssemblyName,
+                NanoryLex
+            };
+        }
+
+#if UNITY_EDITOR
         private void OnValidate()
         {
             if (_assemblyDefinitions?.Length > 0)
@@ -68,8 +73,10 @@ namespace Nanory.Lex
             {
                 _clientAssemblyNames = new string[] { FallbackAssemblyName };
             }
-        } 
-        #endif
+
+            UnityEditor.EditorUtility.SetDirty(this);
+        }
+#endif
         [HideInInspector]
         [SerializeField]
         private string[] _clientAssemblyNames;
