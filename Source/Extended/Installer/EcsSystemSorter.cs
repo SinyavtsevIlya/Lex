@@ -26,13 +26,13 @@ namespace Nanory.Lex
             Creator = creator;
         }
 
-        public EcsSystemGroup GetSortedSystems<TFeature1>(EcsTypesScanner ecsTypesScanner = null) 
+        public EcsSystemGroup GetFeaturedSystems<TFeature1>(EcsTypesScanner ecsTypesScanner = null) 
             where TFeature1 : FeatureBase
         {
             return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[] { typeof(TFeature1) }));
         }
 
-        public EcsSystemGroup GetSortedSystems<TFeature1, TFeature2>(EcsTypesScanner ecsTypesScanner = null)
+        public EcsSystemGroup GetFeaturedSystems<TFeature1, TFeature2>(EcsTypesScanner ecsTypesScanner = null)
             where TFeature1 : FeatureBase
             where TFeature2 : FeatureBase
         {
@@ -40,6 +40,19 @@ namespace Nanory.Lex
             {
                 typeof(TFeature1),
                 typeof(TFeature2)
+            }));
+        }
+
+        public EcsSystemGroup GetFeaturedSystems<TFeature1, TFeature2, TFeature3>(EcsTypesScanner ecsTypesScanner = null)
+            where TFeature1 : FeatureBase
+            where TFeature2 : FeatureBase
+            where TFeature3 : FeatureBase
+        {
+            return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[]
+            {
+                typeof(TFeature1),
+                typeof(TFeature2),
+                typeof(TFeature3)
             }));
         }
 

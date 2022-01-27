@@ -132,6 +132,18 @@ namespace Nanory.Lex
         }
     }
 
+    public class MissingCommandBufferSystemException<TSystem> : Exception where TSystem : EntityCommandBufferSystem 
+    {
+        private readonly IEcsEntityCommandBufferLookup _context;
+
+        public MissingCommandBufferSystemException(IEcsEntityCommandBufferLookup context)
+        {
+            _context = context;
+        }
+
+        public override string Message => $"No {nameof(TSystem)} was found in {nameof(_context)}.";
+    }
+
     public interface IEcsEntityCommandBufferLookup
     {
         IEcsEntityCommandBufferLookup SetEntityCommandBufferSystemsLookup(List<EntityCommandBufferSystem> systems);
@@ -177,6 +189,11 @@ namespace Nanory.Lex
         protected abstract void OnUpdate();
 
         protected virtual void OnCreate() { }
+
+        protected int NewEntity()
+        {
+            return World.NewEntity();
+        }
 
         protected ref TComponent Get<TComponent>(int entity) where TComponent : struct
         {
