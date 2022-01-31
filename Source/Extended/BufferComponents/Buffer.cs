@@ -9,7 +9,10 @@ namespace Nanory.Lex
         public void AutoReset(ref Buffer<TElement> c)
         {
             if (c.Values != null)
+            {
+                c.Values.Clear();
                 Pool.Push(c.Values);
+            }
 
             c.Values = null;
         }

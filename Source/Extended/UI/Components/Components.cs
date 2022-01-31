@@ -25,7 +25,9 @@ namespace Nanory.Lex
 
         public void AutoReset(ref CloseEvent<TScreen> c)
         {
-            // do not clear the value
+            // NOTE: We implement IEcsAutoReset to 
+            // prevent automatic cleaning the component 
+            // data.
         }
     }
 
