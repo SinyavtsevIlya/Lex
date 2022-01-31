@@ -38,12 +38,14 @@ namespace Nanory.Lex
         private readonly EcsFilter _ecbNewEntityFilter;
         private readonly EcsFilter _ecbSetFilter;
         private readonly EcsFilter _ecbAddFilter;
+        private readonly EcsFilter _ecbAddOrSetFilter;
         private readonly EcsFilter _ecbDelFilter;
         private readonly EcsFilter _ecbDelEntityFilter;
 
         public readonly EcsPool<NewEntityCommand> PoolECBNewEntityCommand;
         public readonly EcsPool<SetCommand> PoolECBSetCommand;
         public readonly EcsPool<AddCommand> PoolECBAddCommand;
+        public readonly EcsPool<AddOrSetCommand> PoolECBAddOrSetCommand;
         public readonly EcsPool<DelCommand> PoolECBDelCommand;
         public readonly EcsPool<DelEntityCommand> PoolECBDelEntityCommand;
 
@@ -55,12 +57,14 @@ namespace Nanory.Lex
             _ecbNewEntityFilter = BufferWorld.Filter<NewEntityCommand>().End();
             _ecbSetFilter = BufferWorld.Filter<SetCommand>().End();
             _ecbAddFilter = BufferWorld.Filter<AddCommand>().End();
+            _ecbAddOrSetFilter = BufferWorld.Filter<AddOrSetCommand>().End();
             _ecbDelFilter = BufferWorld.Filter<DelCommand>().End();
             _ecbDelEntityFilter = BufferWorld.Filter<DelEntityCommand>().End();
 
             PoolECBNewEntityCommand = BufferWorld.GetPool<NewEntityCommand>();
             PoolECBSetCommand = BufferWorld.GetPool<SetCommand>();
             PoolECBAddCommand = BufferWorld.GetPool<AddCommand>();
+            PoolECBAddOrSetCommand = BufferWorld.GetPool<AddOrSetCommand>();
             PoolECBDelCommand = BufferWorld.GetPool<DelCommand>();
             PoolECBDelEntityCommand = BufferWorld.GetPool<DelEntityCommand>();
         }
@@ -89,7 +93,20 @@ namespace Nanory.Lex
                 bufferPool.CpyToDstWorld(bufferEntity, addCmd.entity);
                 BufferWorld.DelEntity(bufferEntity);
             }
-            
+
+            foreach (var bufferEntity in _ecbAddOrSetFilter)
+            {
+                ref var addOrSetCmd = ref PoolECBAddOrSetCommand.Get(bufferEntity);
+                var pool = DstWorld.PoolsSparse[addOrSetCmd.componentIndex];
+                if (!pool.Has(addOrSetCmd.entity))
+                {
+                    pool.Activate(addOrSetCmd.entity);
+                }
+                var bufferPool = BufferWorld.PoolsSparse[addOrSetCmd.componentIndex];
+                bufferPool.CpyToDstWorld(bufferEntity, addOrSetCmd.entity);
+                BufferWorld.DelEntity(bufferEntity);
+            }
+
             foreach (var bufferEntity in _ecbDelFilter)
             {
                 ref var delCmd = ref PoolECBDelCommand.Get(bufferEntity);
@@ -112,6 +129,12 @@ namespace Nanory.Lex
         }
 
         public struct AddCommand
+        {
+            public int entity;
+            public int componentIndex;
+        }
+
+        public struct AddOrSetCommand
         {
             public int entity;
             public int componentIndex;
@@ -156,7 +179,7 @@ namespace Nanory.Lex
             };
             var pool = entityCommandBuffer.BufferWorld.GetPool<TComponent>();
 
-            if (!entityCommandBuffer.BufferWorld.Has<TComponent>(bufferEntity))
+            if (!entityCommandBuffer.BufferWorld.Has<TComponent>(bufferEntity)) // ?
             {
                 return ref pool.Add(bufferEntity);
             }
@@ -164,6 +187,17 @@ namespace Nanory.Lex
             {
                 return ref pool.Get(bufferEntity);
             }
+        }
+
+        public static ref TComponent AddOrSet<TComponent>(this EntityCommandBuffer entityCommandBuffer, int entity) where TComponent : struct
+        {
+            var bufferEntity = entityCommandBuffer.BufferWorld.NewEntity();
+            entityCommandBuffer.PoolECBAddOrSetCommand.Add(bufferEntity) = new EntityCommandBuffer.AddOrSetCommand()
+            {
+                componentIndex = EcsComponent<TComponent>.TypeIndex,
+                entity = entity
+            };
+            return ref entityCommandBuffer.BufferWorld.GetPool<TComponent>().Add(bufferEntity);
         }
 
         public static void Del<TComponent>(this EntityCommandBuffer entityCommandBuffer, int entity) where TComponent : struct

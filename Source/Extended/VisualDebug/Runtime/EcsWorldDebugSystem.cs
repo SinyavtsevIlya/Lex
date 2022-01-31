@@ -6,8 +6,9 @@ using Object = UnityEngine.Object;
 
 namespace Nanory.Lex.UnityEditorIntegration
 {
-    public sealed class EcsWorldDebugSystem : IEcsPreInitSystem, IEcsRunSystem, IEcsWorldEventListener
+    public sealed class EcsWorldDebugSystem : IEcsPreInitSystem, IEcsInitSystem, IEcsRunSystem, IEcsDestroySystem, IEcsWorldEventListener
     {
+        readonly EcsSystemGroup _rootSystemGroup;
         readonly string _worldName;
         readonly GameObject _rootGO;
         readonly Transform _entitiesRoot;
@@ -18,8 +19,9 @@ namespace Nanory.Lex.UnityEditorIntegration
         Dictionary<int, byte> _dirtyEntities;
         Type[] _typesCache;
 
-        public EcsWorldDebugSystem(string worldName = null, bool bakeComponentsInName = true)
+        public EcsWorldDebugSystem(EcsSystemGroup rootSystemGroup, string worldName = null, bool bakeComponentsInName = true)
         {
+            _rootSystemGroup = rootSystemGroup;
             _bakeComponentsInName = bakeComponentsInName;
             _worldName = worldName;
             _rootGO = new GameObject(_worldName != null ? $"[ECS-WORLD {_worldName}]" : "[ECS-WORLD]");
@@ -39,6 +41,16 @@ namespace Nanory.Lex.UnityEditorIntegration
             _entities = new EcsEntityDebugView[_world.GetWorldSize()];
             _dirtyEntities = new Dictionary<int, byte>(_entities.Length);
             _world.AddEventListener(this);
+        }
+
+        public void Init(EcsSystems systems)
+        {
+            LexSystemsDebugger.AddEcsSystems(_rootSystemGroup);
+        }
+
+        public void Destroy(EcsSystems systems)
+        {
+            LexSystemsDebugger.RemoveEcsSystems(_rootSystemGroup);
         }
 
         public void Run(EcsSystems systems)

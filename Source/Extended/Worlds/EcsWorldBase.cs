@@ -8,8 +8,15 @@ namespace Nanory.Lex
 {
     public class EcsWorldBase : EcsWorld, IEcsEntityCommandBufferLookup
     {
+        private readonly string _name;
+
         private List<EntityCommandBufferSystem> _entityCommandBufferSystems;
         private Dictionary<Type, IEcsSystem> _systemsByTypes;
+
+        public EcsWorldBase(Config cfg = default, string name = default) : base(cfg)
+        {
+            _name = name;
+        }
 
         public EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem
         {
@@ -22,6 +29,8 @@ namespace Nanory.Lex
             throw new MissingCommandBufferSystemException<TSystem>(this);
         }
 
+        public string Name => _name;
+
         public IEcsEntityCommandBufferLookup SetEntityCommandBufferSystemsLookup(List<EntityCommandBufferSystem> systems)
         {
             _entityCommandBufferSystems = systems;
@@ -30,10 +39,17 @@ namespace Nanory.Lex
 
         public void SetSystemsLookup(IEnumerable<IEcsSystem> systems)
         {
+            _systemsByTypes = new Dictionary<Type, IEcsSystem>();
+
             foreach (var system in systems)
             {
                 _systemsByTypes[system.GetType()] = system;
             }
+        }
+
+        public void SetSystemsLookup(Dictionary<Type, IEcsSystem> systemsByType)
+        {
+            _systemsByTypes = systemsByType;
         }
 
         public TSystem GetSystem<TSystem>() where TSystem : class, IEcsSystem

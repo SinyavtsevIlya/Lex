@@ -116,7 +116,9 @@ namespace Nanory.Lex
             return Items[entity].Data;
         }
 
-        void IEcsPool.Destroy() { }
+        void IEcsPool.Destroy() 
+        {
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref T Add(int entity)
@@ -155,7 +157,9 @@ namespace Nanory.Lex
         public bool Has(int entity)
         {
 #if DEBUG
-            if (!_world.IsEntityAliveInternal(entity)) { throw new Exception("Cant touch destroyed entity."); }
+            if (!_world.IsEntityAliveInternal(entity)) {
+                throw new Exception("Cant touch destroyed entity."); 
+            }
 #endif
             return Items[entity].Attached;
         }

@@ -38,8 +38,7 @@ namespace Nanory.Lex
         {
             return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[] 
             {
-                typeof(TFeature1),
-                typeof(TFeature2)
+                typeof(TFeature1), typeof(TFeature2)
             }));
         }
 
@@ -50,9 +49,19 @@ namespace Nanory.Lex
         {
             return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[]
             {
-                typeof(TFeature1),
-                typeof(TFeature2),
-                typeof(TFeature3)
+                typeof(TFeature1), typeof(TFeature2), typeof(TFeature3)
+            }));
+        }
+
+        public EcsSystemGroup GetFeaturedSystems<TFeature1, TFeature2, TFeature3, TFeature4>(EcsTypesScanner ecsTypesScanner = null)
+            where TFeature1 : FeatureBase
+            where TFeature2 : FeatureBase
+            where TFeature3 : FeatureBase
+            where TFeature4 : FeatureBase
+        {
+            return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[]
+            {
+                typeof(TFeature1), typeof(TFeature2), typeof(TFeature3), typeof(TFeature4)
             }));
         }
 
@@ -90,10 +99,17 @@ namespace Nanory.Lex
 
             var commandBufferSystems = SystemMap.Values.Where(s => s is EntityCommandBufferSystem).Select(s => s as EntityCommandBufferSystem).ToList();
             var commandBufferLookupSystems = SystemMap.Values.Where(s => s is IEcsEntityCommandBufferLookup).Select(s => s as IEcsEntityCommandBufferLookup).ToList();
-            var systemGroups = SystemMap.Values.Where(s => s is EcsSystemGroup).Select(s => s as EcsSystemGroup).ToList();
+
+            if (World is EcsWorldBase worldBase)
+            {
+                worldBase.SetSystemsLookup(SystemMap);
+                worldBase.SetEntityCommandBufferSystemsLookup(commandBufferSystems);
+            }
 
             commandBufferSystems.ForEach(cbs => cbs.SetDstWorld(World));
             commandBufferLookupSystems.ForEach(bs => bs.SetEntityCommandBufferSystemsLookup(commandBufferSystems));
+
+            var systemGroups = SystemMap.Values.Where(s => s is EcsSystemGroup).Select(s => s as EcsSystemGroup).ToList();
 
             foreach (var systemGroup in systemGroups)
             {
@@ -193,10 +209,6 @@ namespace Nanory.Lex
 
             }
 
-#if UNITY_EDITOR
-            LexSystemsDebugger.AddEcsSystems(rootSystemGroup);
-#endif
-
             return rootSystemGroup;
         }
 
@@ -277,10 +289,6 @@ namespace Nanory.Lex
             RootSystemGroup = null; 
             SystemMap = null;
             SystemTypes = null;
-
-#if UNITY_EDITOR
-            LexSystemsDebugger.RemoveEcsSystems(RootSystemGroup);
-#endif
         }
     }
 
