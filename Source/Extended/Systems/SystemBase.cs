@@ -219,11 +219,23 @@ namespace Nanory.Lex
 
         protected void Swap<TComponent>(int a, int b) where TComponent : struct
         {
-            var componentA = Get<TComponent>(a);
-            var componentB = Get<TComponent>(b);
+            var hasComponentA = (TryGet<TComponent>(a, out var tComponentA));
+            var hasComponentB = (TryGet<TComponent>(b, out var tComponentB));
 
-            Get<TComponent>(a) = componentB;
-            Get<TComponent>(b) = componentA;
+            if (hasComponentA && hasComponentB)
+            {
+                Get<TComponent>(a) = tComponentB;
+                Get<TComponent>(b) = tComponentA;
+            }
+
+            if (!hasComponentA && hasComponentB)
+            {
+                Add<TComponent>(a) = tComponentB;
+            }
+            if (!hasComponentB && hasComponentA)
+            {
+                Add<TComponent>(b) = tComponentA;
+            }
         }
 
         protected void SwapTag<TComponent>(int a, int b) where TComponent : struct
