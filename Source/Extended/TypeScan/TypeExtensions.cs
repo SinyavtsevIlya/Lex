@@ -73,6 +73,7 @@ namespace Nanory.Lex
             if (!t.IsGenericType)
                 return t.Name;
             string genericTypeName = t.GetGenericTypeDefinition().Name;
+
             genericTypeName = genericTypeName.Substring(0,
                 genericTypeName.IndexOf('`'));
             string genericArgs = string.Join(",",
@@ -112,6 +113,16 @@ namespace Nanory.Lex
             foreach (var item in collection)
             {
                 UnityEngine.Debug.Log($"{++idx}) {item}");
+            }
+            return collection;
+        }
+
+        public static IEnumerable<T> Log<T>(this IEnumerable<T> collection, Func<T, string> format)
+        {
+            var idx = 0;
+            foreach (var item in collection)
+            {
+                UnityEngine.Debug.Log(format?.Invoke(item));
             }
             return collection;
         }

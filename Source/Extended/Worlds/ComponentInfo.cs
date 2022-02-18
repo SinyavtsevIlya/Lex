@@ -18,4 +18,14 @@ namespace Nanory.Lex
             TypeIndex = EcsComponentsInfo.Count++;
         }
     }
+
+    /// <summary>
+    /// A generic event component that identifies 
+    /// a change event that occurs on the TComponent.
+    /// </summary>
+    /// <typeparam name="TComponent"></typeparam>
+    public struct Changed<TComponent> where TComponent : struct
+    {
+
+    }
 }

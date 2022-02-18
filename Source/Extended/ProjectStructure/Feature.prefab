@@ -121,10 +121,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2b4147ce57929a4da2b7a8779146046, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\nusing Nanory.Lex.Conversion;\r\n\r\nnamespace
-    {namespace}\r\n{\r\n    public class {itemname}Authoting : MonoBehaviour, IConvertGameObjectToEntity\r\n   
-    {\r\n        public void Convert(int entity, GameObjectConversionSystem converstionSystem)\r\n       
-    {\r\n            $\r\n        }\r\n    }\r\n}\r\n"
+  Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\nusing Nanory.Lex.Lifecycle;\nusing
+    Nanory.Lex.Conversion;\r\n\nnamespace {namespace}\r\n{\r\n    public class {itemname}Authoring
+    : MonoBehaviour, IConvertGameObjectToEntity\r\n    {\r\n        public void Convert(int
+    entity, GameObjectConversionSystem converstionSystem)\r\n        {\r\n           
+    $\r\n        }\r\n    }\r\n}\r\n"
 --- !u!1 &813085216399293143
 GameObject:
   m_ObjectHideFlags: 0
@@ -631,12 +632,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2b4147ce57929a4da2b7a8779146046, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\n\r\nnamespace {namespace}\r\n{\r\n   
-    [UpdateInGroup(typeof(PrimaryWidgetSystemGroup))]\r\n    public sealed class
-    {itemname}WidgetSystem : EcsSystemBase\r\n    {\r\n        protected override
-    void OnUpdate()\r\n        {\r\n            foreach (var ownerEntity in Filter()\r\n           
-    .With<BindEvent<{itemname}Widget>>()\r\n            .End())\r\n            {\r\n               
-    var widget = Get<BindEvent<{itemname}Widget>>(ownerEntity).Value;\r\n               
+  Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\n\rusing Nanory.Lex.Lifecycle;\n\nnamespace
+    {namespace}\r\n{\r\n    [UpdateInGroup(typeof(PrimaryWidgetSystemGroup))]\r\n   
+    public sealed class {itemname}WidgetSystem : EcsSystemBase\r\n    {\r\n       
+    protected override void OnUpdate()\r\n        {\r\n            foreach (var ownerEntity
+    in Filter()\r\n            .With<BindEvent<{itemname}Widget>>()\r\n           
+    .End())\r\n            {\r\n                var widget = Get<BindEvent<{itemname}Widget>>(ownerEntity).Value;\r\n               
     $\r\n            }\r\n\r\n            foreach (var ownerEntity in Filter()\r\n           
     .With<UnbindEvent<{itemname}Widget>>()\r\n            .End())\r\n           
     {\r\n                var widget = Get<UnbindEvent<{itemname}Widget>>(ownerEntity).Value;\r\n\r\n           
@@ -868,10 +869,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2b4147ce57929a4da2b7a8779146046, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\nusing Nanory.Lex.Lifecycle;\r\n\r\nnamespace
-    {namespace}\r\n{\r\n    [UpdateInGroup(typeof(UIPresentationSystemGroup))]\r\n   
-    public sealed class {itemname}ScreenSystem : EcsSystemBase\r\n    {\r\n       
-    protected override void OnUpdate()\r\n        {\r\n            foreach (var ownerEntity
+  Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\nusing Nanory.Lex.Lifecycle;\r\n\nnamespace
+    {namespace}\r\n{\r\n    [UpdateInGroup(typeof(ScreenSystemGroup))]\r\n    public
+    sealed class {itemname}ScreenSystem : EcsSystemBase\r\n    {\r\n        protected
+    override void OnUpdate()\r\n        {\r\n            foreach (var ownerEntity
     in Filter()\r\n            .With<ScreensStorage>()\r\n            .With<CreatedEvent>()\r\n           
     .End())\r\n            {\r\n                var screen = this.GetScreen<{itemname}Screen>(ownerEntity); 
     \r\n                $    \r\n            }\r\n\r\n            foreach (var ownerEntity
@@ -1388,9 +1389,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2b4147ce57929a4da2b7a8779146046, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\nusing Nanory.Lex.Conversion;\r\n\r\nnamespace
-    {namespace}\r\n{\r\n    public class {itemname}Authoting : MonoBehaviour, IConvertGameObjectToEntity\r\n   
-    {\r\n        public void Convert(int entity, GameObjectConversionSystem converstionSystem)\r\n       
+  Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\nusing Nanory.Lex.Lifecycle;\nusing
+    Nanory.Lex.Conversion;\r\n\r\nnamespace {namespace}\r\n{\r\n    public class
+    {itemname}Authoring : MonoBehaviour, IConvertGameObjectToEntity\r\n    {\r\n       
+    public void Convert(int entity, GameObjectConversionSystem converstionSystem)\r\n       
     {\r\n            $\r\n        }\r\n    }\r\n}\r\n"
 --- !u!1 &6320431403272297797
 GameObject:
@@ -1466,9 +1468,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2b4147ce57929a4da2b7a8779146046, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Content: "using Nanory.Lex;\r\n\r\nnamespace {itemname}\r\n{\r\n    public sealed
-    class {itemname}System : EcsSystemBase\r\n    {\r\n        protected override
-    void OnUpdate()\r\n        {\r\n            $\r\n        }\r\n    }\r\n}\r\n"
+  Content: "using Nanory.Lex;\r\n\rusing Nanory.Lex.Lifecycle;\n\nnamespace {namespace}\r\n{\r\n   
+    public sealed class {itemname}System : EcsSystemBase\r\n    {\r\n        protected
+    override void OnUpdate()\r\n        {\r\n            $\r\n        }\r\n    }\r\n}\r\n"
 --- !u!1 &6384378381131492007
 GameObject:
   m_ObjectHideFlags: 0
