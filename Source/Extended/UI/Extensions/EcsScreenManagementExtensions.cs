@@ -63,7 +63,6 @@ namespace Nanory.Lex
         #region Private
         private static void ActivateScreen<TScreen>(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage) where TScreen : MonoBehaviour
         {
-            Debug.Log($"ActivateScreen {typeof(TScreen)}");
             var world = system.World;
             var screen = system.GetScreen<TScreen>(ownerEntity); 
             world.Add<MonoScreen<TScreen>>(ownerEntity).Value = screen;
@@ -78,7 +77,6 @@ namespace Nanory.Lex
         private static void DeactivateScreen(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage, Type screenType)
         {
 
-            Debug.Log($"DeactivateScreen {screenType}");
             var world = system.World;
             var screen = screenStorage.ScreenByType[screenType];
             var closeEventComponentIndex = screenStorage.CloseEventComponentIndexByType[screenType];

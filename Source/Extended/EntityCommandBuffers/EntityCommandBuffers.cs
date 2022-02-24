@@ -68,7 +68,7 @@ namespace Nanory.Lex
             PoolECBDelCommand = BufferWorld.GetPool<DelCommand>();
             PoolECBDelEntityCommand = BufferWorld.GetPool<DelEntityCommand>();
         }
-
+        
         public void Playback()
         {
             foreach (var bufferEntity in _ecbNewEntityFilter)

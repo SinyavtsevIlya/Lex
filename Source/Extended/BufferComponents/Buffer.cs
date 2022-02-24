@@ -17,6 +17,12 @@ namespace Nanory.Lex
             c.Values = null;
         }
 
+        public Buffer<TElement> Initiatize()
+        {
+            Values = Pool.Pop();
+            return this;
+        }
+
         public static class Pool
         {
             public static Stack<List<TElement>> Values = new Stack<List<TElement>>(64);

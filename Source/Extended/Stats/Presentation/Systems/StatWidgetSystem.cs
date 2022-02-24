@@ -48,7 +48,6 @@ namespace Nanory.Lex.Stats
             .End())
             {
                 var widget = Get<UnbindEvent<TStatWidget>>(ownerEntity).Value;
-
             }
         }
     }

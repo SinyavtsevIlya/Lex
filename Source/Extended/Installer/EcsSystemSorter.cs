@@ -331,6 +331,7 @@ namespace Nanory.Lex
             }
         }
 
+#if UNITY_EDITOR
         public static bool TryGetSourceHyperLink(this IEcsSystem system, out string result)
         {
             var results = UnityEditor.AssetDatabase.FindAssets(system.GetType().Name);
@@ -342,5 +343,6 @@ namespace Nanory.Lex
             result = string.Empty;
             return false;
         }
+#endif
     }
 }

@@ -6,7 +6,7 @@
 
         public void AutoReset(ref Prefab c)
         {
-            PoolIndeces.AutoReset(ref c.PoolIndeces);
+            c.PoolIndeces.AutoReset(ref c.PoolIndeces);
         }
     }
 
