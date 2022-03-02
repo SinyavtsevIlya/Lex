@@ -27,7 +27,10 @@ namespace Nanory.Lex
                     if (!System.IO.Directory.Exists(resourcesPath))
                         System.IO.Directory.CreateDirectory(resourcesPath);
 
-                    AssetDatabase.CreateFolder("Assets", "Resources");
+                    if (!AssetDatabase.IsValidFolder("Assets/Resources"))
+                    {
+                        AssetDatabase.CreateFolder("Assets", "Resources");
+                    }
 
                     AssetDatabase.CreateAsset(_default, $"Assets/Resources/{typeof(TSettings).Name}.asset");
                     AssetDatabase.SaveAssets();

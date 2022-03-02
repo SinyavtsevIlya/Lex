@@ -2,6 +2,11 @@
 
 namespace Nanory.Lex
 {
+    /// <summary>
+    /// Buffer - is a special collection type
+    /// containing a pooling mechanism.
+    /// </summary>
+    /// <typeparam name="TElement"></typeparam>
     public struct Buffer<TElement> : IEcsAutoReset<Buffer<TElement>>
     {
         public List<TElement> Values;
