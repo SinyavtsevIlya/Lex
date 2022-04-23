@@ -18,7 +18,7 @@ namespace Nanory.Lex
             // (e.g. health bar widget may exist on both core-screen and inventory screen)
             // We always first want to remove the old one, and then add the new one. If we try to make it 
             // in a different way, we will simply remove all widgets from the entity.
-            // Thats why we schedule the add operation using AddWidgetRequest. 
+            // Thats why we schedule the add operation using widgetSyncPoint. 
 
             var widgetSyncPoint = system.GetCommandBufferFrom<WidgetEntityCommandBufferSystem>();
             widgetSyncPoint.Add<Mono<TWidget>>(ownerEntity).Value = widget;

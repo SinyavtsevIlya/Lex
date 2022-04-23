@@ -55,6 +55,11 @@ namespace Nanory.Lex.Conversion
 
         public EcsConversionWorldWrapper World => _conversionWorldWrapper;
 
+        public int GetPrimaryEntity(GameObject gameObject)
+        {
+            return GetPrimaryEntity(gameObject, out var _);
+        }
+
         public int GetPrimaryEntity(GameObject gameObject, out bool isNew)
         {
             if (_conversionMap.TryGetValue(gameObject, out var newEntity))

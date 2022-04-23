@@ -168,8 +168,14 @@ namespace Nanory.Lex
         private readonly List<EcsLocalFilterContainer> _localFilterContainers = new List<EcsLocalFilterContainer>(8);
         protected List<EntityCommandBufferSystem> _entityCommandBufferSystems;
 
+        #region Shortcuts
+        /// <summary>
+        /// Default predefined entity command buffer shortcut.
+        /// </summary>
+        public EntityCommandBuffer Later;
         public EcsWorldBase World;
-        public EcsSystems EcsSystems;
+        public EcsSystems EcsSystems; 
+        #endregion
 
         public void PreInit(EcsSystems systems)
         {
@@ -233,7 +239,6 @@ namespace Nanory.Lex
                 Add<TComponent>(a) = tComponentB;
                 Del<TComponent>(b);
             }
-
             if (!hasComponentB && hasComponentA)
             {
                 Add<TComponent>(b) = tComponentA;

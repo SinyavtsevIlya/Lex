@@ -10,5 +10,6 @@ namespace Nanory.Lex.Stats
     {
         IStatView SetMaxValue(int maxValue);
         IStatView SetValue(int value);
+        void Dispose();
     }
 }

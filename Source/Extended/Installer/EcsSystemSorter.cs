@@ -97,8 +97,8 @@ namespace Nanory.Lex
                 TryCreateSystemRecursive(systemType);
             }
 
-            var commandBufferSystems = SystemMap.Values.Where(s => s is EntityCommandBufferSystem).Select(s => s as EntityCommandBufferSystem).ToList();
-            var commandBufferLookupSystems = SystemMap.Values.Where(s => s is IEcsEntityCommandBufferLookup).Select(s => s as IEcsEntityCommandBufferLookup).ToList();
+            var commandBufferSystems = SystemMap.Values.OfType<EntityCommandBufferSystem>().ToList();
+            var commandBufferLookupSystems = SystemMap.Values.OfType<IEcsEntityCommandBufferLookup>().ToList();
 
             if (World is EcsWorldBase worldBase)
             {
@@ -107,9 +107,17 @@ namespace Nanory.Lex
             }
 
             commandBufferSystems.ForEach(cbs => cbs.SetDstWorld(World));
-            commandBufferLookupSystems.ForEach(bs => bs.SetEntityCommandBufferSystemsLookup(commandBufferSystems));
+            commandBufferLookupSystems.ForEach(bs => 
+            {
+                bs.SetEntityCommandBufferSystemsLookup(commandBufferSystems);
+                if (bs is EcsSystemBase systemBase)
+                {
+                    // NOTE: set default command buffer system via constructor
+                    systemBase.Later = commandBufferSystems.First(b => b is BeginSimulationECBSystem).GetBuffer();
+                }
+            });
 
-            var systemGroups = SystemMap.Values.Where(s => s is EcsSystemGroup).Select(s => s as EcsSystemGroup).ToList();
+            var systemGroups = SystemMap.Values.OfType<EcsSystemGroup>().ToList();
 
             foreach (var systemGroup in systemGroups)
             {

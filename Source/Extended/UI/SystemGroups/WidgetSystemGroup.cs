@@ -12,7 +12,13 @@
     }
 
     [UpdateInGroup(typeof(WidgetSystemGroup))]
+    [UpdateBefore(typeof(TertiaryWidgetSystemGroup))]
     public class SecondaryWidgetSystemGroup : EcsSystemGroup
+    {
+    }
+
+    [UpdateInGroup(typeof(WidgetSystemGroup))]
+    public class TertiaryWidgetSystemGroup : EcsSystemGroup
     {
     }
 }
