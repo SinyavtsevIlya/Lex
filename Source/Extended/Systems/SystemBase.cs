@@ -231,10 +231,13 @@ namespace Nanory.Lex
             if (!hasComponentA && hasComponentB)
             {
                 Add<TComponent>(a) = tComponentB;
+                Del<TComponent>(b);
             }
+
             if (!hasComponentB && hasComponentA)
             {
                 Add<TComponent>(b) = tComponentA;
+                Del<TComponent>(a);
             }
         }
 

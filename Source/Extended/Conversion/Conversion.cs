@@ -55,16 +55,18 @@ namespace Nanory.Lex.Conversion
 
         public EcsConversionWorldWrapper World => _conversionWorldWrapper;
 
-        public int GetPrimaryEntity(GameObject gameObject)
+        public int GetPrimaryEntity(GameObject gameObject, out bool isNew)
         {
-            if (_conversionMap.TryGetValue(gameObject, out var resolvedEntity))
+            if (_conversionMap.TryGetValue(gameObject, out var newEntity))
             {
-                return resolvedEntity;
+                isNew = false;
+                return newEntity;
             }
 
-            var newEntity = _conversionWorldWrapper.NewEntity();
+            newEntity = _conversionWorldWrapper.NewEntity();
             _conversionMap[gameObject] = newEntity;
 
+            isNew = true;
             return newEntity;
         }
 
@@ -74,12 +76,17 @@ namespace Nanory.Lex.Conversion
             if (gameObject == null)
                 throw new System.ArgumentException("Unable to convert. Passed gameObject is null");
 #endif
-            var entity = GetPrimaryEntity(gameObject);
+            var entity = GetPrimaryEntity(gameObject, out var isNew);
 
             var isPrefab = gameObject.scene.name == null;
 
             if (isPrefab)
             {
+                if (!isNew)
+                {
+                    return entity;
+                }
+
                 World.Dst.SetAsPrefab(entity);
             }
 
