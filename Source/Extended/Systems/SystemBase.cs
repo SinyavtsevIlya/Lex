@@ -207,17 +207,17 @@ namespace Nanory.Lex
 
         protected virtual void OnCreate() { }
 
-        protected int NewEntity()
+        public int NewEntity()
         {
             return World.NewEntity();
         }
 
-        protected ref TComponent Get<TComponent>(int entity) where TComponent : struct
+        public ref TComponent Get<TComponent>(int entity) where TComponent : struct
         {
             return ref World.GetPool<TComponent>().Get(entity);
         }
 
-        protected void Swap<TComponent>(int a, int b) where TComponent : struct
+        public void Swap<TComponent>(int a, int b) where TComponent : struct
         {
             var hasComponentA = (TryGet<TComponent>(a, out var tComponentA));
             var hasComponentB = (TryGet<TComponent>(b, out var tComponentB));
@@ -241,7 +241,7 @@ namespace Nanory.Lex
             }
         }
 
-        protected void SwapTag<TComponent>(int a, int b) where TComponent : struct
+        public void SwapTag<TComponent>(int a, int b) where TComponent : struct
         {
             var hasTagA = Has<TComponent>(a);
             var hasTagB = Has<TComponent>(b);
@@ -256,7 +256,7 @@ namespace Nanory.Lex
             }
         }
 
-        protected ref TComponent GetOrAdd<TComponent>(int entity) where TComponent : struct
+        public ref TComponent GetOrAdd<TComponent>(int entity) where TComponent : struct
         {
             var pool = World.GetPool<TComponent>();
 
@@ -270,7 +270,7 @@ namespace Nanory.Lex
             }
         }
 
-        protected bool TryGet<T>(int entity, out T component) where T : struct
+        public bool TryGet<T>(int entity, out T component) where T : struct
         {
             if (World.GetPool<T>().Has(entity))
             {
@@ -281,37 +281,37 @@ namespace Nanory.Lex
             return false;
         }
 
-        protected ref TComponent Add<TComponent>(int entity) where TComponent : struct
+        public ref TComponent Add<TComponent>(int entity) where TComponent : struct
         {
             return ref World.GetPool<TComponent>().Add(entity);
         }
 
-        protected bool Has<TComponent>(int entity) where TComponent : struct
+        public bool Has<TComponent>(int entity) where TComponent : struct
         {
             return World.GetPool<TComponent>().Has(entity);
         }
 
-        protected void Del<TComponent>(int entity) where TComponent : struct
+        public void Del<TComponent>(int entity) where TComponent : struct
         {
             World.GetPool<TComponent>().Del(entity);
         }
 
-        protected void RemoveBuffer<TComponent>(int entity) where TComponent : struct
+        public void RemoveBuffer<TComponent>(int entity) where TComponent : struct
         {
             World.RemoveBuffer<TComponent>(entity);
         }
 
-        protected ref Buffer<TComponent> AddBuffer<TComponent>(int entity) where TComponent : struct
+        public ref Buffer<TComponent> AddBuffer<TComponent>(int entity) where TComponent : struct
         {
             return ref World.AddBuffer<TComponent>(entity);
         }
 
-        protected EcsFilter.Mask Filter<T>() where T : struct
+        public EcsFilter.Mask Filter<T>() where T : struct
         {
             return EcsFilter.Mask.New(World, _localFilterContainers).With<T>();
         }
 
-        protected EcsFilter.Mask Filter()
+        public EcsFilter.Mask Filter()
         {
             return EcsFilter.Mask.New(World, _localFilterContainers);
         }
