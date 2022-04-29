@@ -249,7 +249,9 @@ namespace Nanory.Lex
                     }
                     else
                     {
-                        throw new Exception($"<b> {currentSystem}</b> has an {nameof(UpdateBefore)} <b>{updateBefore.TargetSystemType}</b> attribute. But <b>{updateBefore.TargetSystemType}</b> is not exist. Use {nameof(UpdateInGroup)} attribute");
+                        //throw new Exception($"<b> {currentSystem}</b> has an {nameof(UpdateBefore)} <b>{updateBefore.TargetSystemType}</b> attribute. But <b>{updateBefore.TargetSystemType}</b> is not exist. Use {nameof(UpdateInGroup)} attribute");
+                        dependencyLayer.Add(currentSystem);
+                        unsorted.RemoveAt(idx);
                     }
                 }
             }
