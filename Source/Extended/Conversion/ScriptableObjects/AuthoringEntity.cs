@@ -12,6 +12,8 @@ namespace Nanory.Lex.Conversion
         [SerializeReference]
         public List<AuthoringComponent> _components = new List<AuthoringComponent>();
 
+        public bool IsPrefab { get; private set; } = true;
+
         public bool Has<TAuthoringComponent>() where TAuthoringComponent: AuthoringComponent
         {
             foreach (var component in _components)
@@ -80,6 +82,13 @@ namespace Nanory.Lex.Conversion
             {
                 component.AuthoringEntity = this;
             }
+        }
+
+        public AuthoringEntity Instantiate()
+        {
+            var copy = Instantiate(this);
+            copy.IsPrefab = false;
+            return copy;
         }
 
 #if UNITY_EDITOR

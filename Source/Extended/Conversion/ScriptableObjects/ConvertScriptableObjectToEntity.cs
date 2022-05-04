@@ -102,7 +102,10 @@ namespace Nanory.Lex.Conversion
                 return entity;
             }
 
-            World.Dst.SetAsPrefab(entity);
+            if (authoringEntity.IsPrefab)
+            {
+                World.Dst.SetAsPrefab(entity);
+            }
 
             authoringEntity.Convert(entity, this);
 
