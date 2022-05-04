@@ -4,7 +4,7 @@ using Nanory.Lex.Conversion;
 
 namespace Nanory.Lex.Lifecycle
 {
-    public class CreatedEventAuthoring : ConversionComponent
+    public class CreatedEventAuthoring : AuthoringComponent
     {
         public override void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem)
         {

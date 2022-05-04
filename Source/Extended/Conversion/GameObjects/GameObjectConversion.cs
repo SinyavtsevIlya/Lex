@@ -14,7 +14,7 @@ namespace Nanory.Lex.Conversion.GameObjects
         }
     }
 
-    public abstract class Authoring<TComponent> : ConversionComponent where TComponent : struct
+    public abstract class Authoring<TComponent> : AuthoringComponent where TComponent : struct
     {
         [SerializeField] protected TComponent _component;
 

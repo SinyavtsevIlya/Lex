@@ -7,114 +7,40 @@ using System.Linq;
 namespace Nanory.Lex.Conversion
 {
     [Serializable]
-    public abstract class ConversionComponent : IConvertToEntity
+    public abstract class AuthoringComponent : IConvertToEntity
     {
         [HideInInspector]
         [NonSerialized]
-        public ConversionEntity ConversionEntity;
+        public AuthoringEntity AuthoringEntity;
 
-        public TConversionComponent Get<TConversionComponent>()
-            where TConversionComponent : ConversionComponent =>
-            ConversionEntity.Get<TConversionComponent>();
+        public TAuthoringComponent Get<TAuthoringComponent>()
+            where TAuthoringComponent : AuthoringComponent =>
+            AuthoringEntity.Get<TAuthoringComponent>();
 
         public TConversionComponent[] GetAll<TConversionComponent>()
-            where TConversionComponent : ConversionComponent =>
-            ConversionEntity._components.OfType<TConversionComponent>()
+            where TConversionComponent : AuthoringComponent =>
+            AuthoringEntity._components.OfType<TConversionComponent>()
             .ToArray();
 
-        public ConversionEntity Add<TConversionComponent>(TConversionComponent c)
-            where TConversionComponent : ConversionComponent =>
-            ConversionEntity.Add(c);
+        public AuthoringEntity Add<TAuthoringComponent>(TAuthoringComponent c)
+            where TAuthoringComponent : AuthoringComponent =>
+            AuthoringEntity.Add(c);
 
         public abstract void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem);
     }
 
-    [CreateAssetMenu(fileName = "ConversionEntity", menuName = "Lex/ConversionEntity")]
-    public class ConversionEntity : ScriptableObject, IConvertToEntity
-    {
-        [SerializeReference]
-        public List<ConversionComponent> _components = new List<ConversionComponent>();
-
-        public bool Has<TConversionComponent>() where TConversionComponent: ConversionComponent
-        {
-            foreach (var component in _components)
-            {
-                if (component is TConversionComponent)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public TConversionComponent Get<TConversionComponent>() where TConversionComponent: ConversionComponent
-        {
-            foreach (var value in _components)
-            {
-                if (value is TConversionComponent c)
-                {
-                    return c;
-                }
-            }
-            throw new Exception($"entity {this.name} doesn't have {typeof(TConversionComponent)} component");
-        }
-
-        public bool TryGet<TConversionComponent>(out TConversionComponent component) where TConversionComponent: ConversionComponent
-        {
-            component = null;
-            foreach (var value in _components)
-            {
-                if (value is TConversionComponent c)
-                {
-                    component = c;
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public ConversionEntity Add<TConversionComponent>(TConversionComponent component) where TConversionComponent: ConversionComponent
-        {
-            foreach (var c in _components)
-            {
-                if (c is TConversionComponent)
-                    throw new System.Exception("Component is already on a Conversion");
-            }
-            _components.Add(component);
-            return this;
-        }
-
-        public void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem)
-        {
-            foreach (var component in _components)
-            {
-                component.Convert(entity, сonvertToEntitySystem);  
-            }
-        }
-
-#if UNITY_EDITOR
-        public ConversionComponent[] GetAvailableComponents => AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(a => a.GetTypes())
-            .Where(t => typeof(ConversionComponent).IsAssignableFrom(t))
-            .Where(t => !_components.Any(v => v.GetType() == t))
-            .Where(t => !t.IsAbstract)
-            .Select(t => Activator.CreateInstance(t) as ConversionComponent)
-            .ToArray(); 
-#endif
-    }
-
     public static class ConversionExtensions
     {
-        public static void Convert(this EcsWorld world, ConversionEntity conversionEntity)
+        public static void Convert(this EcsWorld world, IConvertToEntity convertToEntity)
         {
             ref var requestEntity = ref world.Add<ConvertRequest>(world.NewEntity());
-            requestEntity.Value = conversionEntity;
+            requestEntity.Value = convertToEntity;
         }
     }
 
     public struct ConvertRequest
     {
-        public ConversionEntity Value;
+        public IConvertToEntity Value;
     }
 
     public interface IConvertToEntity
@@ -125,7 +51,7 @@ namespace Nanory.Lex.Conversion
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public class ConvertToEntitySystem : IEcsRunSystem, IEcsInitSystem, IEcsEntityCommandBufferLookup
     {
-        private Dictionary<ConversionEntity, int> _conversionMap = new Dictionary<ConversionEntity, int>();
+        private Dictionary<AuthoringEntity, int> _conversionMap = new Dictionary<AuthoringEntity, int>();
         private EcsConversionWorldWrapper _conversionWorldWrapper;
         private EcsPool<ConvertRequest> _requestsPool;
         private EcsFilter _requestsFilter;
@@ -136,33 +62,40 @@ namespace Nanory.Lex.Conversion
 
         public EcsConversionWorldWrapper World => _conversionWorldWrapper;
 
-        public int GetPrimaryEntity(ConversionEntity conversionEntity)
+        public int GetPrimaryEntity(AuthoringEntity conversionEntity)
         {
             return GetPrimaryEntity(conversionEntity, out var _);
         }
 
-        public int GetPrimaryEntity(ConversionEntity conversionEntity, out bool isNew)
+        public int GetPrimaryEntity(AuthoringEntity authoringEntity, out bool isNew)
         {
-            if (_conversionMap.TryGetValue(conversionEntity, out var newEntity))
+            if (_conversionMap.TryGetValue(authoringEntity, out var newEntity))
             {
                 isNew = false;
                 return newEntity;
             }
 
             newEntity = _conversionWorldWrapper.NewEntity();
-            _conversionMap[conversionEntity] = newEntity;
+            _conversionMap[authoringEntity] = newEntity;
 
             isNew = true;
             return newEntity;
         }
 
-        public int Convert(ConversionEntity conversionEntity)
+        public int Convert(IConvertToEntity convertToEntity)
+        {
+            var entity = World.NewEntity();
+            convertToEntity.Convert(entity, this);
+            return entity;
+        }
+
+        public int Convert(AuthoringEntity authoringEntity)
         {
 #if DEBUG
-            if (conversionEntity == null)
+            if (authoringEntity == null)
                 throw new System.ArgumentException("Unable to convert. Passed conversionEntity is null");
 #endif
-            var entity = GetPrimaryEntity(conversionEntity, out var isNew);
+            var entity = GetPrimaryEntity(authoringEntity, out var isNew);
 
             if (!isNew)
             {
@@ -171,7 +104,7 @@ namespace Nanory.Lex.Conversion
 
             World.Dst.SetAsPrefab(entity);
 
-            conversionEntity.Convert(entity, this);
+            authoringEntity.Convert(entity, this);
 
             return entity;
         }
@@ -189,7 +122,15 @@ namespace Nanory.Lex.Conversion
             foreach (var requestEntity in _requestsFilter)
             {
                 ref var request = ref _requestsPool.Get(requestEntity);
-                Convert(request.Value);
+
+                if (request.Value is AuthoringEntity authoringEntity)
+                {
+                    Convert(authoringEntity);
+                }
+                else
+                {
+                    Convert(request.Value);
+                }
                 _conversionWorldWrapper.DelEntity(requestEntity);
             }
         }
