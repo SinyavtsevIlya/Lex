@@ -4,25 +4,38 @@ using System;
 using System.Reflection;
 using System.Linq;
 
-namespace Nanory.Lex.Conversion.ScriptableObjects
+namespace Nanory.Lex.Conversion
 {
     [Serializable]
-    public abstract class ConversionComponent : IConvertScriptableObjectToEntity
+    public abstract class ConversionComponent : IConvertToEntity
     {
         [HideInInspector]
         [NonSerialized]
         public ConversionEntity ConversionEntity;
 
-        public abstract void Convert(int entity, ScriptableObjectConversionSystem conversionSystem);
+        public TConversionComponent Get<TConversionComponent>()
+            where TConversionComponent : ConversionComponent =>
+            ConversionEntity.Get<TConversionComponent>();
+
+        public TConversionComponent[] GetAll<TConversionComponent>()
+            where TConversionComponent : ConversionComponent =>
+            ConversionEntity._components.OfType<TConversionComponent>()
+            .ToArray();
+
+        public ConversionEntity Add<TConversionComponent>(TConversionComponent c)
+            where TConversionComponent : ConversionComponent =>
+            ConversionEntity.Add(c);
+
+        public abstract void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem);
     }
 
-    [CreateAssetMenu(fileName = "ScriptableEntity", menuName = "Lex/ScriptableEntity")]
-    public class ConversionEntity : ScriptableObject, IConvertScriptableObjectToEntity
+    [CreateAssetMenu(fileName = "ConversionEntity", menuName = "Lex/ConversionEntity")]
+    public class ConversionEntity : ScriptableObject, IConvertToEntity
     {
         [SerializeReference]
         public List<ConversionComponent> _components = new List<ConversionComponent>();
 
-        public bool Has<TConversionComponent>() where TConversionComponent : ConversionComponent
+        public bool Has<TConversionComponent>() where TConversionComponent: ConversionComponent
         {
             foreach (var component in _components)
             {
@@ -34,7 +47,7 @@ namespace Nanory.Lex.Conversion.ScriptableObjects
             return false;
         }
 
-        public TConversionComponent Get<TConversionComponent>() where TConversionComponent : ConversionComponent
+        public TConversionComponent Get<TConversionComponent>() where TConversionComponent: ConversionComponent
         {
             foreach (var value in _components)
             {
@@ -46,12 +59,12 @@ namespace Nanory.Lex.Conversion.ScriptableObjects
             throw new Exception($"entity {this.name} doesn't have {typeof(TConversionComponent)} component");
         }
 
-        public bool TryGet<TBluepintComponent>(out TBluepintComponent component) where TBluepintComponent : ConversionComponent
+        public bool TryGet<TConversionComponent>(out TConversionComponent component) where TConversionComponent: ConversionComponent
         {
             component = null;
             foreach (var value in _components)
             {
-                if (value is TBluepintComponent c)
+                if (value is TConversionComponent c)
                 {
                     component = c;
                     return true;
@@ -60,22 +73,22 @@ namespace Nanory.Lex.Conversion.ScriptableObjects
             return false;
         }
 
-        public ConversionEntity Add<TBluepintComponent>(TBluepintComponent component) where TBluepintComponent : ConversionComponent
+        public ConversionEntity Add<TConversionComponent>(TConversionComponent component) where TConversionComponent: ConversionComponent
         {
             foreach (var c in _components)
             {
-                if (c is TBluepintComponent)
+                if (c is TConversionComponent)
                     throw new System.Exception("Component is already on a Conversion");
             }
             _components.Add(component);
             return this;
         }
 
-        public void Convert(int entity, ScriptableObjectConversionSystem conversionSystem)
+        public void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem)
         {
             foreach (var component in _components)
             {
-                component.Convert(entity, conversionSystem);  
+                component.Convert(entity, сonvertToEntitySystem);  
             }
         }
 
@@ -90,31 +103,31 @@ namespace Nanory.Lex.Conversion.ScriptableObjects
 #endif
     }
 
-    public static class ScriptableObjectConversionExtensions
+    public static class ConversionExtensions
     {
         public static void Convert(this EcsWorld world, ConversionEntity conversionEntity)
         {
-            ref var requestEntity = ref world.Add<ConvertScriptableObjectRequest>(world.NewEntity());
+            ref var requestEntity = ref world.Add<ConvertRequest>(world.NewEntity());
             requestEntity.Value = conversionEntity;
         }
     }
 
-    public struct ConvertScriptableObjectRequest
+    public struct ConvertRequest
     {
         public ConversionEntity Value;
     }
 
-    public interface IConvertScriptableObjectToEntity
+    public interface IConvertToEntity
     {
-        void Convert(int entity, ScriptableObjectConversionSystem conversionSystem);
+        void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem);
     }
 
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    public class ScriptableObjectConversionSystem : IEcsRunSystem, IEcsInitSystem, IEcsEntityCommandBufferLookup
+    public class ConvertToEntitySystem : IEcsRunSystem, IEcsInitSystem, IEcsEntityCommandBufferLookup
     {
-        private Dictionary<ScriptableObject, int> _conversionMap = new Dictionary<ScriptableObject, int>();
+        private Dictionary<ConversionEntity, int> _conversionMap = new Dictionary<ConversionEntity, int>();
         private EcsConversionWorldWrapper _conversionWorldWrapper;
-        private EcsPool<ConvertScriptableObjectRequest> _requestsPool;
+        private EcsPool<ConvertRequest> _requestsPool;
         private EcsFilter _requestsFilter;
         protected List<EntityCommandBufferSystem> _entityCommandBufferSystems;
 
@@ -123,21 +136,21 @@ namespace Nanory.Lex.Conversion.ScriptableObjects
 
         public EcsConversionWorldWrapper World => _conversionWorldWrapper;
 
-        public int GetPrimaryEntity(ScriptableObject scriptableObject)
+        public int GetPrimaryEntity(ConversionEntity conversionEntity)
         {
-            return GetPrimaryEntity(scriptableObject, out var _);
+            return GetPrimaryEntity(conversionEntity, out var _);
         }
 
-        public int GetPrimaryEntity(ScriptableObject scriptableObject, out bool isNew)
+        public int GetPrimaryEntity(ConversionEntity conversionEntity, out bool isNew)
         {
-            if (_conversionMap.TryGetValue(scriptableObject, out var newEntity))
+            if (_conversionMap.TryGetValue(conversionEntity, out var newEntity))
             {
                 isNew = false;
                 return newEntity;
             }
 
             newEntity = _conversionWorldWrapper.NewEntity();
-            _conversionMap[scriptableObject] = newEntity;
+            _conversionMap[conversionEntity] = newEntity;
 
             isNew = true;
             return newEntity;
@@ -167,8 +180,8 @@ namespace Nanory.Lex.Conversion.ScriptableObjects
         {
             _ecsSystems = systems;
             _conversionWorldWrapper = new EcsConversionWorldWrapper(systems.GetWorld());
-            _requestsPool = _conversionWorldWrapper.Dst.GetPool<ConvertScriptableObjectRequest>();
-            _requestsFilter = _conversionWorldWrapper.Dst.Filter<ConvertScriptableObjectRequest>().End();
+            _requestsPool = _conversionWorldWrapper.Dst.GetPool<ConvertRequest>();
+            _requestsFilter = _conversionWorldWrapper.Dst.Filter<ConvertRequest>().End();
         }
 
         public void Run(EcsSystems systems)

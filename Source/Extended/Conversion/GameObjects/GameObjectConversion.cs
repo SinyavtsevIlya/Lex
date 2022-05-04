@@ -14,13 +14,13 @@ namespace Nanory.Lex.Conversion.GameObjects
         }
     }
 
-    public abstract class Authoring<TComponent> : MonoBehaviour, IConvertGameObjectToEntity where TComponent : struct
+    public abstract class Authoring<TComponent> : ConversionComponent where TComponent : struct
     {
         [SerializeField] protected TComponent _component;
 
-        public void Convert(int entity, GameObjectConversionSystem converstionSystem)
+        public override void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem)
         {
-            converstionSystem.World.Add<TComponent>(entity) = _component;
+            сonvertToEntitySystem.World.Add<TComponent>(entity) = _component;
         }
     }
 
@@ -38,7 +38,7 @@ namespace Nanory.Lex.Conversion.GameObjects
 
     public interface IConvertGameObjectToEntity
     {
-        void Convert(int entity, GameObjectConversionSystem converstionSystem);
+        void Convert(int entity, GameObjectConversionSystem сonvertToEntitySystem);
     }
 
     [UpdateInGroup(typeof(PresentationSystemGroup))]
