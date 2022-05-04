@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using Nanory.Lex.Conversion;
+using Nanory.Lex.Conversion.GameObjects;
 
 namespace Nanory.Lex
 {

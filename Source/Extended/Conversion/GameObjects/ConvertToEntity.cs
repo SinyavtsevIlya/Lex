@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Nanory.Lex.Conversion
+namespace Nanory.Lex.Conversion.GameObjects
 {
     public class ConvertToEntity : MonoBehaviour
     {
