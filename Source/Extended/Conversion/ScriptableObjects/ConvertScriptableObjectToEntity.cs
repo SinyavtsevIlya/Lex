@@ -89,6 +89,7 @@ namespace Nanory.Lex.Conversion
             return entity;
         }
 
+        /// TODO: Change "isNew" to isConverted, cause now we can accidentally skip the conversion process.
         public int Convert(AuthoringEntity authoringEntity)
         {
 #if DEBUG
