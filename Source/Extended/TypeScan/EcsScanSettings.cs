@@ -1,7 +1,7 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using UnityEngine;
 #if UNITY_EDITOR
 #endif
 
@@ -43,8 +43,8 @@ namespace Nanory.Lex
 
             _assemblyDefinitions = new UnityEditorInternal.AssemblyDefinitionAsset[] { asset };
 #endif
-            _clientAssemblyNames = new string[] 
-            { 
+            _clientAssemblyNames = new string[]
+            {
                 FallbackAssemblyName,
                 NanoryLex
             };

@@ -16,7 +16,7 @@ namespace Nanory.Lex.UnityEditorIntegration
 
         public override void OnInspectorGUI()
         {
-            var observer = (EcsEntityDebugView) target;
+            var observer = (EcsEntityDebugView)target;
             if (observer.World != null)
             {
                 var guiEnabled = GUI.enabled;
@@ -128,5 +128,5 @@ namespace Nanory.Lex.UnityEditorIntegration
         Type GetFieldType();
         void OnGUI(string label, object value, EcsWorld world, int entityId);
     }
-} 
+}
 #endif

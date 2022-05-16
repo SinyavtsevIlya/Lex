@@ -1,9 +1,8 @@
 #if UNITY_EDITOR
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Nanory.Lex;
-using System.Collections.Generic;
 
 namespace Nanory.Lex.UnityEditorIntegration
 {
@@ -169,6 +168,6 @@ namespace Nanory.Lex.UnityEditorIntegration
             }
             return texture;
         }
-    }  
+    }
 }
 #endif

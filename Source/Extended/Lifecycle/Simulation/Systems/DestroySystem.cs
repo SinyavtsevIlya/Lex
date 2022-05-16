@@ -1,6 +1,4 @@
-﻿using Nanory.Lex;
-
-namespace Nanory.Lex.Lifecycle
+﻿namespace Nanory.Lex.Lifecycle
 {
     [UpdateInGroup(typeof(OneFrameSystemGroup), OrderFirst = true)]
     public sealed class DestroySystem : EcsSystemBase

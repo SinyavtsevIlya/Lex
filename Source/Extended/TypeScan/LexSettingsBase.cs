@@ -8,7 +8,7 @@ namespace Nanory.Lex
     public abstract class LexSettingsBase<TSettings> : ScriptableObject where TSettings : ScriptableObject
     {
         private static TSettings _default;
-        public static TSettings Default 
+        public static TSettings Default
         {
             get
             {

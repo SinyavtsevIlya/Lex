@@ -1,6 +1,4 @@
-﻿using Nanory.Lex;
-
-namespace Nanory.Lex.Lifecycle
+﻿namespace Nanory.Lex.Lifecycle
 {
     /// <summary>
     /// Entities destruction management.

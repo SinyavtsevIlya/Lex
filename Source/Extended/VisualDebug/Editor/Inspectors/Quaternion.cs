@@ -14,10 +14,10 @@ namespace Nanory.Lex.UnityEditorIntegration.Inspectors
 
         public void OnGUI(string label, object value, EcsWorld world, int entityId)
         {
-            EditorGUILayout.Vector3Field(label, ((Quaternion) value).eulerAngles);
+            EditorGUILayout.Vector3Field(label, ((Quaternion)value).eulerAngles);
         }
     }
 
 
-} 
+}
 #endif

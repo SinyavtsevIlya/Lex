@@ -7,9 +7,9 @@ namespace Nanory.Lex
 
     public class EcsBufferWorld : EcsWorld
     {
-        private readonly EcsWorld _dstWorld; 
+        private readonly EcsWorld _dstWorld;
 
-        public EcsBufferWorld(EcsWorld dstWorld, Config cfg) : base (cfg)
+        public EcsBufferWorld(EcsWorld dstWorld, Config cfg) : base(cfg)
         {
             _dstWorld = dstWorld;
         }
@@ -68,7 +68,7 @@ namespace Nanory.Lex
             PoolECBDelCommand = BufferWorld.GetPool<DelCommand>();
             PoolECBDelEntityCommand = BufferWorld.GetPool<DelEntityCommand>();
         }
-        
+
         public void Playback()
         {
             foreach (var bufferEntity in _ecbNewEntityFilter)
@@ -146,11 +146,11 @@ namespace Nanory.Lex
             public int componentIndex;
         }
 
-        public struct NewEntityCommand 
+        public struct NewEntityCommand
         {
             public int entity;
         }
-        public struct DelEntityCommand 
+        public struct DelEntityCommand
         {
             public int entity;
         }

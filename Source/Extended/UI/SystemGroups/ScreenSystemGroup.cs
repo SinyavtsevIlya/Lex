@@ -2,7 +2,7 @@
 {
     [UpdateInGroup(typeof(UIPresentationSystemGroup))]
     [UpdateBefore(typeof(WidgetSystemGroup))]
-    public class ScreenSystemGroup : EcsSystemGroup 
-    { 
+    public class ScreenSystemGroup : EcsSystemGroup
+    {
     }
 }

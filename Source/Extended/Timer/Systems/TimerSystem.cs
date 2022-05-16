@@ -1,5 +1,4 @@
-﻿using Nanory.Lex;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Nanory.Lex.Timer
 {
@@ -26,7 +25,7 @@ namespace Nanory.Lex.Timer
                     {
                         beginSim_ECB.Add(ownerEntity, timer.TimerContextComponentIndex);
                     }
-                        
+
                     if (timer.IsInfinity == 0)
                     {
                         beginSim_ECB.DelEntity(timerEntity);

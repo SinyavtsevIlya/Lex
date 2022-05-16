@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Nanory.Lex
 {
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    public class UIPresentationSystemGroup : EcsSystemGroup 
+    public class UIPresentationSystemGroup : EcsSystemGroup
     {
         private EntityCommandBuffer _widgetsCommandBuffer;
 

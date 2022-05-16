@@ -1,8 +1,6 @@
-﻿using Nanory.Lex;
-
-namespace Nanory.Lex.Timer
+﻿namespace Nanory.Lex.Timer
 {
-    public struct Timer 
+    public struct Timer
     {
         public float CurrentTime;
         public float Duration;

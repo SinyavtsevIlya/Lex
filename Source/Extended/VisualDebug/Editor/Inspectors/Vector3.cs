@@ -14,8 +14,8 @@ namespace Nanory.Lex.UnityEditorIntegration.Inspectors
 
         public void OnGUI(string label, object value, EcsWorld world, int entityId)
         {
-            EditorGUILayout.Vector3Field(label, (Vector3) value);
+            EditorGUILayout.Vector3Field(label, (Vector3)value);
         }
     }
-} 
+}
 #endif

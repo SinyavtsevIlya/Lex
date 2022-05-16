@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Nanory.Lex.Stats
+﻿namespace Nanory.Lex.Stats
 {
-    public class CalculateStatSystem<TStatComponent> : IEcsRunSystem, IEcsInitSystem 
+    public class CalculateStatSystem<TStatComponent> : IEcsRunSystem, IEcsInitSystem
         where TStatComponent : struct, IStat
     {
         private EcsFilter _changedStats;

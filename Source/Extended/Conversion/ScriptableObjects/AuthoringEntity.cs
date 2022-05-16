@@ -1,8 +1,7 @@
-﻿using UnityEngine;
+﻿using System;
 using System.Collections.Generic;
-using System;
 using System.Linq;
-using UnityEngine.Serialization;
+using UnityEngine;
 
 namespace Nanory.Lex.Conversion
 {
@@ -14,19 +13,19 @@ namespace Nanory.Lex.Conversion
 
         public bool IsPrefab { get; private set; } = true;
 
-        public bool Has<TAuthoringComponent>() where TAuthoringComponent: AuthoringComponent
+        public bool Has<TAuthoringComponent>() where TAuthoringComponent : AuthoringComponent
         {
             foreach (var component in _components)
             {
                 if (component is TAuthoringComponent)
                 {
-                    return true; 
+                    return true;
                 }
             }
             return false;
         }
 
-        public TAuthoringComponent Get<TAuthoringComponent>() where TAuthoringComponent: AuthoringComponent
+        public TAuthoringComponent Get<TAuthoringComponent>() where TAuthoringComponent : AuthoringComponent
         {
             foreach (var value in _components)
             {
@@ -38,7 +37,7 @@ namespace Nanory.Lex.Conversion
             throw new Exception($"entity {this.name} doesn't have {typeof(TAuthoringComponent)} component");
         }
 
-        public bool TryGet<TAuthoringComponent>(out TAuthoringComponent component) where TAuthoringComponent: AuthoringComponent
+        public bool TryGet<TAuthoringComponent>(out TAuthoringComponent component) where TAuthoringComponent : AuthoringComponent
         {
             component = null;
             foreach (var value in _components)
@@ -52,7 +51,7 @@ namespace Nanory.Lex.Conversion
             return false;
         }
 
-        public AuthoringEntity Add<TAuthoringComponent>(TAuthoringComponent component) where TAuthoringComponent: AuthoringComponent
+        public AuthoringEntity Add<TAuthoringComponent>(TAuthoringComponent component) where TAuthoringComponent : AuthoringComponent
         {
             foreach (var c in _components)
             {
@@ -68,7 +67,7 @@ namespace Nanory.Lex.Conversion
         {
             foreach (var component in _components)
             {
-                component.Convert(entity, сonvertToEntitySystem); 
+                component.Convert(entity, сonvertToEntitySystem);
             }
         }
 

@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using Nanory.Lex;
 
 namespace Nanory.Lex.Stats
 {

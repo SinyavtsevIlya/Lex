@@ -1,6 +1,4 @@
-﻿using Nanory.Lex;
-
-namespace Nanory.Lex.Timer
+﻿namespace Nanory.Lex.Timer
 {
     public static class EcsTimerExtensions
     {

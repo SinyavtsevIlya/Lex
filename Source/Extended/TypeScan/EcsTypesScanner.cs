@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Nanory.Lex;
-using UnityEngine.Assertions;
 
 namespace Nanory.Lex
 {
@@ -61,7 +59,7 @@ namespace Nanory.Lex
             return AppDomain.CurrentDomain.GetAssembliesByName(_clientAssemblyNames)
                 .AssertIsEmpty($"Check your _clientAssemblyNames: {_clientAssemblyNames}")
                 .SelectMany(s => s.GetTypes())
-                .Where(type => 
+                .Where(type =>
                 {
                     if (type.Namespace == null)
                     {

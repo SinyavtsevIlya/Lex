@@ -67,7 +67,7 @@ namespace Nanory.Lex
                         $"IEcsAutoReset<{typeof(T).Name}> explicit implementation not supported, use implicit instead.");
                 }
 #endif
-                _autoReset = (AutoResetHandler) Delegate.CreateDelegate(
+                _autoReset = (AutoResetHandler)Delegate.CreateDelegate(
                     typeof(AutoResetHandler),
 #if ENABLE_IL2CPP && !UNITY_EDITOR
                     _autoresetFakeInstance,
@@ -116,7 +116,7 @@ namespace Nanory.Lex
             return Items[entity].Data;
         }
 
-        void IEcsPool.Destroy() 
+        void IEcsPool.Destroy()
         {
         }
 
@@ -157,8 +157,9 @@ namespace Nanory.Lex
         public bool Has(int entity)
         {
 #if DEBUG
-            if (!_world.IsEntityAliveInternal(entity)) {
-                throw new Exception("Cant touch destroyed entity."); 
+            if (!_world.IsEntityAliveInternal(entity))
+            {
+                throw new Exception("Cant touch destroyed entity.");
             }
 #endif
             return Items[entity].Attached;
@@ -190,7 +191,7 @@ namespace Nanory.Lex
                 entityData.ComponentsCount--;
                 if (entityData.ComponentsCount == 0)
                 {
-                    _world.DelEntity (entity);
+                    _world.DelEntity(entity);
                 }
             }
         }

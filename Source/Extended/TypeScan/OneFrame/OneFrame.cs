@@ -2,6 +2,6 @@
 {
     public class OneFrame : System.Attribute
     {
-        
+
     }
 }

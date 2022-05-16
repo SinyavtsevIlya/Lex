@@ -1,6 +1,6 @@
-﻿using UnityEngine;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Nanory.Lex
 {
@@ -64,7 +64,7 @@ namespace Nanory.Lex
         private static void ActivateScreen<TScreen>(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage) where TScreen : MonoBehaviour
         {
             var world = system.World;
-            var screen = system.GetScreen<TScreen>(ownerEntity); 
+            var screen = system.GetScreen<TScreen>(ownerEntity);
             world.Add<MonoScreen<TScreen>>(ownerEntity).Value = screen;
             world.Add<OpenEvent<TScreen>>(ownerEntity).Value = screen;
             screenStorage.ActiveScreen = screen;

@@ -1,5 +1,3 @@
-﻿using Nanory.Lex;
-
-namespace Nanory.Lex.Timer
+﻿namespace Nanory.Lex.Timer
 {
 }

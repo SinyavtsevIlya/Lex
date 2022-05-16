@@ -1,8 +1,7 @@
-﻿using UnityEngine;
+﻿using System;
 using System.Collections.Generic;
-using System;
-using System.Reflection;
 using System.Linq;
+using UnityEngine;
 
 namespace Nanory.Lex.Conversion
 {

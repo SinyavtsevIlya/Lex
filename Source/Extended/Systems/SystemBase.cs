@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Nanory.Lex
 {
@@ -131,7 +131,7 @@ namespace Nanory.Lex
             }
         }
 
-        protected virtual void OnCreate(EcsSystems systems) 
+        protected virtual void OnCreate(EcsSystems systems)
         {
             for (int i = 0; i < _preInitSystems.Count; i++)
             {
@@ -145,7 +145,7 @@ namespace Nanory.Lex
         }
     }
 
-    public class MissingCommandBufferSystemException<TSystem> : Exception where TSystem : EntityCommandBufferSystem 
+    public class MissingCommandBufferSystemException<TSystem> : Exception where TSystem : EntityCommandBufferSystem
     {
         private readonly IEcsEntityCommandBufferLookup _context;
 
@@ -174,7 +174,7 @@ namespace Nanory.Lex
         /// </summary>
         public EntityCommandBuffer Later;
         public EcsWorldBase World;
-        public EcsSystems EcsSystems; 
+        public EcsSystems EcsSystems;
         #endregion
 
         public void PreInit(EcsSystems systems)

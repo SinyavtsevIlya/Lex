@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Nanory.Lex.Conversion;
+using Nanory.Lex.Conversion.GameObjects;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Nanory.Lex.Conversion;
-using Nanory.Lex.Conversion.GameObjects;
 
 namespace Nanory.Lex
 {
@@ -20,14 +20,14 @@ namespace Nanory.Lex
         protected Func<Type, IEcsSystem> Creator { get; private set; }
         protected Type[] SystemTypes { get; set; }
 
-        public EcsSystemSorter(EcsWorld world, Func<Type,IEcsSystem> creator = null)
+        public EcsSystemSorter(EcsWorld world, Func<Type, IEcsSystem> creator = null)
         {
             World = world;
             SystemMap = new Dictionary<Type, IEcsSystem>();
             Creator = creator;
         }
 
-        public EcsSystemGroup GetFeaturedSystems<TFeature1>(EcsTypesScanner ecsTypesScanner = null) 
+        public EcsSystemGroup GetFeaturedSystems<TFeature1>(EcsTypesScanner ecsTypesScanner = null)
             where TFeature1 : FeatureBase
         {
             return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[] { typeof(TFeature1) }));
@@ -37,7 +37,7 @@ namespace Nanory.Lex
             where TFeature1 : FeatureBase
             where TFeature2 : FeatureBase
         {
-            return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[] 
+            return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[]
             {
                 typeof(TFeature1), typeof(TFeature2)
             }));
@@ -109,7 +109,7 @@ namespace Nanory.Lex
             }
 
             commandBufferSystems.ForEach(cbs => cbs.SetDstWorld(World));
-            commandBufferLookupSystems.ForEach(bs => 
+            commandBufferLookupSystems.ForEach(bs =>
             {
                 bs.SetEntityCommandBufferSystemsLookup(commandBufferSystems);
                 if (bs is EcsSystemBase systemBase)
@@ -131,7 +131,7 @@ namespace Nanory.Lex
                 if (handledSystems.Contains(systemType))
                     return;
 
-                var updateInGroup = (UpdateInGroup) Attribute.GetCustomAttribute(systemType, typeof(UpdateInGroup));
+                var updateInGroup = (UpdateInGroup)Attribute.GetCustomAttribute(systemType, typeof(UpdateInGroup));
                 var targetGroup = updateInGroup != null ? updateInGroup.TargetGroupType : typeof(SimulationSystemGroup);
 
                 var instance = GetSystemByType(systemType);
@@ -167,7 +167,7 @@ namespace Nanory.Lex
                 {
                     var currentSystem = unsorted[idx];
 
-                    var updateInGroup = (UpdateInGroup) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateInGroup));
+                    var updateInGroup = (UpdateInGroup)Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateInGroup));
                     if (updateInGroup != null)
                     {
                         // exclude special "OrderFirst" systems to insert them later to the very beginning 
@@ -191,7 +191,7 @@ namespace Nanory.Lex
                 {
                     var currentSystem = unsorted[idx];
 
-                    var updateBefore = (UpdateBefore) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateBefore));
+                    var updateBefore = (UpdateBefore)Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateBefore));
 
                     if (updateBefore == null)
                     {
@@ -281,7 +281,7 @@ namespace Nanory.Lex
             // that have dependencies
             if (system == null)
             {
-                system = (IEcsSystem) Activator.CreateInstance(systemType);
+                system = (IEcsSystem)Activator.CreateInstance(systemType);
             }
 
             SystemMap[systemType] = system;
@@ -295,10 +295,10 @@ namespace Nanory.Lex
             return scanner.ScanSystemTypes(featureTypes);
         }
 
-        public void Dispose() 
+        public void Dispose()
         {
             World = null;
-            RootSystemGroup = null; 
+            RootSystemGroup = null;
             SystemMap = null;
             SystemTypes = null;
         }

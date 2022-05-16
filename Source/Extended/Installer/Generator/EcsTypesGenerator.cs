@@ -1,11 +1,11 @@
 ﻿#if UNITY_EDITOR
+using Nanory.Lex.AssetsManagement;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using System.IO;
 using System.Linq;
 using UnityEditor;
-using Nanory.Lex.AssetsManagement;
+using UnityEngine;
 
 namespace Nanory.Lex.Generation
 {

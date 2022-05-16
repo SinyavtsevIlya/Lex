@@ -1,7 +1,7 @@
 ﻿namespace Nanory.Lex
 {
     [UpdateInGroup(typeof(UIPresentationSystemGroup))]
-    public class WidgetSystemGroup : EcsSystemGroup 
+    public class WidgetSystemGroup : EcsSystemGroup
     {
     }
 

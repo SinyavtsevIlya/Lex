@@ -24,5 +24,5 @@ namespace Nanory.Lex.Generation
             Debug.Log("Nanory.Lex.Generator : SystemTypes code cleared");
         }
     }
-} 
+}
 #endif

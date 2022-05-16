@@ -1,13 +1,12 @@
 ﻿#if UNITY_EDITOR
 namespace Nanory.Lex.UnityEditorIntegration.ProjectStructure
 {
-    using UnityEngine;
-    using UnityEditor;
+    using Nanory.Lex.AssetsManagement;
     using System;
     using System.IO;
     using System.Reflection;
-    using System.Collections.Generic;
-    using Nanory.Lex.AssetsManagement;
+    using UnityEditor;
+    using UnityEngine;
 
     [CustomEditor(typeof(ProjectStructureHelper))]
     public class ProjectStructureHelperEditor : Editor
@@ -24,7 +23,7 @@ namespace Nanory.Lex.UnityEditorIntegration.ProjectStructure
                 serializedObject.ApplyModifiedProperties();
 
                 if (string.IsNullOrEmpty(namespaceProp.stringValue))
-                { 
+                {
                     var rect = EditorGUILayout.GetControlRect();
                     rect.height = rect.height + 5;
                     EditorGUI.HelpBox(rect, "Specify namespace to create project structure", MessageType.Info);
@@ -85,7 +84,8 @@ namespace Nanory.Lex.UnityEditorIntegration.ProjectStructure
                     }
 
                     File.WriteAllText(current.ToGlobalPath(), content);
-                } else
+                }
+                else
                 {
                     Directory.CreateDirectory(current);
                 }

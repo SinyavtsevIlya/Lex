@@ -126,5 +126,5 @@ namespace Nanory.Lex.UnityEditorIntegration
 
         public EcsEntityDebugView GetEntityDebugView(int id) => _entities[id];
     }
-} 
+}
 #endif

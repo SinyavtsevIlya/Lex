@@ -1,6 +1,6 @@
-﻿using UnityEngine;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Nanory.Lex
 {
@@ -14,7 +14,7 @@ namespace Nanory.Lex
         public TWidget Value;
     }
 
-    public struct OpenEvent<TScreen> where TScreen : MonoBehaviour 
+    public struct OpenEvent<TScreen> where TScreen : MonoBehaviour
     {
         public TScreen Value;
     }

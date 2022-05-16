@@ -9,21 +9,27 @@
 using System;
 using UnityEngine;
 
-namespace Nanory.Lex.UnityEditorIntegration {
-    public static class EditorExtensions {
-        public static string GetCleanGenericTypeName (Type type) {
-            if (!type.IsGenericType) {
+namespace Nanory.Lex.UnityEditorIntegration
+{
+    public static class EditorExtensions
+    {
+        public static string GetCleanGenericTypeName(Type type)
+        {
+            if (!type.IsGenericType)
+            {
                 return type.Name;
             }
             var constraints = "";
-            foreach (var constraint in type.GetGenericArguments ()) {
-                constraints += constraints.Length > 0 ? $", {GetCleanGenericTypeName (constraint)}" : constraint.Name;
+            foreach (var constraint in type.GetGenericArguments())
+            {
+                constraints += constraints.Length > 0 ? $", {GetCleanGenericTypeName(constraint)}" : constraint.Name;
             }
-            return $"{type.Name.Substring (0, type.Name.LastIndexOf ("`", StringComparison.Ordinal))}<{constraints}>";
+            return $"{type.Name.Substring(0, type.Name.LastIndexOf("`", StringComparison.Ordinal))}<{constraints}>";
         }
     }
 
-    public sealed class EcsEntityDebugView : MonoBehaviour {
+    public sealed class EcsEntityDebugView : MonoBehaviour
+    {
         [NonSerialized]
         public EcsWorld World;
         [NonSerialized]

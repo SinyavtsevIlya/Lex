@@ -89,7 +89,7 @@ namespace Nanory.Lex
                 var result = AppDomain.CurrentDomain.GetAssemblies().
                  SingleOrDefault(assembly => assembly.GetName().Name == name);
 
-                if (result != default) 
+                if (result != default)
                     yield return result;
             }
         }

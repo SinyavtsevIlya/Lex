@@ -138,7 +138,7 @@ namespace Nanory.Lex
             {
                 entity = _recycledEntities[--_recycledEntitiesCount];
                 ref var entityData = ref Entities[entity];
-                entityData.Gen = (short) -entityData.Gen;
+                entityData.Gen = (short)-entityData.Gen;
             }
             else
             {
@@ -201,7 +201,7 @@ namespace Nanory.Lex
                     {
                         if (Pools[idx].Has(entity))
                         {
-                            Pools[idx++].Del(entity);   
+                            Pools[idx++].Del(entity);
                             break;
                         }
                     }
@@ -211,7 +211,7 @@ namespace Nanory.Lex
 #endif
                 return;
             }
-            entityData.Gen = (short) (entityData.Gen == short.MaxValue ? -1 : -(entityData.Gen + 1));
+            entityData.Gen = (short)(entityData.Gen == short.MaxValue ? -1 : -(entityData.Gen + 1));
             if (_recycledEntitiesCount == _recycledEntities.Length)
             {
                 Array.Resize(ref _recycledEntities, _recycledEntitiesCount << 1);
@@ -247,14 +247,14 @@ namespace Nanory.Lex
         public int GetWorldSize()
         {
             return Entities.Length;
-        }   
+        }
 
         public EcsPool<T> GetPool<T>() where T : struct
         {
             var rawPool = PoolsSparse[EcsComponent<T>.TypeIndex];
             if (rawPool != null)
             {
-                return (EcsPool<T>) rawPool;
+                return (EcsPool<T>)rawPool;
             }
             var pool = CreatePool<T>();
 
@@ -434,9 +434,9 @@ namespace Nanory.Lex
                         if (IsMaskCompatible(filter.GetMask(), entity))
                         {
 #if DEBUG
-                            if (!filter.EntitiesMap.ContainsKey(entity)) 
-                            { 
-                                throw new Exception("Entity not in filter."); 
+                            if (!filter.EntitiesMap.ContainsKey(entity))
+                            {
+                                throw new Exception("Entity not in filter.");
                             }
 #endif
                             filter.RemoveEntity(entity);

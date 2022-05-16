@@ -206,7 +206,7 @@ namespace Nanory.Lex
 
         public void Run(EcsSystems systems)
         {
-            foreach (var entity in _filter) 
+            foreach (var entity in _filter)
             {
                 _pool.Del(entity);
             }

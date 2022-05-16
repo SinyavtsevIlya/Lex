@@ -46,5 +46,5 @@
         {
             world.GetPool<T>().Del(entity);
         }
-    } 
+    }
 }
