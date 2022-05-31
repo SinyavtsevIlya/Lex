@@ -147,7 +147,7 @@ namespace Nanory.Lex.Stats
             ref var receiverStat = ref Get<TStatComponent>(statReceiverEntity);
             receiverStat.StatValue = totalStatValue * totalMultiplierPercent / 100;
 
-            Later.Add<StatReceivedEvent<TStatComponent>>(statReceiverEntity);
+            Later.AddOrSet<StatReceivedEvent<TStatComponent>>(statReceiverEntity);
         }
     }
 }
