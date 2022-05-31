@@ -33,24 +33,7 @@ namespace Nanory.Lex.Stats
             CleanupStatReceivingEvents();
 
             #region TODO
-            // 1) Можно ускорить. Вместо перебора всего фильтра
-            // шерстить список Stats для стат-ресивера нужно
-            // держать два списка: AdditiveStats и Mutliply-
-            // -Stats чтобы проходить по ним отсортировано.
 
-            // 2) После просчета результирующего стата, можно 
-            // проверять, если ли на этой сущности StatReceiver-
-            // -Link и в этом случае запускать перепросчет уже 
-            // для этого линка. Таким образом будут рекурсивно 
-            // обработы все Stat зависимости. Например:
-            // На героя одет меч, но меч сломан и он дает 25% 
-            // атаки. Получается граф: поломка -> меч -> игрок.
-             
-            // 3) Сделать отдельный метод
-            // SetStatApplyed (statContext, statReceiver) и
-            // SetStatChanged (statContext) 
-            // Тогда во втором случае не нужно явно указывать
-            // получателя.
 
             #endregion
 
@@ -70,7 +53,7 @@ namespace Nanory.Lex.Stats
                     {
                         if (nextStatReceiverLink.Value.Unpack(World, out var nextStatReceiverEntity))
                         {
-                            Later.SetStatsChanged(statReceiverEntity, nextStatReceiverEntity);
+                            Later.SetStatsChanged(statReceiverEntity);
                         }
                     }
                 }

@@ -40,15 +40,15 @@
 
     /// <summary>
     /// This tag determines the entity as a "Stat-Receiver". This means that the entity 
-    /// may accumulate stats values from it's children Stat-Entities. 
-    /// As soon as the value of the Stat-Entity changes, the value of the Stat-Receiver also changes.
+    /// may accumulate stats values from it's Stat-Context entities. 
+    /// As soon as the value of the Stat-Context entity changes, the value of the Stat-Receiver also changes.
     /// </summary>
     public struct StatReceiverTag { }
 
     /// <summary>
-    /// Stat-Entity - is the entity which holds one or several Stat-Components (e.g. Strength, Max-Health, etc.) 
+    /// Stat-Context entity - is the entity which holds one or several Stat-Components (e.g. Strength, Max-Health, etc.) 
     /// It persists as a StatElement (dynamic buffer element) of a "Stat-Context" Entity. Stat-Context Entity can be anything, say an item (sword, gun, potion etc.) or a buff, an ability. 
-    /// Stat-Entity also stores a reference
+    /// Stat-Context entity also stores a reference
     /// to a Stat-Receiver entity to which this effect will be applied.
     /// </summary>
     public struct Stats : IEcsAutoReset<Stats>
