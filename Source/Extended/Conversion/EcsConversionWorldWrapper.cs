@@ -1,4 +1,4 @@
-﻿namespace Nanory.Lex.Conversion.ScriptableObjects
+﻿namespace Nanory.Lex.Conversion
 {
     public class EcsConversionWorldWrapper
     {

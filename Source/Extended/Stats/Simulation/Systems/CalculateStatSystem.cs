@@ -1,107 +1,173 @@
-﻿namespace Nanory.Lex.Stats
+﻿using System.Collections.Generic;
+
+namespace Nanory.Lex.Stats
 {
-    public class CalculateStatSystem<TStatComponent> : IEcsRunSystem, IEcsInitSystem
+    [UpdateInGroup(typeof(StatSystemGroup))]
+    public class CalculateStatSystem<TStatComponent> : EcsSystemBase
         where TStatComponent : struct, IStat
     {
-        private EcsFilter _changedStats;
-        private EcsFilter _removedStats;
         private EcsFilter _additiveStats;
         private EcsFilter _multiplyStats;
 
-        public void Init(EcsSystems systems)
+        private List<int> _eventsCache;
+
+        protected override void OnCreate()
         {
-            var world = systems.GetWorld();
+            _additiveStats = Filter()
+                .With<TStatComponent>()
+                .With<StatReceiverLink>()
+                .With<AdditiveStatTag>()
+                .End();
 
-            //_changedStats = world.Filter<TStatComponent>()
-            //    .With<StatsChangedEvent>()
-            //    .With<StatReceiverLink>()
-            //    .End();
+            _multiplyStats = Filter()
+                .With<TStatComponent>()
+                .With<StatReceiverLink>()
+                .With<MultiplyStatTag>()
+                .End();
 
-            //_removedStats = GetEntityQuery(
-            //    ComponentType.ReadWrite<TStatComponent>(),
-            //    ComponentType.ReadOnly<StatsRemovedEvent>(),
-            //    ComponentType.ReadOnly<StatReceiverLink>());
-
-            //_additiveStats = GetEntityQuery(
-            //    ComponentType.ReadOnly<TStatComponent>(),
-            //    ComponentType.ReadOnly<StatReceiverLink>(),
-            //    ComponentType.ReadOnly<AdditiveStatTag>());
-
-            //_multiplyStats = GetEntityQuery(
-            //    ComponentType.ReadOnly<TStatComponent>(),
-            //    ComponentType.ReadOnly<StatReceiverLink>(),
-            //    ComponentType.ReadOnly<MultiplyStatTag>());
+            _eventsCache = new List<int>(32);
         }
 
-        public void Run(EcsSystems systems)
+        protected override void OnUpdate()
         {
-            //var changedStatsEntities = _changedStats.ToEntityArray(Allocator.TempJob);
+            CleanupStatReceivingEvents();
 
-            //for (var idx = 0; idx < changedStatsEntities.Length; idx++)
-            //{
-            //    var statReceiver = EntityManager.GetSharedComponentData<StatReceiverLink>(changedStatsEntities[idx]);
-            //    Calculate(statReceiver);
-            //}
+            #region TODO
+            // 1) Можно ускорить. Вместо перебора всего фильтра
+            // шерстить список Stats для стат-ресивера нужно
+            // держать два списка: AdditiveStats и Mutliply-
+            // -Stats чтобы проходить по ним отсортировано.
 
-            //changedStatsEntities.Dispose();
+            // 2) После просчета результирующего стата, можно 
+            // проверять, если ли на этой сущности StatReceiver-
+            // -Link и в этом случае запускать перепросчет уже 
+            // для этого линка. Таким образом будут рекурсивно 
+            // обработы все Stat зависимости. Например:
+            // На героя одет меч, но меч сломан и он дает 25% 
+            // атаки. Получается граф: поломка -> меч -> игрок.
+             
+            // 3) Сделать отдельный метод
+            // SetStatApplyed (statContext, statReceiver) и
+            // SetStatChanged (statContext) 
+            // Тогда во втором случае не нужно явно указывать
+            // получателя.
 
-            //var removedStatsEntities = _removedStats.ToEntityArray(Allocator.TempJob);
+            #endregion
 
-            //for (var idx = 0; idx < removedStatsEntities.Length; idx++)
-            //{
-            //    var statEntity = removedStatsEntities[idx];
-            //    var statReceiver = EntityManager.GetSharedComponentData<StatReceiverLink>(statEntity);
-            //    EntityManager.SetSharedComponentData(statEntity, new StatReceiverLink() { Value = Entity.Null });
-            //    Calculate(statReceiver);
-            //}
+            foreach (var changedStatEntity in Filter()
+                .With<TStatComponent>()
+                .With<StatsChangedEvent>()
+                .With<StatReceiverLink>()
+                .End())
+            {
+                ref var statReceiverLink = ref Get<StatReceiverLink>(changedStatEntity);
+                if (statReceiverLink.Value.Unpack(World, out var statReceiverEntity))
+                {
+                    TryAddStatToReceiver(changedStatEntity, statReceiverEntity);
+                    Calculate(statReceiverEntity);
 
-            //removedStatsEntities.Dispose();
+                    if (TryGet<StatReceiverLink>(statReceiverEntity, out var nextStatReceiverLink))
+                    {
+                        if (nextStatReceiverLink.Value.Unpack(World, out var nextStatReceiverEntity))
+                        {
+                            Later.SetStatsChanged(statReceiverEntity, nextStatReceiverEntity);
+                        }
+                    }
+                }
+            }
+
+            foreach (var removedStatEntity in Filter()
+                .With<TStatComponent>()
+                .With<StatsRemovedEvent>()
+                .With<StatReceiverLink>()
+                .End())
+            {
+                ref var statReceiverLink = ref Get<StatReceiverLink>(removedStatEntity);
+                if (statReceiverLink.Value.Unpack(World, out var statReceiverEntity))
+                {
+                    Get<Stats>(statReceiverEntity).Buffer.Values.Remove(World.PackEntity(removedStatEntity));
+                    Calculate(statReceiverEntity);
+
+                    if (TryGet<StatReceiverLink>(statReceiverEntity, out var nextStatReceiverLink))
+                    {
+                        if (nextStatReceiverLink.Value.Unpack(World, out var nextStatReceiverEntity))
+                        {
+                            Later.SetStatsRemoved(statReceiverEntity);
+                        }
+                    }
+                }
+            }
         }
 
-        //private void Calculate(StatReceiverLink statReceiver)
-        //{
-        //    var buffer = new EntityCommandBuffer(Allocator.Temp);
+        private void TryAddStatToReceiver(int changedStatEntity, int statReceiverEntity)
+        {
+            var stats = Get<Stats>(statReceiverEntity).Buffer.Values;
+            foreach (var e in stats)
+            {
+                if (e.Unpack(World, out var statE))
+                {
+                    if (statE == changedStatEntity)
+                        return;
+                }
+            }
+            stats.Add(World.PackEntity(changedStatEntity));
+        }
 
-        //    var receiverStat = GetComponent<TStatComponent>(statReceiver.Value);
+        private void CleanupStatReceivingEvents()
+        {
+            foreach (var eventEntity in Filter()
+            .With<StatReceivedEvent<TStatComponent>>()
+            .End())
+            {
+                _eventsCache.Add(eventEntity);
+            }
 
-        //    _additiveStats.SetSharedComponentFilter(statReceiver);
-        //    _multiplyStats.SetSharedComponentFilter(statReceiver);
+            if (_eventsCache.Count > 0)
+            {
+                foreach (var e in _eventsCache)
+                {
+                    Later.Del<StatReceivedEvent<TStatComponent>>(e);
+                }
+                _eventsCache.Clear();
+            }
+        }
 
-        //    var totalStatValue = 0f;
+        private void Calculate(int statReceiverEntity)
+        {
+            var totalStatValue = 0;
 
-        //    var childrenStatEntites = _additiveStats.ToEntityArray(Allocator.TempJob);
+            foreach (var additiveStatEntity in _additiveStats)
+            {
+                ref var currentStatReceiverLink = ref Get<StatReceiverLink>(additiveStatEntity);
+                if (currentStatReceiverLink.Value.Unpack(World, out var currentStatReceiverEntity))
+                {
+                    if (currentStatReceiverEntity == statReceiverEntity)
+                    {
+                        ref var stat = ref Get<TStatComponent>(additiveStatEntity);
+                        totalStatValue += stat.StatValue;
+                    }
+                }
+            }
 
-        //    for (var statIdx = 0; statIdx < childrenStatEntites.Length; statIdx++)
-        //    {
-        //        var childStatEntity = childrenStatEntites[statIdx];
-        //        var stat = GetComponent<TStatComponent>(childStatEntity);
-        //        ref var value = ref InterpretUnsafeUtility.Retrieve<TStatComponent, float>(ref stat);
-        //        totalStatValue += value;
-        //    }
-        //    childrenStatEntites.Dispose();
+            var totalMultiplierPercent = 100;
 
-        //    var multiplyChildrenStatEntities = _multiplyStats.ToEntityArray(Allocator.TempJob);
+            foreach (var multiplyStatEntity in _multiplyStats)
+            {
+                ref var currentStatReceiverLink = ref Get<StatReceiverLink>(multiplyStatEntity);
+                if (currentStatReceiverLink.Value.Unpack(World, out var currentStatReceiverEntity))
+                {
+                    if (currentStatReceiverEntity == statReceiverEntity)
+                    {
+                        ref var stat = ref Get<TStatComponent>(multiplyStatEntity);
+                        totalMultiplierPercent += stat.StatValue;
+                    }
+                }
+            }
 
-        //    for (var statIdx = 0; statIdx < multiplyChildrenStatEntities.Length; statIdx++)
-        //    {
-        //        var childStatEntity = multiplyChildrenStatEntities[statIdx];
-        //        var stat = GetComponent<TStatComponent>(childStatEntity);
-        //        ref var value = ref InterpretUnsafeUtility.Retrieve<TStatComponent, float>(ref stat);
-        //        totalStatValue *= value;
-        //    }
-        //    multiplyChildrenStatEntities.Dispose();
+            ref var receiverStat = ref Get<TStatComponent>(statReceiverEntity);
+            receiverStat.StatValue = totalStatValue * totalMultiplierPercent / 100;
 
-        //    ref var receiverStatValue = ref InterpretUnsafeUtility.Retrieve<TStatComponent, float>(ref receiverStat);
-        //    receiverStatValue = totalStatValue;
-
-        //    buffer.AppendToBuffer(statReceiver.Value, new StatRecievedElementEvent()
-        //    {
-        //        StatType = ComponentType.ReadOnly<TStatComponent>()
-        //    });
-
-        //    SetComponent(statReceiver.Value, receiverStat);
-
-        //    buffer.Playback(EntityManager);
-        //}
+            Later.Add<StatReceivedEvent<TStatComponent>>(statReceiverEntity);
+        }
     }
 }

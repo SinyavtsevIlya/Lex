@@ -89,7 +89,7 @@ public static class {featureName}SystemTypesLookup
             var oneFrameSystemTypes = scanner.GetOneFrameSystemTypesGenericArgumentsByFeature(new Type[] { featureType });
 
             var baseSystemsSeq = worldSystemTypes.Count() == 0 ? null : $"// Base Systems{Format.NewLine(2)}" + worldSystemTypes
-                .Select(type => $"typeof({type.Name})")
+                .Select(type => $"typeof({type.ToGenericTypeString()})")
                 .Aggregate((a, b) => $"{a},{Format.NewLine(2)}{b}");
 
             var cleanupSystemsSeq = oneFrameSystemTypes.Count() == 0 ? null : $"// OneFrame Systems{Format.NewLine(2)}" + oneFrameSystemTypes

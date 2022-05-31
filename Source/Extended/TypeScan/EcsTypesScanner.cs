@@ -8,16 +8,21 @@ namespace Nanory.Lex
     {
         private readonly string[] _clientAssemblyNames;
 
+        #region State
+        private List<Type> _cachedTypes;
+        private List<Type> _componentTypes;
+        #endregion
+
         public EcsTypesScanner(EcsScanSettings settings)
         {
             _clientAssemblyNames = settings.ClientAssemblyNames;
+
+            _cachedTypes = CacheAssemblyTypes();
+            _componentTypes = GetAssignableTypes(typeof(IComponentContract)).ToList();
         }
 
-        public EcsTypesScanner()
+        public EcsTypesScanner() : this(settings: EcsScanSettings.Default)
         {
-            var settings = EcsScanSettings.Default;
-
-            _clientAssemblyNames = settings.ClientAssemblyNames;
         }
 
         public IEnumerable<Type> ScanSystemTypes(params Type[] targetFeatureTypes)
@@ -28,7 +33,13 @@ namespace Nanory.Lex
 
         public IEnumerable<Type> GetSystemTypesByFeature(IEnumerable<Type> featureTypes)
         {
-            return GetTypesByFeature(typeof(IEcsSystem), featureTypes);
+            var providedSystemTypes = featureTypes
+                .Where(ft => GetTypesByFeature(typeof(SystemTypesProviderBase), featureTypes).Any())
+                .SelectMany(ft => GetTypesByFeature(typeof(SystemTypesProviderBase), featureTypes))
+                .SelectMany(systemProviderType => (Activator.CreateInstance(systemProviderType) as SystemTypesProviderBase).GetSystemTypes(this));
+
+            return GetTypesByFeature(typeof(IEcsSystem), featureTypes)
+                .Union(providedSystemTypes);
         }
 
         public IEnumerable<Type> GetOneFrameSystemTypesFeaturesGeneric(IEnumerable<Type> featureTypes)
@@ -42,7 +53,7 @@ namespace Nanory.Lex
 
         public List<Type> GetOneFrameSystemTypesGenericArgumentsByFeature(IEnumerable<Type> featureTypes)
         {
-            return GetAssignableTypes(typeof(IComponentMock))
+            return GetAssignableTypes(typeof(IComponentContract))
                 .FilterGenericTypesByAttribute<OneFrame>()
                 .FilterTypesByFeature(featureTypes)
                 .ToList();
@@ -54,11 +65,24 @@ namespace Nanory.Lex
             return customTypes.FilterTypesByFeature(targetFeatureTypes);
         }
 
-        public IEnumerable<Type> GetAssignableTypes(params Type[] typesToScan)
+        private List<Type> CacheAssemblyTypes()
         {
             return AppDomain.CurrentDomain.GetAssembliesByName(_clientAssemblyNames)
                 .AssertIsEmpty($"Check your _clientAssemblyNames: {_clientAssemblyNames}")
                 .SelectMany(s => s.GetTypes())
+                .ToList();
+        }
+
+        public List<Type> GetTypes() => _cachedTypes;
+
+        /// <summary>
+        /// Returns types that <b>possibly</b> can be components. (non primitive value types)
+        /// </summary>
+        public List<Type> GetComponentTypes() => _componentTypes;
+
+        public IEnumerable<Type> GetAssignableTypes(params Type[] typesToScan)
+        {
+            return _cachedTypes
                 .Where(type =>
                 {
                     if (type.Namespace == null)
@@ -66,9 +90,13 @@ namespace Nanory.Lex
                         UnityEngine.Debug.LogWarning($"{type} has no namespace.");
                     }
 
-                    if (typesToScan.Any(t => t == typeof(IComponentMock)))
+                    if (typesToScan.Any(t => t == typeof(IComponentContract)))
                     {
-                        return type.IsValueType && !type.IsPrimitive && type.Namespace != null && !type.Namespace.StartsWith("System") && !type.IsEnum;
+                        return type.IsValueType && 
+                        !type.IsPrimitive && 
+                        type.Namespace != null && 
+                        !type.Namespace.StartsWith("System") && 
+                        !type.IsEnum;
                     }
 
                     if (type.IsGenericTypeDefinition || type.IsInterface)
@@ -87,7 +115,7 @@ namespace Nanory.Lex
 
     [UnityEngine.Scripting.Preserve]
     // Only for internal scanning
-    internal interface IComponentMock { }
+    internal interface IComponentContract { }
 
     public class PreserveAutoCreationAttribute : Attribute { }
 }

@@ -6,7 +6,12 @@ using System.Linq;
 
 namespace Nanory.Lex
 {
-    public class FeatureBase { }
+    public abstract class SystemTypesProviderBase
+    {
+        public abstract IEnumerable<Type> GetSystemTypes(EcsTypesScanner scanner);
+    }
+
+    public abstract class FeatureBase { }
 
     /// <summary>
     /// Sorts systems in a hierarchical manner based on special Ordering attributes
