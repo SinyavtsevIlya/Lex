@@ -26,7 +26,6 @@
     /// <summary>
     /// An event that any of the Stat-Entity of <see cref="StatReceiverTag">Stat-Receiver</see> has changed. Always placed on the <see cref="StatReceiverTag">Stat-Receiver</see> entity
     /// </summary>
-    [OneFrame]
     public struct StatReceivedEvent<TStatComponent>
     {
     }
