@@ -90,7 +90,11 @@ namespace Nanory.Lex.UnityEditorIntegration.ProjectStructure
                     Directory.CreateDirectory(current);
                 }
             }
+#if UNITY_2020_2_3
+            var path = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage()?.assetPath;
+#else
             var path = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage()?.assetPath;
+#endif
             UnityEditor.SceneManagement.EditorSceneManager.OpenScene(_lastEditedScene);
             AssetDatabase.DeleteAsset(path);
             AssetDatabase.Refresh();

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Nanory.Lex.Conversion.GameObjects
+namespace Nanory.Lex.Conversion
 {
     public static class GameObjectConversionExtensions
     {
