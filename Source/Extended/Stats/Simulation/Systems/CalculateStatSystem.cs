@@ -32,11 +32,6 @@ namespace Nanory.Lex.Stats
         {
             CleanupStatReceivingEvents();
 
-            #region TODO
-
-
-            #endregion
-
             foreach (var changedStatEntity in Filter()
                 .With<TStatComponent>()
                 .With<StatsChangedEvent>()
@@ -69,6 +64,8 @@ namespace Nanory.Lex.Stats
                 if (statReceiverLink.Value.Unpack(World, out var statReceiverEntity))
                 {
                     Get<Stats>(statReceiverEntity).Buffer.Values.Remove(World.PackEntity(removedStatEntity));
+                    World.Del<StatReceiverLink>(removedStatEntity);
+
                     Calculate(statReceiverEntity);
 
                     if (TryGet<StatReceiverLink>(statReceiverEntity, out var nextStatReceiverLink))
