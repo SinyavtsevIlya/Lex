@@ -134,7 +134,7 @@ namespace Nanory.Lex.Conversion
                 {
                     Convert(request.Value);
                 }
-                _conversionWorldWrapper.DelEntity(requestEntity);
+                GetCommandBufferFrom<BeginSimulationECBSystem>().DelEntity(requestEntity);
             }
         }
 

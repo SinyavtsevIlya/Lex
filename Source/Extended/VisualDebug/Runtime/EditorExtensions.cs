@@ -34,6 +34,8 @@ namespace Nanory.Lex.UnityEditorIntegration
         public EcsWorld World;
         [NonSerialized]
         public int Entity;
+        [NonSerialized]
+        public string DebugName;
     }
 }
 #endif

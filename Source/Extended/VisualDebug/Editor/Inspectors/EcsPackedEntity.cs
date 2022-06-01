@@ -15,17 +15,20 @@ namespace Nanory.Lex.UnityEditorIntegration.Inspectors
         public void OnGUI(string label, object value, EcsWorld world, int entityId)
         {
             var packed = (EcsPackedEntity)value;
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.IntField("Id", packed.Id);
-            EditorGUILayout.IntField("Gen", packed.Gen);
-            EditorGUILayout.EndHorizontal();
-
 
             if (packed.Unpack(world, out var entity))
             {
-                if (world.TryGet<EcsDebugGameobjectLink>(packed.Id, out var ecsDebugGameobjectLink))
+                if (world is EcsWorldBase worldBase)
                 {
-                    EditorGUILayout.ObjectField(ecsDebugGameobjectLink.Value, typeof(GameObject), true);
+                    var debugView = worldBase.GetSystem<EcsWorldDebugSystem>().GetEntityDebugView(entity);
+                    EditorGUILayout.ObjectField(debugView, typeof(GameObject), true);
+                }
+                else
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.IntField("Id", packed.Id);
+                    EditorGUILayout.IntField("Gen", packed.Gen);
+                    EditorGUILayout.EndHorizontal();
                 }
             }
             else

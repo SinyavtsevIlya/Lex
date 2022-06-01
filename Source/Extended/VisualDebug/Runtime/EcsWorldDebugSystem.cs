@@ -8,22 +8,18 @@ namespace Nanory.Lex.UnityEditorIntegration
 {
     public sealed class EcsWorldDebugSystem : IEcsPreInitSystem, IEcsInitSystem, IEcsRunSystem, IEcsDestroySystem, IEcsWorldEventListener
     {
-        readonly EcsSystemGroup _rootSystemGroup;
         readonly string _worldName;
         readonly GameObject _rootGO;
         readonly Transform _entitiesRoot;
         readonly Transform _pooledEntitiesRoot;
-        readonly bool _bakeComponentsInName;
+        readonly bool _bakeComponentsInName = true;
         EcsWorld _world;
         EcsEntityDebugView[] _entities;
         Dictionary<int, byte> _dirtyEntities;
         Type[] _typesCache;
 
-        public EcsWorldDebugSystem(EcsSystemGroup rootSystemGroup, string worldName = null, bool bakeComponentsInName = true)
+        public EcsWorldDebugSystem()
         {
-            _rootSystemGroup = rootSystemGroup;
-            _bakeComponentsInName = bakeComponentsInName;
-            _worldName = worldName;
             _rootGO = new GameObject(_worldName != null ? $"[ECS-WORLD {_worldName}]" : "[ECS-WORLD]");
             Object.DontDestroyOnLoad(_rootGO);
             _rootGO.hideFlags = HideFlags.NotEditable;
@@ -45,12 +41,12 @@ namespace Nanory.Lex.UnityEditorIntegration
 
         public void Init(EcsSystems systems)
         {
-            LexSystemsDebugger.AddEcsSystems(_rootSystemGroup);
+            LexSystemsDebugger.AddEcsSystems(systems.AllSystems[0] as EcsSystemGroup);
         }
 
         public void Destroy(EcsSystems systems)
         {
-            LexSystemsDebugger.RemoveEcsSystems(_rootSystemGroup);
+            LexSystemsDebugger.RemoveEcsSystems(systems.AllSystems[0] as EcsSystemGroup);
         }
 
         public void Run(EcsSystems systems)
@@ -58,7 +54,11 @@ namespace Nanory.Lex.UnityEditorIntegration
             foreach (var pair in _dirtyEntities)
             {
                 var entity = pair.Key;
-                var entityName = entity.ToString();
+
+                var observer = _entities[entity];
+                var entityName = string.IsNullOrEmpty(observer.DebugName) ?
+                    $"Entity-{entity}" :
+                    $"{observer.DebugName} Entity-{entity}";
                 if (_world.GetEntityGen(entity) > 0)
                 {
                     var count = _world.GetComponentTypes(entity, ref _typesCache);
@@ -125,6 +125,12 @@ namespace Nanory.Lex.UnityEditorIntegration
         }
 
         public EcsEntityDebugView GetEntityDebugView(int id) => _entities[id];
+
+        public void SetName(int entity, string name)
+        {
+            var entityDebugView = _entities[entity];
+            entityDebugView.DebugName = name;
+        }
     }
 }
 #endif

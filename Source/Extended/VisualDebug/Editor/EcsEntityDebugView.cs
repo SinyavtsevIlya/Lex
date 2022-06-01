@@ -1,9 +1,12 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
 
 namespace Nanory.Lex.UnityEditorIntegration
 {
@@ -41,7 +44,9 @@ namespace Nanory.Lex.UnityEditorIntegration
                     var typeName = EditorExtensions.GetCleanGenericTypeName(type);
                     if (!EcsComponentInspectors.Render(typeName, type, component, debugView))
                     {
+                        EditorGUILayout.BeginHorizontal();
                         EditorGUILayout.LabelField(typeName, EditorStyles.boldLabel);
+                        EditorGUILayout.EndHorizontal();
                         var indent = EditorGUI.indentLevel;
                         EditorGUI.indentLevel++;
                         foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public))
@@ -62,27 +67,51 @@ namespace Nanory.Lex.UnityEditorIntegration
             var fieldType = field.FieldType;
             if (!EcsComponentInspectors.Render(field.Name, fieldType, fieldValue, entity))
             {
-                if (fieldType == typeof(UnityEngine.Object) || fieldType.IsSubclassOf(typeof(UnityEngine.Object)))
+                RenderFallbackType(fieldType, fieldValue, field.Name, entity);
+            }
+        }
+
+        void RenderFallbackType(Type fieldType, object fieldValue, string fieldName, EcsEntityDebugView entity)
+        {
+            if (fieldType.IsGenericType)
+            {
+                if (fieldType.GetGenericTypeDefinition() == typeof(Buffer<>))
                 {
-                    GUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(field.Name, GUILayout.MaxWidth(EditorGUIUtility.labelWidth - 16));
-                    var guiEnabled = GUI.enabled;
-                    GUI.enabled = false;
-                    EditorGUILayout.ObjectField(fieldValue as UnityEngine.Object, fieldType, false);
-                    GUI.enabled = guiEnabled;
-                    GUILayout.EndHorizontal();
+                    var fieldInfo = fieldType.GetField("Values");
+                    var list = fieldInfo.GetValue(fieldValue) as IEnumerable;
+
+                    foreach (var item in list)
+                    {
+                        if (!EcsComponentInspectors.Render("", item.GetType(), item, entity))
+                        {
+                            RenderFallbackType(item.GetType(), item, "", entity);
+                        }
+                        //EditorGUILayout.SelectableLabel(item.ToString(), (GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight)));
+                    }
                     return;
                 }
-                var strVal = fieldValue != null ? string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}", fieldValue) : "null";
-                if (strVal.Length > MaxFieldToStringLength)
-                {
-                    strVal = strVal.Substring(0, MaxFieldToStringLength);
-                }
-                GUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(field.Name, GUILayout.MaxWidth(EditorGUIUtility.labelWidth - 16));
-                EditorGUILayout.SelectableLabel(strVal, GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight));
-                GUILayout.EndHorizontal();
             }
+
+            if (fieldType == typeof(UnityEngine.Object) || fieldType.IsSubclassOf(typeof(UnityEngine.Object)))
+            {
+                GUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(fieldName, GUILayout.MaxWidth(EditorGUIUtility.labelWidth - 16));
+                var guiEnabled = GUI.enabled;
+                GUI.enabled = false;
+                EditorGUILayout.ObjectField(fieldValue as UnityEngine.Object, fieldType, false);
+                GUI.enabled = guiEnabled;
+                GUILayout.EndHorizontal();
+                return;
+            }
+            var strVal = fieldValue != null ? string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}", fieldValue) : "null";
+            if (strVal.Length > MaxFieldToStringLength)
+            {
+                strVal = strVal.Substring(0, MaxFieldToStringLength);
+            }
+            GUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(fieldName, GUILayout.MaxWidth(EditorGUIUtility.labelWidth - 16));
+            EditorGUILayout.SelectableLabel(strVal, GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight));
+            GUILayout.EndHorizontal();
         }
     }
 

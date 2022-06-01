@@ -7,6 +7,7 @@ namespace Nanory.Lex
     /// containing a pooling mechanism.
     /// </summary>
     /// <typeparam name="TElement"></typeparam>
+    [System.Serializable]
     public struct Buffer<TElement> : IEcsAutoReset<Buffer<TElement>>
     {
         public List<TElement> Values;

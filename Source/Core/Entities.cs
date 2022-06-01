@@ -6,6 +6,7 @@ using Unity.IL2CPP.CompilerServices;
 
 namespace Nanory.Lex
 {
+    [System.Serializable]
     public struct EcsPackedEntity
     {
         internal int Id;
