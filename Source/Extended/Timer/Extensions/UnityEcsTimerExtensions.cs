@@ -22,7 +22,7 @@
             var timerContextComponentIndex = EcsComponent<TContext>.TypeIndex;
             ecb.Add<Timer>(timerEntity) = new Timer(duration, isInfinity, timerContextComponentIndex);
             ecb.Add<TimerOwnerLink>(timerEntity) = new TimerOwnerLink { Value = ecb.DstWorld.PackEntity(ownerEntity) };
-
+            ecb.BufferWorld.GetPool<TContext>();
             return timerEntity;
         }
     }

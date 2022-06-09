@@ -40,6 +40,7 @@ public static class {featureName}SystemTypesLookup
             var scanner = new EcsTypesScanner();
 
             scanner.GetAssignableTypes(typeof(FeatureBase))
+                .Where(type => type != typeof(UnityEditorIntegration.Feature))
                 .Where(type => typeof(FeatureBase).IsAssignableFrom(type))
                 .Where(type => type != typeof(FeatureBase))
                 .SelectMany(featureType => (

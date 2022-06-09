@@ -436,7 +436,7 @@ namespace Nanory.Lex
 #if DEBUG
                             if (!filter.EntitiesMap.ContainsKey(entity))
                             {
-                                throw new Exception("Entity not in filter.");
+                                throw new Exception($"Entity not in filter: {entity}");
                             }
 #endif
                             filter.RemoveEntity(entity);

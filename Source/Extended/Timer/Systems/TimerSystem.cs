@@ -23,7 +23,7 @@ namespace Nanory.Lex.Timer
                 {
                     if (timerOwnerLink.Value.Unpack(World, out var ownerEntity))
                     {
-                        beginSim_ECB.Add(ownerEntity, timer.TimerContextComponentIndex);
+                        beginSim_ECB.AddOrSet(ownerEntity, timer.TimerContextComponentIndex);
                     }
 
                     if (timer.IsInfinity == 0)

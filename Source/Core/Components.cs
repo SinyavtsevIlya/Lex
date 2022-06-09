@@ -215,7 +215,7 @@ namespace Nanory.Lex
             ref var itemData = ref Items[entity];
 #if DEBUG
             if (_world.GetEntityGen(entity) < 0) { throw new Exception($"Cant add {typeof(T).Name} to destroyed entity {entity}."); }
-            if (itemData.Attached) { throw new Exception($"{typeof(T).Name} is Already attached to entity {entity}"); }
+            if (itemData.Attached) { throw new Exception($"{typeof(T).FullName} is Already attached to entity {entity}"); }
 #endif
             itemData.Attached = true;
             _world.OnEntityChange(entity, _id, true);

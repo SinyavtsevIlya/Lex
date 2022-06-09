@@ -261,6 +261,18 @@ namespace Nanory.Lex
             }
         }
 
+        public void Toggle<TComponent>(int entity) where TComponent : struct
+        {
+            if (Has<TComponent>(entity))
+            {
+                Del<TComponent>(entity);
+            }
+            else
+            {
+                Add<TComponent>(entity);
+            }
+        }
+
         public ref TComponent GetOrAdd<TComponent>(int entity) where TComponent : struct
         {
             var pool = World.GetPool<TComponent>();

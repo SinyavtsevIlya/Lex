@@ -184,12 +184,12 @@ namespace Nanory.Lex
             });
         }
 
-        public static void Add(this EntityCommandBuffer entityCommandBuffer, int entity, int componentIndex)
+        public static void AddOrSet(this EntityCommandBuffer entityCommandBuffer, int entity, int componentIndex)
         {
             var bufferEntity = entityCommandBuffer.BufferWorld.NewEntity();
             entityCommandBuffer.Schedule(new EntityCommandBuffer.Op()
             {
-                OpType = EntityCommandBuffer.OpType.Add,
+                OpType = EntityCommandBuffer.OpType.AddOrSet,
                 ComponentIndex = componentIndex,
                 Entity = entity,
                 BufferEntity = bufferEntity
