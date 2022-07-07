@@ -75,11 +75,23 @@ namespace Nanory.Lex
                         bufferPool.CpyToDstWorld(op.BufferEntity, op.Entity);
                         break;
                     case OpType.Add:
-                        pool.Activate(op.Entity);
-                        bufferPool.CpyToDstWorld(op.BufferEntity, op.Entity);
+                        if (!pool.Has(op.Entity))
+                        {
+                            pool.Activate(op.Entity);
+                            bufferPool.CpyToDstWorld(op.BufferEntity, op.Entity);
+                        }
                         break;
                     case OpType.Set:
-                        BufferWorld.PoolsSparse[op.ComponentIndex].CpyToDstWorld(op.BufferEntity, op.Entity);
+#if DEBUG
+                        if (!pool.Has(op.Entity))
+                        {
+                            throw new System.Exception(
+                                $"Entity Command Buffer: Unable to set the {pool.GetComponentType()} " +
+                                $"value to entity-{op.Entity} that doesn't have such component. " +
+                                $"Call location: {op.CallLocation}");
+                        }
+#endif
+                        bufferPool.CpyToDstWorld(op.BufferEntity, op.Entity);
                         break;
                     default:
                         break;
@@ -99,6 +111,9 @@ namespace Nanory.Lex
             public int ComponentIndex;
             public int Entity;
             public int BufferEntity;
+#if DEBUG
+            public string CallLocation;
+#endif
         }
 
         public enum OpType
@@ -117,12 +132,15 @@ namespace Nanory.Lex
         public static ref TComponent Add<TComponent>(this EntityCommandBuffer entityCommandBuffer, int entity) where TComponent : struct
         {
             var bufferEntity = entityCommandBuffer.BufferWorld.NewEntity();
-            entityCommandBuffer.Schedule(new EntityCommandBuffer.Op() 
+            entityCommandBuffer.Schedule(new EntityCommandBuffer.Op()
             {
                 OpType = EntityCommandBuffer.OpType.Add,
-                ComponentIndex = EcsComponent<TComponent>.TypeIndex, 
+                ComponentIndex = EcsComponent<TComponent>.TypeIndex,
                 Entity = entity,
-                BufferEntity = bufferEntity
+                BufferEntity = bufferEntity,
+#if DEBUG
+                CallLocation = GetCallLocation()
+#endif
             });
             return ref entityCommandBuffer.BufferWorld.GetPool<TComponent>().Add(bufferEntity);
         }
@@ -130,23 +148,17 @@ namespace Nanory.Lex
         public static ref TComponent Set<TComponent>(this EntityCommandBuffer entityCommandBuffer, int entity) where TComponent : struct
         {
             var bufferEntity = entityCommandBuffer.BufferWorld.NewEntity();
-            entityCommandBuffer.Schedule(new EntityCommandBuffer.Op() 
+            entityCommandBuffer.Schedule(new EntityCommandBuffer.Op()
             {
                 OpType = EntityCommandBuffer.OpType.Set,
                 ComponentIndex = EcsComponent<TComponent>.TypeIndex,
                 Entity = entity,
-                BufferEntity = bufferEntity
+                BufferEntity = bufferEntity,
+#if DEBUG
+                CallLocation = GetCallLocation()
+#endif
             });
-            var pool = entityCommandBuffer.BufferWorld.GetPool<TComponent>();
-
-            if (!entityCommandBuffer.BufferWorld.Has<TComponent>(bufferEntity)) // ?
-            {
-                return ref pool.Add(bufferEntity);
-            }
-            else
-            {
-                return ref pool.Get(bufferEntity);
-            }
+            return ref entityCommandBuffer.BufferWorld.GetPool<TComponent>().Add(bufferEntity);
         }
 
         public static ref TComponent AddOrSet<TComponent>(this EntityCommandBuffer entityCommandBuffer, int entity) where TComponent : struct
@@ -157,7 +169,10 @@ namespace Nanory.Lex
                 OpType = EntityCommandBuffer.OpType.AddOrSet,
                 ComponentIndex = EcsComponent<TComponent>.TypeIndex,
                 Entity = entity,
-                BufferEntity = bufferEntity
+                BufferEntity = bufferEntity,
+#if DEBUG
+                CallLocation = GetCallLocation()
+#endif
             });
             return ref entityCommandBuffer.BufferWorld.GetPool<TComponent>().Add(bufferEntity);
         }
@@ -169,7 +184,10 @@ namespace Nanory.Lex
                 OpType = EntityCommandBuffer.OpType.Del,
                 ComponentIndex = EcsComponent<TComponent>.TypeIndex,
                 Entity = entity,
-                BufferEntity = -1
+                BufferEntity = -1,
+#if DEBUG
+                CallLocation = GetCallLocation()
+#endif
             });
         }
 
@@ -180,7 +198,10 @@ namespace Nanory.Lex
                 OpType = EntityCommandBuffer.OpType.Del,
                 ComponentIndex = componentIndex,
                 Entity = entity,
-                BufferEntity = -1
+                BufferEntity = -1,
+#if DEBUG
+                CallLocation = GetCallLocation()
+#endif
             });
         }
 
@@ -192,7 +213,10 @@ namespace Nanory.Lex
                 OpType = EntityCommandBuffer.OpType.AddOrSet,
                 ComponentIndex = componentIndex,
                 Entity = entity,
-                BufferEntity = bufferEntity
+                BufferEntity = bufferEntity,
+#if DEBUG
+                CallLocation = GetCallLocation()
+#endif
             });
             entityCommandBuffer.BufferWorld.PoolsSparse[componentIndex].Activate(bufferEntity);
         }
@@ -204,7 +228,10 @@ namespace Nanory.Lex
                 OpType = EntityCommandBuffer.OpType.Del,
                 ComponentIndex = EcsComponent<Buffer<TElement>>.TypeIndex,
                 Entity = entity,
-                BufferEntity = -1
+                BufferEntity = -1,
+#if DEBUG
+                CallLocation = GetCallLocation()
+#endif
             });
         }
 
@@ -215,8 +242,13 @@ namespace Nanory.Lex
             {
                 OpType = EntityCommandBuffer.OpType.DelEntity,
                 Entity = entity,
-                BufferEntity = -1
+                BufferEntity = -1,
+#if DEBUG
+                CallLocation = GetCallLocation()
+#endif
             });
         }
+
+        private static string GetCallLocation() => System.Environment.StackTrace.Split(new string[] { System.Environment.NewLine }, System.StringSplitOptions.None)[3];
     }
 }
