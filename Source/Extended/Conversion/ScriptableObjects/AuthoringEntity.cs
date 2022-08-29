@@ -11,6 +11,8 @@ namespace Nanory.Lex.Conversion
         [SerializeReference]
         public List<AuthoringComponent> _components = new List<AuthoringComponent>();
 
+        public List<AuthoringComponent> Components => _components;
+
         public bool IsPrefab { get; private set; } = true;
 
         public bool Has<TAuthoringComponent>() where TAuthoringComponent : AuthoringComponent
