@@ -17,7 +17,21 @@ namespace Nanory.Lex
         int GetId();
         Type GetComponentType();
         void Destroy();
+
+        /// TODO: maybe it's better to rename CpyToDstWorld to CpyToDstPool.
+        /// <summary>
+        /// Copies component data from Source-entity (from this Pool) to the Destination-entity (in DstPool).
+        /// Throws an exception if DstPool is not passed via constructor.
+        /// </summary>
+        /// <param name="src">Entity to copy component from</param>
+        /// <param name="dst">Entity to paste component data to</param>
         void CpyToDstWorld(int src, int dst);
+
+        /// <summary>
+        /// Copies component data from Source-entity to the Destination-entity.
+        /// Both of components should be in this Pool.</summary>
+        /// <param name="src">Entity to copy component from</param>
+        /// <param name="dst">Entity to paste component data to</param>
         void CpyToDstEntity(int src, int dst);
         void Activate(int entity);
     }
@@ -38,18 +52,18 @@ namespace Nanory.Lex
         readonly int _id;
         readonly AutoResetHandler _autoReset;
         public PoolItem[] Items;
-        PoolItem[] _dstItems;
+        public EcsPool<T> _dstPool;
 #if ENABLE_IL2CPP && !UNITY_EDITOR
         T _autoresetFakeInstance;
 #endif
 
-        internal EcsPool(EcsWorld world, int id, int capacity, PoolItem[] dstItems = null)
+        internal EcsPool(EcsWorld world, int id, int capacity, EcsPool<T> dstPool = null)
         {
             _type = typeof(T);
             _world = world;
             _id = id;
             Items = new PoolItem[capacity];
-            _dstItems = dstItems;
+            _dstPool = dstPool;
             var isAutoReset = typeof(IEcsAutoReset<T>).IsAssignableFrom(_type);
 #if DEBUG
             if (!isAutoReset && _type.GetInterface("IEcsAutoReset`1") != null)
@@ -198,7 +212,17 @@ namespace Nanory.Lex
 
         public void CpyToDstWorld(int src, int dst)
         {
-            _dstItems[dst] = Items[src];
+#if DEBUG
+            if (_dstPool == null)
+                throw new Exception($"unable to call {nameof(CpyToDstWorld)} for the pool of type {GetComponentType()} when DstPool is null. World: {_world}");
+
+            if (_dstPool.Items.Length <= dst)
+                throw new IndexOutOfRangeException($"{nameof(_dstPool.Items)}: index {dst} was out of range {_dstPool.Items.Length}");
+
+            if (Items.Length <= src)
+                throw new IndexOutOfRangeException($"{nameof(Items)}: index {src} was out of range {Items.Length}");
+#endif
+            _dstPool.Items[dst] = Items[src];
         }
 
         public void CpyToDstEntity(int src, int dst)
