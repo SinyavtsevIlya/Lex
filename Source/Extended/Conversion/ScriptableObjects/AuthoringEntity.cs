@@ -8,16 +8,46 @@ namespace Nanory.Lex.Conversion
     [CreateAssetMenu(fileName = "AuthoringEntity", menuName = "Lex/AuthoringEntity")]
     public class AuthoringEntity : ScriptableObject, IConvertToEntity, ISerializationCallbackReceiver
     {
+        /// <summary>
+        /// List of components of <b>this</b> Authoring-Entity (components of base Authoring-entities are not included)
+        /// </summary>
         [SerializeReference]
         public List<AuthoringComponent> _components = new List<AuthoringComponent>();
 
-        public List<AuthoringComponent> Components => _components;
+        /// <summary>
+        /// Complete list of components of this Authoring-Entity and all its base Authoring-entities.
+        /// NOTE: Use <see cref="Components"/> lazy property to get an actual list of components
+        /// </summary>
+
+        private List<AuthoringComponent> _overallComponents;
+
+#if UNITY_EDITOR
+        [Nanory.Lex.UnityEditorIntegration.BaseAuthoringEntity]
+#endif
+
+        [SerializeField] private AuthoringEntity _baseAuthoringEntity;
+
+        /// <summary>
+        /// Complete list of components of this Authoring-Entity and all its base Authoring-entities.
+        /// </summary>
+        public List<AuthoringComponent> Components
+        {
+            get
+            {
+                if (_overallComponents == null)
+                {
+                    _overallComponents = new List<AuthoringComponent>();
+                    GetBaseComponentsNonAlloc(_overallComponents);
+                }
+                return _overallComponents;
+            }
+        }
 
         public bool IsPrefab { get; private set; } = true;
 
         public bool Has<TAuthoringComponent>() where TAuthoringComponent : AuthoringComponent
         {
-            foreach (var component in _components)
+            foreach (var component in Components)
             {
                 if (component is TAuthoringComponent)
                 {
@@ -29,7 +59,7 @@ namespace Nanory.Lex.Conversion
 
         public TAuthoringComponent Get<TAuthoringComponent>() where TAuthoringComponent : AuthoringComponent
         {
-            foreach (var value in _components)
+            foreach (var value in Components)
             {
                 if (value is TAuthoringComponent c)
                 {
@@ -42,7 +72,7 @@ namespace Nanory.Lex.Conversion
         public bool TryGet<TAuthoringComponent>(out TAuthoringComponent component) where TAuthoringComponent : AuthoringComponent
         {
             component = null;
-            foreach (var value in _components)
+            foreach (var value in Components)
             {
                 if (value is TAuthoringComponent c)
                 {
@@ -55,7 +85,7 @@ namespace Nanory.Lex.Conversion
 
         public AuthoringEntity Add<TAuthoringComponent>(TAuthoringComponent component) where TAuthoringComponent : AuthoringComponent
         {
-            foreach (var c in _components)
+            foreach (var c in Components)
             {
                 if (c is TAuthoringComponent)
                     throw new System.Exception($"Component {c} is already on a {this}");
@@ -67,7 +97,7 @@ namespace Nanory.Lex.Conversion
 
         public void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem)
         {
-            foreach (var component in _components)
+            foreach (var component in Components)
             {
                 component.Convert(entity, сonvertToEntitySystem);
             }
@@ -90,6 +120,34 @@ namespace Nanory.Lex.Conversion
             var copy = Instantiate(this);
             copy.IsPrefab = false;
             return copy;
+        }
+
+        public void GetBaseComponentsNonAlloc(List<AuthoringComponent> result)
+        {
+            if (_baseAuthoringEntity != null)
+            {
+                _baseAuthoringEntity.GetBaseComponentsNonAlloc(result);
+            }
+
+            foreach (var overrideComponent in _components)
+            {
+                var hasFound = false;
+                for (var idx = 0; idx < result.Count; idx++)
+                {
+                    var component = result[idx];
+                    if (component.GetType().Equals(overrideComponent.GetType()))
+                    {
+                        result[idx] = overrideComponent;
+                        hasFound = true;
+                        break;
+                    }
+                }
+
+                if (!hasFound)
+                {
+                    result.Add(overrideComponent);
+                }
+            }
         }
 
 #if UNITY_EDITOR
