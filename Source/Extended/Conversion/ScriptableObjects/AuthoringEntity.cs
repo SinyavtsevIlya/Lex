@@ -85,7 +85,7 @@ namespace Nanory.Lex.Conversion
 
         public AuthoringEntity Add<TAuthoringComponent>(TAuthoringComponent component) where TAuthoringComponent : AuthoringComponent
         {
-            foreach (var c in Components)
+            foreach (var c in _components)
             {
                 if (c is TAuthoringComponent)
                     throw new System.Exception($"Component {c} is already on a {this}");

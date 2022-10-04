@@ -30,17 +30,27 @@ namespace Nanory.Lex.Conversion
 
     public static class ConversionExtensions
     {
-        public static void Convert(this EcsWorld world, IConvertToEntity convertToEntity)
+        public static void Convert(this EcsWorld world, IConvertToEntity convertToEntity, ConversionMode conversionMode)
         {
             ref var requestEntity = ref world.Add<ConvertRequest>(world.NewEntity());
             requestEntity.Value = convertToEntity;
+            requestEntity.Mode = conversionMode;
         }
     }
 
     public struct ConvertRequest
     {
+        public ConversionMode Mode;
         public IConvertToEntity Value;
     }
+
+    public enum ConversionMode
+    {
+        Instanced,
+        Unique,
+        Prefab
+    }
+
 
     public interface IConvertToEntity
     {
@@ -50,7 +60,7 @@ namespace Nanory.Lex.Conversion
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public class ConvertToEntitySystem : IEcsRunSystem, IEcsInitSystem, IEcsEntityCommandBufferLookup
     {
-        private Dictionary<AuthoringEntity, int> _conversionMap = new Dictionary<AuthoringEntity, int>();
+        private Dictionary<int, int> _conversionMap = new Dictionary<int, int>();
         private EcsConversionWorldWrapper _conversionWorldWrapper;
         private EcsPool<ConvertRequest> _requestsPool;
         private EcsFilter _requestsFilter;
@@ -61,55 +71,72 @@ namespace Nanory.Lex.Conversion
 
         public EcsConversionWorldWrapper World => _conversionWorldWrapper;
 
-        public int GetPrimaryEntity(AuthoringEntity conversionEntity)
+        public int Convert(IConvertToEntity convertToEntity, ConversionMode conversionMode)
         {
-            return GetPrimaryEntity(conversionEntity, out var _);
-        }
-
-        public int GetPrimaryEntity(AuthoringEntity authoringEntity, out bool isNew)
-        {
-            if (_conversionMap.TryGetValue(authoringEntity, out var newEntity))
+            switch (conversionMode)
             {
-                isNew = false;
-                return newEntity;
+                case ConversionMode.Instanced: return ConvertAsInstansedEntity(convertToEntity);
+                case ConversionMode.Unique: return ConvertOrGetAsUniqueEntity(convertToEntity);
+                case ConversionMode.Prefab: return ConvertOrGetAsPrefabEntity(convertToEntity);
+                default: throw new ArgumentOutOfRangeException(nameof(conversionMode));
             }
-
-            newEntity = _conversionWorldWrapper.NewEntity();
-            _conversionMap[authoringEntity] = newEntity;
-
-            isNew = true;
-            return newEntity;
         }
 
-        public int Convert(IConvertToEntity convertToEntity)
+        public int ConvertAsInstansedEntity(IConvertToEntity convertToEntity)
         {
+#if DEBUG
+            // TODO: cache an instanced entity int the debug InstancedRegistry to prevent user from trying to convert 
+            // instanced entity as prefab or unique entity.
+#endif
             var entity = World.NewEntity();
             convertToEntity.Convert(entity, this);
             return entity;
         }
 
-        /// TODO: Change "isNew" to isConverted, cause now we can accidentally skip the conversion process.
-        public int Convert(AuthoringEntity authoringEntity)
+        public int ConvertOrGetAsPrefabEntity(IConvertToEntity convertToEntity) => ConvertOrGetPrimaryEntity(convertToEntity, true);
+
+        public int ConvertOrGetAsUniqueEntity(IConvertToEntity convertToEntity) => ConvertOrGetPrimaryEntity(convertToEntity, false);
+
+        public int ConvertOrGetPrimaryEntity(IConvertToEntity convertToEntity, bool isPrefab)
         {
-#if DEBUG
-            if (authoringEntity == null)
-                throw new System.ArgumentException("Unable to convert. Passed conversionEntity is null");
-#endif
-            var entity = GetPrimaryEntity(authoringEntity, out var isNew);
+            if (convertToEntity == null)
+                throw new ArgumentNullException(nameof(convertToEntity));
+
+            var entity = GetPrimaryEntity(convertToEntity, out var isNew);
 
             if (!isNew)
             {
                 return entity;
             }
 
-            if (authoringEntity.IsPrefab)
+            if (isPrefab)
             {
                 World.Dst.SetAsPrefab(entity);
             }
 
-            authoringEntity.Convert(entity, this);
+            convertToEntity.Convert(entity, this);
 
             return entity;
+        }
+
+        public int GetPrimaryEntity(AuthoringEntity conversionEntity)
+        {
+            return GetPrimaryEntity(conversionEntity, out var _);
+        }
+
+        public int GetPrimaryEntity(IConvertToEntity convertToEntity, out bool isNew)
+        {
+            if (_conversionMap.TryGetValue(convertToEntity.GetHashCode(), out var newEntity))
+            {
+                isNew = false;
+                return newEntity;
+            }
+
+            newEntity = _conversionWorldWrapper.NewEntity();
+            _conversionMap[convertToEntity.GetHashCode()] = newEntity;
+
+            isNew = true;
+            return newEntity;
         }
 
         public void Init(EcsSystems systems)
@@ -122,19 +149,13 @@ namespace Nanory.Lex.Conversion
 
         public void Run(EcsSystems systems)
         {
+            var later = GetCommandBufferFrom<BeginSimulationECBSystem>();
+
             foreach (var requestEntity in _requestsFilter)
             {
                 ref var request = ref _requestsPool.Get(requestEntity);
-
-                if (request.Value is AuthoringEntity authoringEntity)
-                {
-                    Convert(authoringEntity);
-                }
-                else
-                {
-                    Convert(request.Value);
-                }
-                GetCommandBufferFrom<BeginSimulationECBSystem>().DelEntity(requestEntity);
+                Convert(request.Value, request.Mode);
+                later.DelEntity(requestEntity);
             }
         }
 

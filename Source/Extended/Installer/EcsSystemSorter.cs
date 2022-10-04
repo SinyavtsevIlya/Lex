@@ -1,5 +1,4 @@
 ﻿using Nanory.Lex.Conversion;
-using Nanory.Lex.Conversion.GameObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -83,7 +82,6 @@ namespace Nanory.Lex
 
             var conversionSystemTypes = new Type[]
             {
-                typeof(GameObjectConversionSystem),
                 typeof(ConvertToEntitySystem)
             };
 
