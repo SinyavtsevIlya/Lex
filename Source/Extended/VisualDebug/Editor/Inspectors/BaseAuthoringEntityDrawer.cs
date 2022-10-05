@@ -1,4 +1,5 @@
-﻿namespace Nanory.Lex.UnityEditorIntegration
+﻿#if UNITY_EDITOR
+namespace Nanory.Lex.UnityEditorIntegration
 {
     using UnityEngine;
     using UnityEditor;
@@ -71,3 +72,4 @@
         }
     }
 }
+#endif
