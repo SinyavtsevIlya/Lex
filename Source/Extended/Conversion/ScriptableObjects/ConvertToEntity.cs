@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace Nanory.Lex.Conversion
 {
     [Serializable]
     public abstract class AuthoringComponent : IConvertToEntity
     {
-        [HideInInspector]
+#if UNITY_EDITOR
+        [UnityEngine.HideInInspector]
+#endif
         [NonSerialized]
         public AuthoringEntity AuthoringEntity;
 
@@ -58,7 +59,7 @@ namespace Nanory.Lex.Conversion
     }
 
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    public class ConvertToEntitySystem : IEcsRunSystem, IEcsInitSystem, IEcsEntityCommandBufferLookup
+    public class ConvertToEntitySystem : IEcsRunSystem, IEcsPreInitSystem, IEcsEntityCommandBufferLookup
     {
         private Dictionary<int, int> _conversionMap = new Dictionary<int, int>();
         private EcsConversionWorldWrapper _conversionWorldWrapper;
@@ -119,11 +120,6 @@ namespace Nanory.Lex.Conversion
             return entity;
         }
 
-        public int GetPrimaryEntity(AuthoringEntity conversionEntity)
-        {
-            return GetPrimaryEntity(conversionEntity, out var _);
-        }
-
         public int GetPrimaryEntity(IConvertToEntity convertToEntity, out bool isNew)
         {
             if (_conversionMap.TryGetValue(convertToEntity.GetHashCode(), out var newEntity))
@@ -139,7 +135,7 @@ namespace Nanory.Lex.Conversion
             return newEntity;
         }
 
-        public void Init(EcsSystems systems)
+        public void PreInit(EcsSystems systems)
         {
             _ecsSystems = systems;
             _conversionWorldWrapper = new EcsConversionWorldWrapper(systems.GetWorld());

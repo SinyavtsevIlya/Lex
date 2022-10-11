@@ -161,10 +161,6 @@ namespace Nanory.Lex
                 }
                 entity = _entitiesCount++;
                 Entities[entity].Gen = 1;
-                for (int i = 0, iMax = _poolsCount; i < iMax; i++)
-                {
-                    Pools[i].InitAutoReset(entity);
-                }
             }
 #if DEBUG
             _leakedEntities.Add(entity);

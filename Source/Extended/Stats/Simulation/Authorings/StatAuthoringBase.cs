@@ -50,11 +50,10 @@ namespace Nanory.Lex.Stats
             world.Add<TStatComponent>(statEntity) = stat;
             world.Add<TStatComponent>(statContextEntity) = stat;
 
+            // TODO: TRYGET may cause bugs here (returning a copy)
             if (!world.TryGet<Stats>(statContextEntity, out var stats))
             {
-                stats = new Stats();
-                stats.Buffer.Values = Buffer<EcsPackedEntity>.Pool.Pop();
-                world.Add<Stats>(statContextEntity) = stats;
+                stats = world.Add<Stats>(statContextEntity);
             }
 
             stats.Buffer.Values.Add(world.PackEntity(statEntity));

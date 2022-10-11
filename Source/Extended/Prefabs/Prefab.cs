@@ -35,7 +35,7 @@
             if (world.GetPool<Prefab>().Has(entity))
                 return false;
 
-            world.GetPool<Prefab>().Add(entity).PoolIndeces.Values = Buffer<int>.Pool.Pop();
+            world.GetPool<Prefab>().Add(entity);
             return true;
         }
 

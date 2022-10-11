@@ -82,7 +82,7 @@ namespace Nanory.Lex
                 }
 #endif
                 _autoReset = (AutoResetHandler)Delegate.CreateDelegate(
-                    typeof(AutoResetHandler),
+                typeof(AutoResetHandler),
 #if ENABLE_IL2CPP && !UNITY_EDITOR
                     _autoresetFakeInstance,
 #else
@@ -132,6 +132,7 @@ namespace Nanory.Lex
 
         void IEcsPool.Destroy()
         {
+            
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -146,6 +147,7 @@ namespace Nanory.Lex
             if (itemData.Attached) { throw new Exception($"{typeof(T).Name} is Already attached to entity {entity}"); }
 #endif
             itemData.Attached = true;
+            _autoReset?.Invoke(ref Items[entity].Data);
             _world.OnEntityChange(entity, _id, true);
             _world.Entities[entity].ComponentsCount++;
 #if DEBUG || LEX_WORLD_EVENTS
@@ -192,7 +194,10 @@ namespace Nanory.Lex
                 itemData.Attached = false;
                 if (_autoReset != null)
                 {
-                    _autoReset.Invoke(ref Items[entity].Data);
+                    if (_dstPool == null)
+                    {
+                        _autoReset.Invoke(ref Items[entity].Data);
+                    }
                 }
                 else
                 {

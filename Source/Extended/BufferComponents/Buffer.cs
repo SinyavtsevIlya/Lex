@@ -3,8 +3,25 @@
 namespace Nanory.Lex
 {
     /// <summary>
-    /// Buffer - is a special collection type
-    /// containing a pooling mechanism.
+    /// Buffer - is a pool-able collection type.
+    /// <list type="bullet">
+    /// <item>Wraps a <see cref="List{T}"/> inside it.</item>
+    /// <item>Implements an automated pooling mechanism, to prevent allocations.</item>
+    /// <item>Can be used:</item>
+    /// <list type="number">
+    /// <item>As a component field: 
+    ///     <code>
+    ///         public struct SomeComponent { public <see cref="Buffer{TElement}"/> Buffer; }
+    ///     </code></item>   
+    /// <item>As a component itself (Just by using Add-Component methods)    
+    ///     <code>
+    ///         <see cref="EcsBufferExtensions.AddBuffer{TElement}(EcsWorld, int)"/>
+    ///     </code></item>  
+    /// <item>As a standalone helping temporary collection</item>
+    /// </list>
+    /// <item>If the buffer is used as a component field, then this component must implement an <see cref="IEcsAutoReset{T}"/>, and call Buffer's <see cref="AutoReset(ref Buffer{TElement}) inside it."/></item>
+    /// <item>NOTE: All <see cref="Values"/> will be overwritten when the component is added to the entity.</item>
+    /// </list>
     /// </summary>
     /// <typeparam name="TElement"></typeparam>
     [System.Serializable]
@@ -14,19 +31,16 @@ namespace Nanory.Lex
 
         public void AutoReset(ref Buffer<TElement> c)
         {
-            if (c.Values != null)
+            if (c.Values == null)
+            {
+                c.Values = Pool.Pop();
+            }
+            else
             {
                 c.Values.Clear();
                 Pool.Push(c.Values);
+                c.Values = null;
             }
-
-            c.Values = null;
-        }
-
-        public Buffer<TElement> Initiatize()
-        {
-            Values = Pool.Pop();
-            return this;
         }
 
         public static class Pool
@@ -57,7 +71,6 @@ namespace Nanory.Lex
         public static ref Buffer<TElement> AddBuffer<TElement>(this EcsWorld world, int entity) where TElement : struct
         {
             ref var buffer = ref world.GetPool<Buffer<TElement>>().Add(entity);
-            buffer.Values = Buffer<TElement>.Pool.Pop();
             return ref buffer;
         }
 
