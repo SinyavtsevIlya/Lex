@@ -5,96 +5,98 @@ The main goal is to provide a more convenient API while maintaining the performa
 
 > NOTE: The documentation is in progress
 
-> NOTE: This framework is `almost` engine agnostic. Some `Unity` dependencies will be wrapped in defines, soon.
+> NOTE: This framework is **almost** engine agnostic. Some **Unity** dependencies will be wrapped in defines, soon.
 
-# Extended Ecs Types
+# Features workflow
+**Features workflow** helps control which system will be created in which world without manually adding those systems to the world. Instead, the user determines which "Feature" the system belongs to. 
 
-## EcsWorldBase
-In `Lex` the world contains a collection of systems. 
-> NOTE: Everything that works for leo-ecs lite is working for `Lex`. If you want some system to have several worlds passed via ctor you surely can.
+Here is a quick example:
 
-## EcsSystemBase
-Systems can refer to the world they belong to.
-```csharp
-public class SomeSystem : EcsSystemBase 
-{
-    public override void OnCreate() 
-    {
-        World.NewEntity();
-    }
-}
-```
-> NOTE: World doesn't control the system's initialization and update order.
+1. First, let's define a user class, inherited from FeatureBase.
 
-# Features pipeline
-Features pipeline - helps you to keep control over systems per world creation, and don't care about their instantiation at the same time.
-
-## Startup
-Startup - is an entry point for the world.
-Thats how your custom `startup` may look:
 ```c#
-namespace Client
+namespace Client.Some
 {
-    class CoreStartup : MonoBehaviour
+    public class Feature : FeatureBase { }
+}
+```
+
+> Note: the namespace is an important metadata that serves as a constraint for grouping user defined ecs-types by features.
+
+2. And then we can create as many systems as we need. Let's create one: 
+
+```c#
+namespace Client.Some // note: the namespace is the same
+{
+    public class SomeSystem : EcsSystemBase 
     {
-        private EcsWorld _world;
-        private EcsSystems _systems;
-        private EcsSystemSorter _sorter;
-
-        protected virtual Type[] FeatureTypes => new Type[]
+        public override void OnUpdate() 
         {
-            typeof(Nanory.Lex.Lifecycle.Feature),
-            typeof(Core.Feature),
-            typeof(Combat.Feature),
-            typeof(Movement.Feature),
-            typeof(Inventory.Feature)
-        };
-
-        private void Start()
-        {
-            _world = new EcsWorldBase(default, "Core");
-            _systems = new EcsSystems(_world);
-
-            var scanner = new EcsTypesScanner();
-            var systemTypes = scanner.ScanSystemTypes(FeatureTypes);
-            _sorter = new EcsSystemSorter(_world);
-            
-            var featuredSystems = _sorter.GetSortedSystems(systemTypes);
-            _systems.Add(featuredSystems);
-
-            _systems.Init();
-        }
-
-        private void Update()
-        {
-            _systems?.Run();
-        }
-
-        private void OnDestroy()
-        {
-            if (_systems != null)
-            {
-                _systems.Destroy();
-                _systems = null;
-            }
-            if (_world != null)
-            {
-                _world.Destroy();
-                _world = null;
-            }
-            _sorter.Dispose();
+           // some code
         }
     }
 }
 ```
-## FeatureBase
-## EcsSystemSorter
-## EcsTypesScanner
-## EcsSystemGroup
-## UpdateInGroup and UpdateBefore
-## SystemTypesProviders
 
-# Prefabs
+3. In the end, we need to create a world, and determine what features will be included in this world:
+
+```c#
+class CoreStartup // can be a monobehavior or whatever you need.
+{
+    private EcsWorld _world;
+    private EcsSystems _systems;
+    private EcsSystemSorter _sorter;
+    
+    private Type[] FeatureTypes => new Type[]
+    {
+        // add a newly created feature...
+        typeof(Some.Feature), 
+        // ...and all other desired features
+        typeof(Another.Feature), 
+        typeof(OneMore.Feature)
+    };
+
+    private void Start()
+    {
+        _world = new EcsWorldBase(default, "Core");
+        _systems = new EcsSystems(_world);
+
+        // create a scanner - a special class that finds all user-defined ecs-data types.
+        var scanner = new EcsTypesScanner();
+        // pass necessary features to the scanner
+        var systemTypes = scanner.ScanSystemTypes(FeatureTypes);
+        // create a sorter - a special class that sorts systems in a hierarchical manner based on their order and groups.
+        _sorter = new EcsSystemSorter(_world);
+        // get systems and their system groups
+        var featuredSystems = _sorter.GetSortedSystems(systemTypes);
+        // add them to a "_systems" instance.
+        _systems.Add(featuredSystems);
+
+        _systems.Init();
+    }
+
+    private void Update()
+    {
+        _systems?.Run();
+    }
+
+    private void OnDestroy()
+    {
+        _systems?.Destroy();
+        _systems = null;
+        _world?.Destroy();
+        _world = null;
+        _sorter.Dispose();
+    }
+}
+```
+# Prefab entities
+Prefab-entitiy is an entity that has a `Prefab` component assigned to it.
+`Prefab` Component contains all pool indecies of all added components to this entity.
+`Prefab` Component must be added first.
+Prefab-entities doesn't match any `Filter`. 
+World.Instantiate 
+
 # Buffer
 Buffer - is a pool-able collection type. Wraps a `System.Collections.Generic.List<T>` inside it.
 Implements an automated pooling mechanism, to prevent allocations.
@@ -123,3 +125,10 @@ If the buffer is used as a component field, then this component must implement a
 # TypeScan
 # OneFrame
 # VisualDebug
+
+# Extended Ecs Types
+### EcsSystemSorter
+### EcsTypesScanner
+### EcsSystemGroup
+### UpdateInGroup and UpdateBefore attrributes
+### SystemTypesProviders
