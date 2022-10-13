@@ -13,7 +13,7 @@ You can install the repository using `UPM`:
 Just add this line in Packages/manifest.json:
 
 ```
-"com.nanory.lex": "file:E:/Nanory/LexUnity/Assets/Plugins/Lex",
+"com.nanory.lex": "https://github.com/SinyavtsevIlya/Lex.git",
 ```
 
 
