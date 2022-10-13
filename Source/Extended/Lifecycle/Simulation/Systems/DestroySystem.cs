@@ -5,13 +5,11 @@
     {
         protected override void OnUpdate()
         {
-            var later = GetCommandBufferFrom<BeginSimulationECBSystem>();
-
             foreach (var destoyedEntity in Filter()
             .With<DestroyedEvent>()
             .End())
             {
-                later.DelEntity(destoyedEntity);
+                Later.DelEntity(destoyedEntity);
             }
         }
     }

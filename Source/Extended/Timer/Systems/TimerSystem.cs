@@ -7,8 +7,6 @@ namespace Nanory.Lex.Timer
     {
         protected override void OnUpdate()
         {
-            var beginSim_ECB = GetCommandBufferFrom<BeginSimulationECBSystem>();
-
             foreach (var timerEntity in Filter()
             .With<Timer>()
             .With<TimerOwnerLink>()
@@ -23,12 +21,12 @@ namespace Nanory.Lex.Timer
                 {
                     if (timerOwnerLink.Value.Unpack(World, out var ownerEntity))
                     {
-                        beginSim_ECB.AddOrSet(ownerEntity, timer.TimerContextComponentIndex);
+                        Later.AddOrSet(ownerEntity, timer.TimerContextComponentIndex);
                     }
 
                     if (timer.IsInfinity == 0)
                     {
-                        beginSim_ECB.DelEntity(timerEntity);
+                        Later.DelEntity(timerEntity);
                     }
                     else
                     {
