@@ -87,7 +87,7 @@ namespace Nanory.Lex
                 {
                     if (type.Namespace == null)
                     {
-                        UnityEngine.Debug.LogWarning($"{type} has no namespace.");
+                        //UnityEngine.Debug.LogWarning($"{type} has no namespace.");
                     }
 
                     if (typesToScan.Any(t => t == typeof(IComponentContract)))

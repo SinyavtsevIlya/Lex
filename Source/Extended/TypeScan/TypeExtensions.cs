@@ -14,7 +14,8 @@ namespace Nanory.Lex
 
         private static IEnumerable<Type> FilterTypesByNamespace(this IEnumerable<Type> types, IEnumerable<string> namespaces)
         {
-            foreach (var namespaceName in namespaces)
+            var namescapesList = namespaces.ToList();
+            foreach (var namespaceName in namescapesList)
             {
                 foreach (var type in types)
                 {

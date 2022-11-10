@@ -77,7 +77,7 @@ namespace Nanory.Lex.Conversion
             switch (conversionMode)
             {
                 case ConversionMode.Instanced: return ConvertAsInstansedEntity(convertToEntity);
-                case ConversionMode.Unique: return ConvertOrGetAsUniqueEntity(convertToEntity);
+                case ConversionMode.Unique: return ConvertAsUniqueEntity(convertToEntity);
                 case ConversionMode.Prefab: return ConvertOrGetAsPrefabEntity(convertToEntity);
                 default: throw new ArgumentOutOfRangeException(nameof(conversionMode));
             }
@@ -85,11 +85,24 @@ namespace Nanory.Lex.Conversion
 
         public int ConvertAsInstansedEntity(IConvertToEntity convertToEntity)
         {
+            if (convertToEntity == null)
+                throw new ArgumentNullException(nameof(convertToEntity));
 #if DEBUG
-            // TODO: cache an instanced entity int the debug InstancedRegistry to prevent user from trying to convert 
+            // TODO: cache an instanced entity int the debug
+            // InstancedRegistry to prevent user from trying to convert 
             // instanced entity as prefab or unique entity.
 #endif
             var entity = World.NewEntity();
+            convertToEntity.Convert(entity, this);
+            return entity;
+        }
+
+        public int ConvertAsUniqueEntity(IConvertToEntity convertToEntity)
+        {
+            if (convertToEntity == null)
+                throw new ArgumentNullException(nameof(convertToEntity));
+
+            var entity = GetPrimaryEntity(convertToEntity, out _);
             convertToEntity.Convert(entity, this);
             return entity;
         }

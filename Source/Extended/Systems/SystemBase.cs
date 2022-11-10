@@ -332,6 +332,14 @@ namespace Nanory.Lex
         {
             return EcsFilter.Mask.New(World, _localFilterContainers);
         }
+
+        /// <summary>
+        /// Unpacks the passed <see cref="EcsPackedEntity"/> using a user predefined World (via <see cref="EcsSystems.GetWorld(string)"/>)
+        /// </summary>
+        /// <param name="ecsPackedEntity"></param>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public bool TryUnpack(EcsPackedEntity ecsPackedEntity, out int entity) => ecsPackedEntity.Unpack(World, out entity);
     }
 
     public class EntityCommandBufferSystem : IEcsRunSystem

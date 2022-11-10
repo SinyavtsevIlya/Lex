@@ -33,7 +33,7 @@ namespace Nanory.Lex
         public EcsWorld BufferWorld;
         public EcsWorld DstWorld;
 
-        public List<Op> _ops;
+        private List<Op> _ops;
 
         public EntityCommandBuffer(EcsWorld dstWorld, in EcsWorld.Config cfg = default)
         {
@@ -80,7 +80,7 @@ namespace Nanory.Lex
                             }
                             break;
                         case OpType.Set:
-#if DEBUG
+#if DEBUG && ENABLE_ECB_STACKTRACE
                             if (!pool.Has(dstEntity))
                             {
                                 throw new System.Exception(
@@ -112,7 +112,7 @@ namespace Nanory.Lex
             public int ComponentIndex;
             public EcsPackedEntity Entity;
             public int BufferEntity;
-#if DEBUG
+#if DEBUG && ENABLE_ECB_STACKTRACE
             public string CallLocation;
 #endif
         }
@@ -138,7 +138,7 @@ namespace Nanory.Lex
                 ComponentIndex = EcsComponent<TComponent>.TypeIndex,
                 Entity = entityCommandBuffer.DstWorld.PackEntity(entity),
                 BufferEntity = bufferEntity,
-#if DEBUG
+#if DEBUG && ENABLE_ECB_STACKTRACE
                 CallLocation = GetCallLocation()
 #endif
             });
@@ -154,7 +154,7 @@ namespace Nanory.Lex
                 ComponentIndex = EcsComponent<TComponent>.TypeIndex,
                 Entity = entityCommandBuffer.DstWorld.PackEntity(entity),
                 BufferEntity = bufferEntity,
-#if DEBUG
+#if DEBUG && ENABLE_ECB_STACKTRACE
                 CallLocation = GetCallLocation()
 #endif
             });
@@ -170,7 +170,7 @@ namespace Nanory.Lex
                 ComponentIndex = EcsComponent<TComponent>.TypeIndex,
                 Entity = entityCommandBuffer.DstWorld.PackEntity(entity),
                 BufferEntity = bufferEntity,
-#if DEBUG
+#if DEBUG && ENABLE_ECB_STACKTRACE
                 CallLocation = GetCallLocation()
 #endif
             });
@@ -185,7 +185,7 @@ namespace Nanory.Lex
                 ComponentIndex = EcsComponent<TComponent>.TypeIndex,
                 Entity = entityCommandBuffer.DstWorld.PackEntity(entity),
                 BufferEntity = -1,
-#if DEBUG
+#if DEBUG && ENABLE_ECB_STACKTRACE
                 CallLocation = GetCallLocation()
 #endif
             });
@@ -199,7 +199,7 @@ namespace Nanory.Lex
                 ComponentIndex = componentIndex,
                 Entity = entityCommandBuffer.DstWorld.PackEntity(entity),
                 BufferEntity = -1,
-#if DEBUG
+#if DEBUG && ENABLE_ECB_STACKTRACE
                 CallLocation = GetCallLocation()
 #endif
             });
@@ -214,7 +214,7 @@ namespace Nanory.Lex
                 ComponentIndex = componentIndex,
                 Entity = entityCommandBuffer.DstWorld.PackEntity(entity),
                 BufferEntity = bufferEntity,
-#if DEBUG
+#if DEBUG && ENABLE_ECB_STACKTRACE
                 CallLocation = GetCallLocation()
 #endif
             });
@@ -229,7 +229,7 @@ namespace Nanory.Lex
                 ComponentIndex = EcsComponent<Buffer<TElement>>.TypeIndex,
                 Entity = entityCommandBuffer.DstWorld.PackEntity(entity),
                 BufferEntity = -1,
-#if DEBUG
+#if DEBUG && ENABLE_ECB_STACKTRACE
                 CallLocation = GetCallLocation()
 #endif
             });
@@ -243,12 +243,13 @@ namespace Nanory.Lex
                 OpType = EntityCommandBuffer.OpType.DelEntity,
                 Entity = entityCommandBuffer.DstWorld.PackEntity(entity),
                 BufferEntity = -1,
-#if DEBUG
+#if DEBUG && ENABLE_ECB_STACKTRACE
                 CallLocation = GetCallLocation()
 #endif
             });
         }
-
+#if DEBUG && ENABLE_ECB_STACKTRACE
         private static string GetCallLocation() => System.Environment.StackTrace.Split(new string[] { System.Environment.NewLine }, System.StringSplitOptions.None)[3];
+#endif
     }
 }

@@ -34,21 +34,45 @@ namespace Nanory.Lex
             if (c.Values == null)
             {
                 c.Values = Pool.Pop();
+
+#if DEBUG
+                if (c.Values.Count > 0)
+                    throw new System.Exception($"Buffer<{typeof(TElement).Name}> Values are not cleared. Values: {System.Environment.NewLine} {c}");
+#endif
             }
             else
             {
                 c.Values.Clear();
-                Pool.Push(c.Values);
+                Pool.Recycle(c.Values);
                 c.Values = null;
             }
+        }
+
+        public override string ToString()
+        {
+            if (Values == null)
+                return ("Recycled buffer");
+
+            if (Values.Count == 0)
+                return ("Empty buffer");
+
+            var result = string.Empty;
+
+            foreach (var item in Values)
+            {
+                result += item;
+                result += System.Environment.NewLine;
+            }
+            return result;
         }
 
         public static class Pool
         {
             public static Stack<List<TElement>> Values = new Stack<List<TElement>>(64);
 
-            public static void Push(List<TElement> elements)
+            public static void Recycle(List<TElement> elements)
             {
+                elements.Clear();
                 Values.Push(elements);
             }
 
