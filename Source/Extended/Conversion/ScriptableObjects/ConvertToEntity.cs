@@ -78,7 +78,7 @@ namespace Nanory.Lex.Conversion
             {
                 case ConversionMode.Instanced: return ConvertAsInstansedEntity(convertToEntity);
                 case ConversionMode.Unique: return ConvertAsUniqueEntity(convertToEntity);
-                case ConversionMode.Prefab: return ConvertOrGetAsPrefabEntity(convertToEntity);
+                case ConversionMode.Prefab: return ConvertAsPrefabEntity(convertToEntity);
                 default: throw new ArgumentOutOfRangeException(nameof(conversionMode));
             }
         }
@@ -103,6 +103,19 @@ namespace Nanory.Lex.Conversion
                 throw new ArgumentNullException(nameof(convertToEntity));
 
             var entity = GetPrimaryEntity(convertToEntity, out _);
+            convertToEntity.Convert(entity, this);
+            return entity;
+        }
+        
+        public int ConvertAsPrefabEntity(IConvertToEntity convertToEntity)
+        {
+            if (convertToEntity == null)
+                throw new ArgumentNullException(nameof(convertToEntity));
+
+            var entity = GetPrimaryEntity(convertToEntity, out _);
+            
+            World.Dst.SetAsPrefab(entity);
+            
             convertToEntity.Convert(entity, this);
             return entity;
         }
