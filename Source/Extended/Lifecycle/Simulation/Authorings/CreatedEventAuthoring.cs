@@ -4,9 +4,9 @@ namespace Nanory.Lex.Lifecycle
 {
     public class CreatedEventAuthoring : AuthoringComponent
     {
-        public override void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem)
+        public override void Convert(int entity, ConvertToEntitySystem convertToEntitySystem)
         {
-            var later = сonvertToEntitySystem.GetCommandBufferFrom<BeginSimulationECBSystem>();
+            var later = convertToEntitySystem.GetCommandBufferFrom<BeginSimulationECBSystem>();
             later.Add<CreatedEvent>(entity);
         }
     }

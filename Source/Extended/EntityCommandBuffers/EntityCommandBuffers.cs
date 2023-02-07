@@ -145,6 +145,22 @@ namespace Nanory.Lex
             return ref entityCommandBuffer.BufferWorld.GetPool<TComponent>().Add(bufferEntity);
         }
 
+        public static void Add<TComponent1, TComponent2>(this EntityCommandBuffer entityCommandBuffer, int entity)
+            where TComponent1 : struct
+            where TComponent2 : struct
+        {
+            entityCommandBuffer.Add<TComponent1>(entity);
+            entityCommandBuffer.Add<TComponent2>(entity);
+        }
+        
+        public static void Del<TComponent1, TComponent2>(this EntityCommandBuffer entityCommandBuffer, int entity)
+            where TComponent1 : struct
+            where TComponent2 : struct
+        {
+            entityCommandBuffer.Del<TComponent1>(entity);
+            entityCommandBuffer.Del<TComponent2>(entity);
+        }
+
         public static ref TComponent Set<TComponent>(this EntityCommandBuffer entityCommandBuffer, int entity) where TComponent : struct
         {
             var bufferEntity = entityCommandBuffer.BufferWorld.NewEntity();

@@ -163,7 +163,7 @@ namespace Nanory.Lex
         EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem;
     }
 
-    public abstract class EcsSystemBase : IEcsRunSystem, IEcsPreInitSystem, IEcsInitSystem, IEcsEntityCommandBufferLookup
+    public abstract class EcsSystemBase : IEcsRunSystem, IEcsPreInitSystem, IEcsInitSystem, IEcsDestroySystem, IEcsEntityCommandBufferLookup
     {
         private readonly List<EcsLocalFilterContainer> _localFilterContainers = new List<EcsLocalFilterContainer>(8);
         protected List<EntityCommandBufferSystem> _entityCommandBufferSystems;
@@ -186,6 +186,11 @@ namespace Nanory.Lex
         public void Init(EcsSystems systems)
         {
             OnCreate();
+        }
+
+        public void Destroy(EcsSystems systems)
+        {
+            OnDestroy();
         }
 
         public void Run(EcsSystems systems)
@@ -212,6 +217,8 @@ namespace Nanory.Lex
         protected abstract void OnUpdate();
 
         protected virtual void OnCreate() { }
+        
+        protected virtual void OnDestroy() { }
 
         public int NewEntity()
         {
@@ -278,13 +285,9 @@ namespace Nanory.Lex
             var pool = World.GetPool<TComponent>();
 
             if (pool.Has(entity))
-            {
                 return ref pool.Get(entity);
-            }
-            else
-            {
-                return ref pool.Add(entity);
-            }
+            
+            return ref pool.Add(entity);
         }
 
         public bool TryGet<T>(int entity, out T component) where T : struct

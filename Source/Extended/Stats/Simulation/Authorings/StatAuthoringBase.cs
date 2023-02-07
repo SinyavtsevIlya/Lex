@@ -5,9 +5,9 @@ namespace Nanory.Lex.Stats
 {
     public class StatReceiverTagAuthoring : AuthoringComponent
     {
-        public override void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem)
+        public override void Convert(int entity, ConvertToEntitySystem convertToEntitySystem)
         {
-            сonvertToEntitySystem.World.Add<StatReceiverTag>(entity);
+            convertToEntitySystem.World.Add<StatReceiverTag>(entity);
         }
     }
 
@@ -16,9 +16,9 @@ namespace Nanory.Lex.Stats
     {
         [SerializeField] private int _value;
 
-        public override void Convert(int statContextEntity, ConvertToEntitySystem сonvertToEntitySystem)
+        public override void Convert(int statContextEntity, ConvertToEntitySystem convertToEntitySystem)
         {
-            var world = сonvertToEntitySystem.World;
+            var world = convertToEntitySystem.World;
             var statEntity = StatsAuthorizingHelpers.AuthorizeStatEntity<TStatComponent>(statContextEntity, world.Dst, _value);
             world.Add<AdditiveStatTag>(statEntity);
         }
@@ -29,9 +29,9 @@ namespace Nanory.Lex.Stats
     {
         [SerializeField] private int _percent;
 
-        public override void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem)
+        public override void Convert(int entity, ConvertToEntitySystem convertToEntitySystem)
         {
-            var world = сonvertToEntitySystem.World;
+            var world = convertToEntitySystem.World;
             var statEntity = StatsAuthorizingHelpers.AuthorizeStatEntity<TStatComponent>(entity, world.Dst, _percent);
             world.Add<MultiplyStatTag>(statEntity);
         }

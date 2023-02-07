@@ -1,32 +1,76 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Nanory.Lex.Conversion
 {
+    /// <summary>
+    /// Base class for serializable representation
+    /// of any user-defined component. Implementing <see cref="IConvertToEntity.Convert"/>
+    /// is necessary to apply a desired changes to a passed entity.
+    /// All Authoring components are normally stored in <see cref="AuthoringEntity"/>. 
+    /// </summary>
     [Serializable]
     public abstract class AuthoringComponent : IConvertToEntity
     {
 #if UNITY_EDITOR
         [UnityEngine.HideInInspector]
 #endif
-        [NonSerialized]
-        public AuthoringEntity AuthoringEntity;
+        public abstract void Convert(int entity, ConvertToEntitySystem convertToEntitySystem);
+    }
 
-        public TAuthoringComponent Get<TAuthoringComponent>()
-            where TAuthoringComponent : AuthoringComponent =>
-            AuthoringEntity.Get<TAuthoringComponent>();
+    public interface IReplaceAuthoringComponent
+    {
+        public Type GetAuthoringTypeToReplace();
+    }
 
-        public TConversionComponent[] GetAll<TConversionComponent>()
-            where TConversionComponent : AuthoringComponent =>
-            AuthoringEntity._components.OfType<TConversionComponent>()
-            .ToArray();
+    public static class AuthoringComponentExtensions
+    {
+        /// <summary>
+        /// Reusable static temporary pool for merging original AuthoingComponents 
+        /// and overrides-components. We use it to avoid allocations.
+        /// </summary>
+        public readonly static List<AuthoringComponent> MergePoolNonAlloc = new();
+        
+        public static List<AuthoringComponent> MergeNonAlloc(this List<AuthoringComponent> components,
+            List<AuthoringComponent> overrides)
+        {
+            MergePoolNonAlloc.Clear();
 
-        public AuthoringEntity Add<TAuthoringComponent>(TAuthoringComponent c)
-            where TAuthoringComponent : AuthoringComponent =>
-            AuthoringEntity.Add(c);
+            foreach (var component in components)
+            {
+                MergePoolNonAlloc.Add(component);
+            }
 
-        public abstract void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem);
+            if (overrides == null || overrides.Count == 0)
+                return MergePoolNonAlloc;
+
+            foreach (var overrideComponent in overrides)
+            {
+                var hasFound = false;
+                for (var idx = 0; idx < MergePoolNonAlloc.Count; idx++)
+                {
+                    var component = MergePoolNonAlloc[idx];
+                    var isSameType = component.GetType() == overrideComponent.GetType();
+                    var isReplacementType =
+                        overrideComponent is IReplaceAuthoringComponent replacement &&
+                        replacement.GetAuthoringTypeToReplace() == component.GetType();
+                    
+                    if (isSameType || isReplacementType)
+                    {
+                        MergePoolNonAlloc[idx] = overrideComponent;
+                        hasFound = true;
+                        break;
+                    }
+                }
+
+                if (!hasFound)
+                {
+                    MergePoolNonAlloc.Add(overrideComponent);
+                }
+            }
+
+            return MergePoolNonAlloc;
+        }
     }
 
     public static class ConversionExtensions
@@ -55,7 +99,7 @@ namespace Nanory.Lex.Conversion
 
     public interface IConvertToEntity
     {
-        void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem);
+        void Convert(int entity, ConvertToEntitySystem convertToEntitySystem);
     }
 
     [UpdateInGroup(typeof(PresentationSystemGroup))]

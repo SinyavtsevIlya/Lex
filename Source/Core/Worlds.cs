@@ -130,7 +130,8 @@ namespace Nanory.Lex
         {
             return !_destroyed;
         }
-
+        
+        // ReSharper disable Unity.PerformanceAnalysis
         public int NewEntity()
         {
             int entity;

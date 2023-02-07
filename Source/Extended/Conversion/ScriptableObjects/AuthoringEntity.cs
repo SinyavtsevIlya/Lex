@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Nanory.Lex.Conversion
 {
     [CreateAssetMenu(fileName = "AuthoringEntity", menuName = "Lex/AuthoringEntity")]
-    public class AuthoringEntity : ScriptableObject, IConvertToEntity, ISerializationCallbackReceiver
+    public class AuthoringEntity : ScriptableObject, IConvertToEntity
     {
         /// <summary>
         /// List of components of <b>this</b> Authoring-Entity (components of base Authoring-entities are not included)
@@ -43,11 +43,11 @@ namespace Nanory.Lex.Conversion
             }
         }
 
-        public bool IsPrefab { get; private set; } = true;
-
-        public bool Has<TAuthoringComponent>() where TAuthoringComponent : AuthoringComponent
+        public bool Has<TAuthoringComponent>(bool includeBase = true) where TAuthoringComponent : AuthoringComponent
         {
-            foreach (var component in Components)
+            var components = includeBase ? Components : _components;
+            
+            foreach (var component in components)
             {
                 if (component is TAuthoringComponent)
                 {
@@ -56,10 +56,26 @@ namespace Nanory.Lex.Conversion
             }
             return false;
         }
-
-        public TAuthoringComponent Get<TAuthoringComponent>() where TAuthoringComponent : AuthoringComponent
+        
+        public bool Has(Type componentType, bool includeBase = true)
         {
-            foreach (var value in Components)
+            var components = includeBase ? Components : _components;
+            
+            foreach (var component in components)
+            {
+                if (component.GetType() == componentType)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public TAuthoringComponent Get<TAuthoringComponent>(bool includeBase = true) where TAuthoringComponent : AuthoringComponent
+        {
+            var components = includeBase ? Components : _components;
+            
+            foreach (var value in components)
             {
                 if (value is TAuthoringComponent c)
                 {
@@ -90,38 +106,19 @@ namespace Nanory.Lex.Conversion
                 if (c is TAuthoringComponent)
                     throw new System.Exception($"Component {c} is already on a {this}");
             }
-            component.AuthoringEntity = this;
             _components.Add(component);
             return this;
         }
 
-        public void Convert(int entity, ConvertToEntitySystem сonvertToEntitySystem)
+        public void Convert(int entity, ConvertToEntitySystem convertToEntitySystem)
         {
             foreach (var component in Components)
             {
-                component.Convert(entity, сonvertToEntitySystem);
+                component.Convert(entity, convertToEntitySystem);
             }
         }
-
-        public void OnBeforeSerialize()
-        {
-        }
-
-        public void OnAfterDeserialize()
-        {
-            foreach (var component in _components)
-            {
-                component.AuthoringEntity = this;
-            }
-        }
-
-        public AuthoringEntity Instantiate()
-        {
-            var copy = Instantiate(this);
-            copy.IsPrefab = false;
-            return copy;
-        }
-
+        
+        /// TODO: replace with <see cref="AuthoringComponentExtensions.MergeNonAlloc"/>
         public void GetBaseComponentsNonAlloc(List<AuthoringComponent> result)
         {
             if (_baseAuthoringEntity != null)
