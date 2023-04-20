@@ -25,6 +25,13 @@ namespace Nanory.Lex
         {
         }
 
+        public static List<Type> ScanAssembliesTypes()
+        {
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(s => s.GetTypes())
+                .ToList();
+        }
+
         public IEnumerable<Type> ScanSystemTypes(params Type[] targetFeatureTypes)
         {
             return GetSystemTypesByFeature(targetFeatureTypes)

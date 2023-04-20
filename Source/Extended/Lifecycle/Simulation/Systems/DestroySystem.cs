@@ -5,11 +5,11 @@
     {
         protected override void OnUpdate()
         {
-            foreach (var destoyedEntity in Filter()
+            foreach (var destroyedEntity in Filter()
             .With<DestroyedEvent>()
             .End())
             {
-                Later.DelEntity(destoyedEntity);
+                Later.DelEntity(destroyedEntity);
             }
         }
     }

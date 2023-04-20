@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Nanory.Lex.Conversion
 {
@@ -18,9 +19,15 @@ namespace Nanory.Lex.Conversion
         public abstract void Convert(int entity, ConvertToEntitySystem convertToEntitySystem);
     }
 
+    public interface IPrimaryPreviewTexture
+    {
+        Texture2D GetPreviewTexture();
+    }
+
+
     public interface IReplaceAuthoringComponent
     {
-        public Type GetAuthoringTypeToReplace();
+        Type GetAuthoringTypeToReplace();
     }
 
     public static class AuthoringComponentExtensions
@@ -71,6 +78,23 @@ namespace Nanory.Lex.Conversion
 
             return MergePoolNonAlloc;
         }
+
+        public static string ToShortenedAuthoringName(this Type authoringType, bool addSpaces = true)
+        {
+            var typeName = authoringType.Name;
+            if (!typeName.Contains("Authoring"))
+                throw new Exception($"{authoringType} has a wrong naming. It should contain an \"Authoring\" postfix");
+
+            typeName = typeName.Replace("Authoring", string.Empty);
+
+            if (!addSpaces)
+                return typeName;
+            
+            const string pattern = "(\\B[A-Z])";
+            typeName = System.Text.RegularExpressions.Regex.Replace(typeName, pattern, " $1");
+            
+            return typeName;
+        }
     }
 
     public static class ConversionExtensions
@@ -105,7 +129,7 @@ namespace Nanory.Lex.Conversion
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public class ConvertToEntitySystem : IEcsRunSystem, IEcsPreInitSystem, IEcsEntityCommandBufferLookup
     {
-        private Dictionary<int, int> _conversionMap = new Dictionary<int, int>();
+        private Dictionary<int, EcsPackedEntity> _conversionMap = new();
         private EcsConversionWorldWrapper _conversionWorldWrapper;
         private EcsPool<ConvertRequest> _requestsPool;
         private EcsFilter _requestsFilter;
@@ -192,14 +216,18 @@ namespace Nanory.Lex.Conversion
 
         public int GetPrimaryEntity(IConvertToEntity convertToEntity, out bool isNew)
         {
-            if (_conversionMap.TryGetValue(convertToEntity.GetHashCode(), out var newEntity))
+            if (_conversionMap.TryGetValue(convertToEntity.GetHashCode(), out var newPackedEntity))
             {
-                isNew = false;
-                return newEntity;
+                if (newPackedEntity.Unpack(World.Dst, out var newUnpackedEntity))
+                {
+                    isNew = false;
+                    return newUnpackedEntity;
+                }
             }
 
-            newEntity = _conversionWorldWrapper.NewEntity();
-            _conversionMap[convertToEntity.GetHashCode()] = newEntity;
+            var newEntity = _conversionWorldWrapper.NewEntity();
+            newPackedEntity = World.Dst.PackEntity(newEntity);
+            _conversionMap[convertToEntity.GetHashCode()] = newPackedEntity;
 
             isNew = true;
             return newEntity;
