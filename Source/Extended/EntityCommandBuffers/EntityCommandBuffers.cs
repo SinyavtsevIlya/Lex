@@ -100,8 +100,6 @@ namespace Nanory.Lex
                         BufferWorld.DelEntity(op.BufferEntity);
                     }
                 }
-
-                
             }
             _ops.Clear();
         }
