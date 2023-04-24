@@ -4,6 +4,10 @@ using UnityEngine;
 
 namespace Nanory.Lex
 {
+    public struct BindingDirtyTag
+    {
+    }
+    
     public struct BindEvent<TWidget> where TWidget : MonoBehaviour
     {
         public TWidget Value;

@@ -6,55 +6,55 @@ namespace Nanory.Lex
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public class UIPresentationSystemGroup : EcsSystemGroup
     {
-        private EntityCommandBuffer _widgetsCommandBuffer;
-
-        protected override void OnCreate(EcsSystems systems)
-        {
-            base.OnCreate(systems);
-
-            _widgetsCommandBuffer = CacheEntityCommandBuffer(systems.AllSystems);
-        }
-
-        private EntityCommandBuffer CacheEntityCommandBuffer(List<IEcsSystem> systems)
-        {
-            foreach (var system in systems)
-            {
-                if (system is EcsSystemGroup systemGroup)
-                {
-                    var result = CacheEntityCommandBuffer(systemGroup.Systems);
-                    if (result != null)
-                    {
-                        return result;
-                    }
-                }
-                else if (system is EcsSystemBase systemBase)
-                {
-                    return systemBase.GetCommandBufferFrom<WidgetEntityCommandBufferSystem>();
-                }
-            }
-            return null;
-        }
-
-        protected override void OnUpdate(EcsSystems systems)
-        {
-            foreach (var system in _runSystems)
-            {
-                system.Run(systems);
-                _widgetsCommandBuffer.Playback();
-            }
-        }
+        // private EntityCommandBuffer _widgetsCommandBuffer;
+        //
+        // protected override void OnCreate(EcsSystems systems)
+        // {
+        //     base.OnCreate(systems);
+        //     _widgetsCommandBuffer = CacheEntityCommandBuffer(systems.AllSystems);
+        // }
+        //
+        // private EntityCommandBuffer CacheEntityCommandBuffer(List<IEcsSystem> systems)
+        // {
+        //     foreach (var system in systems)
+        //     {
+        //         if (system is EcsSystemGroup systemGroup)
+        //         {
+        //             var result = CacheEntityCommandBuffer(systemGroup.Systems);
+        //             if (result != null)
+        //             {
+        //                 return result;
+        //             }
+        //         }
+        //         else if (system is EcsSystemBase systemBase)
+        //         {
+        //             return systemBase.GetCommandBufferFrom<EndWidgetEntityCommandBuffersSystemGroup>();
+        //         }
+        //     }
+        //     return null;
+        // }
+        //
+        // protected override void OnUpdate(EcsSystems systems)
+        // {
+        //     foreach (var system in _runSystems)
+        //     {
+        //         system.Run(systems);
+        //         _widgetsCommandBuffer.Playback();
+        //     }
+        // }
     }
 
     public static class UISystemTypesRegistry
     {
         public static Type[] Values = new Type[]
         {
-            typeof(WidgetEntityCommandBufferSystem),
+            typeof(BeginWidgetEntityCommandBufferSystem),
+            typeof(EndWidgetEntityCommandBuffersSystemGroup),
+            typeof(EndWidgetCreationEntityCommandBufferSystem),
+            typeof(EndWidgetDestructionEntityCommandBufferSystem),
             typeof(EndPresentationEntityCommandBufferSystem),
             typeof(ScreenSystemGroup),
-            typeof(WidgetSystemGroup),
-            typeof(PrimaryWidgetSystemGroup),
-            typeof(SecondaryWidgetSystemGroup),
+            typeof(WidgetSystemGroup)
         };
     }
 }

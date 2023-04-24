@@ -355,7 +355,10 @@ namespace Nanory.Lex
             return this;
         }
 
+        public void SetBuffer(EntityCommandBuffer buffer) => _buffer = buffer; 
+            
         public EntityCommandBuffer GetBuffer() => _buffer;
+        
 
         public void Run(EcsSystems systems)
         {
