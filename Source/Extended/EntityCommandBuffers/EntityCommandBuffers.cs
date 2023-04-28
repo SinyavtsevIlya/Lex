@@ -104,6 +104,8 @@ namespace Nanory.Lex
             _ops.Clear();
         }
 
+        public bool IsEmpty() => _ops.Count == 0;
+
         public struct Op
         {
             public OpType OpType;

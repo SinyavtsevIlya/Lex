@@ -5,23 +5,33 @@
     {
     }
     
-    [UpdateInGroup(typeof(WidgetSystemGroup), OrderFirst = true)]
-    public class BeginWidgetEntityCommandBufferSystem : EntityCommandBufferSystem
-    {
-    }
-
-    [UpdateInGroup(typeof(EndWidgetEntityCommandBuffersSystemGroup), OrderLast = true)]
-    public class EndWidgetCreationEntityCommandBufferSystem : EntityCommandBufferSystem
+    [UpdateInGroup(typeof(BeginWidgetEcbSystemGroup), OrderFirst = true)]
+    public class BeginWidgetUnbindingEcbSystem : EntityCommandBufferSystem
     {
     }
     
-    [UpdateInGroup(typeof(EndWidgetEntityCommandBuffersSystemGroup), OrderFirst = true)]
-    public class EndWidgetDestructionEntityCommandBufferSystem : EntityCommandBufferSystem
+    [UpdateInGroup(typeof(BeginWidgetEcbSystemGroup), OrderLast = true)]
+    public class BeginWidgetBindingEcbSystem : EntityCommandBufferSystem
+    {
+    }
+
+    [UpdateInGroup(typeof(EndWidgetEcbSystemGroup), OrderLast = true)]
+    public class EndWidgetBindingEcbSystem : EntityCommandBufferSystem
+    {
+    }
+    
+    [UpdateInGroup(typeof(EndWidgetEcbSystemGroup), OrderFirst = true)]
+    public class EndWidgetUnbindingEcbSystem : EntityCommandBufferSystem
+    {
+    }
+    
+    [UpdateInGroup(typeof(WidgetSystemGroup), OrderFirst = true)]
+    public class BeginWidgetEcbSystemGroup : EcsSystemGroup
     {
     }
     
     [UpdateInGroup(typeof(WidgetSystemGroup), OrderLast = true)]
-    public class EndWidgetEntityCommandBuffersSystemGroup : EcsSystemGroup
+    public class EndWidgetEcbSystemGroup : EcsSystemGroup
     {
     }
 }

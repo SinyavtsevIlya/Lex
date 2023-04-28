@@ -28,7 +28,7 @@ namespace Nanory.Lex
         //         }
         //         else if (system is EcsSystemBase systemBase)
         //         {
-        //             return systemBase.GetCommandBufferFrom<EndWidgetEntityCommandBuffersSystemGroup>();
+        //             return systemBase.GetCommandBufferFrom<EndWidgetEcbSystemGroup>();
         //         }
         //     }
         //     return null;
@@ -48,10 +48,12 @@ namespace Nanory.Lex
     {
         public static Type[] Values = new Type[]
         {
-            typeof(BeginWidgetEntityCommandBufferSystem),
-            typeof(EndWidgetEntityCommandBuffersSystemGroup),
-            typeof(EndWidgetCreationEntityCommandBufferSystem),
-            typeof(EndWidgetDestructionEntityCommandBufferSystem),
+            typeof(BeginWidgetBindingEcbSystem),
+            typeof(BeginWidgetUnbindingEcbSystem),
+            typeof(EndWidgetEcbSystemGroup),
+            typeof(BeginWidgetEcbSystemGroup),
+            typeof(EndWidgetBindingEcbSystem),
+            typeof(EndWidgetUnbindingEcbSystem),
             typeof(EndPresentationEntityCommandBufferSystem),
             typeof(ScreenSystemGroup),
             typeof(WidgetSystemGroup)

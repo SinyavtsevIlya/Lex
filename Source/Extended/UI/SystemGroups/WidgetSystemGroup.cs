@@ -7,46 +7,57 @@ namespace Nanory.Lex
     public class WidgetSystemGroup : EcsSystemGroup
     {
         private const int MaxDepth = 25;
-        
-        private List<WidgetSystemBase> _widgetSystems;
-        private EcsFilter _dirtyFilter;
-        private EcsPool<BindingDirtyTag> _dirtyPool;
-        private EntityCommandBufferSystem _beginSyncPointSystem;
-        private EntityCommandBufferSystem _endSyncPointCreationSystem;
-        private EntityCommandBufferSystem _endSyncPointDestructionSystem;
 
-        private EntityCommandBuffer _lockBeginBuffer;
-        private EntityCommandBuffer _lockEndCreationBuffer;
-        private EntityCommandBuffer _lockEndDestructionBuffer;
+        private EcsSystems _systems;
+        private List<WidgetSystemBase> _widgetSystems;
+        
+        private EntityCommandBufferSystem _beginBingingEcbSystem;
+        private EntityCommandBufferSystem _beginUnbindingEcbSystem;
+        
+        private EntityCommandBufferSystem _endBindingEcbSystem;
+        private EntityCommandBufferSystem _endUnbindingEcbSystem;
+
+        private EntityCommandBuffer _lockBeginBindingBuffer;
+        private EntityCommandBuffer _lockBeginUnbindingBuffer;
+        private EntityCommandBuffer _lockEndBindingBuffer;
+        private EntityCommandBuffer _lockEndUnbindingBuffer;
 
         protected override void OnCreate(EcsSystems systems)
         {
             base.OnCreate(systems);
 
             var world = systems.GetWorld();
-            _dirtyFilter = world.Filter<BindingDirtyTag>().End();
-            _dirtyPool = world.GetPool<BindingDirtyTag>();
+            _systems = systems;
             _widgetSystems = new List<WidgetSystemBase>(_runSystems.Count);
-            _lockBeginBuffer = new EntityCommandBuffer(world);
-            _lockEndCreationBuffer = new EntityCommandBuffer(world);
-            _lockEndDestructionBuffer = new EntityCommandBuffer(world);
+            _lockBeginBindingBuffer = new EntityCommandBuffer(world);
+            _lockBeginUnbindingBuffer = new EntityCommandBuffer(world);
+            _lockEndBindingBuffer = new EntityCommandBuffer(world);
+            _lockEndUnbindingBuffer = new EntityCommandBuffer(world);
 
             foreach (var runSystem in _runSystems)
             {
                 if (runSystem is WidgetSystemBase widgetSystem)
                     _widgetSystems.Add(widgetSystem);
-
-                if (runSystem is BeginWidgetEntityCommandBufferSystem beginWidgetEntityCommandBufferSystem)
-                    _beginSyncPointSystem = beginWidgetEntityCommandBufferSystem;
-
-                if (runSystem is EndWidgetEntityCommandBuffersSystemGroup entityCommandBuffersSystemGroup)
+                
+                if (runSystem is BeginWidgetEcbSystemGroup beginWidgetEcbSystemGroup)
                 {
-                    foreach (var system in entityCommandBuffersSystemGroup.Systems)
+                    foreach (var system in beginWidgetEcbSystemGroup.Systems)
                     {
-                        if (system is EndWidgetCreationEntityCommandBufferSystem creationSystem)
-                            _endSyncPointCreationSystem = creationSystem;
-                        if (system is EndWidgetDestructionEntityCommandBufferSystem destructionSystem)
-                            _endSyncPointDestructionSystem = destructionSystem;
+                        if (system is BeginWidgetBindingEcbSystem beginWidgetBindingEcbSystem)
+                            _beginBingingEcbSystem = beginWidgetBindingEcbSystem;
+                        if (system is BeginWidgetUnbindingEcbSystem beginWidgetUnbindingEcbSystem)
+                            _beginUnbindingEcbSystem = beginWidgetUnbindingEcbSystem;
+                    }
+                }
+
+                if (runSystem is EndWidgetEcbSystemGroup endWidgetEcbSystemGroup)
+                {
+                    foreach (var system in endWidgetEcbSystemGroup.Systems)
+                    {
+                        if (system is EndWidgetBindingEcbSystem endBindingEcbSystem)
+                            _endBindingEcbSystem = endBindingEcbSystem;
+                        if (system is EndWidgetUnbindingEcbSystem endUnbindingEcbSystem)
+                            _endUnbindingEcbSystem = endUnbindingEcbSystem;
                     }
                 }
             }
@@ -54,38 +65,8 @@ namespace Nanory.Lex
 
         protected override void OnUpdate(EcsSystems systems)
         {
-            var isDirty = false;
-            
-            var iterations = 0;
-            
-            do
-            {
-                _beginSyncPointSystem.Run(systems);
-                ChangeLockState();
-                foreach (var widgetSystem in _widgetSystems)
-                {
-                    widgetSystem.Unbind();
-                    widgetSystem.Bind();
-                }
-                ChangeLockState();
-                _endSyncPointDestructionSystem.Run(systems);
-                _endSyncPointCreationSystem.Run(systems);
-                ChangeLockState();
-                
-                isDirty = _dirtyFilter.GetEntitiesCount() > 0;
-                
-                foreach (var dirtyEntity in _dirtyFilter)
-                    _dirtyPool.Del(dirtyEntity);
-
-                if (++iterations > MaxDepth)
-                {
-                    Debug.LogError("Max iterations count was exceeded");
-                    break;
-                }
-                
-            } while (isDirty);
-            
-            Debug.Log($"Finished bindign phase in {iterations} iterations");
+            ResolveWidgetSystems(false, _endUnbindingEcbSystem, _beginUnbindingEcbSystem);
+            ResolveWidgetSystems(true, _endBindingEcbSystem, _beginBingingEcbSystem);
 
             for (var systemIdx = 1; systemIdx < _runSystems.Count - 1; systemIdx++)
             {
@@ -93,11 +74,41 @@ namespace Nanory.Lex
             }
         }
 
+        private void ResolveWidgetSystems(bool bindPhase, EntityCommandBufferSystem endEcbSystem, EntityCommandBufferSystem beginEcbSystem)
+        {
+            var iterations = 0;
+            
+            do
+            {
+                beginEcbSystem.Run(_systems);
+                ChangeLockState();
+                
+                foreach (var widgetSystem in _widgetSystems)
+                {
+                    if (!bindPhase)
+                        widgetSystem.Unbind();
+                    else
+                        widgetSystem.Bind();
+                }
+
+                ChangeLockState();
+                endEcbSystem.Run(_systems);
+                ChangeLockState();
+
+                if (++iterations > MaxDepth)
+                {
+                    Debug.LogError("Max iterations count was exceeded");
+                    break;
+                }
+            } while (!endEcbSystem.GetBuffer().IsEmpty());
+        }
+
         private void ChangeLockState()
         {
-            ChangeLockState(_beginSyncPointSystem, ref _lockBeginBuffer);
-            ChangeLockState(_endSyncPointDestructionSystem, ref _lockEndDestructionBuffer);
-            ChangeLockState(_endSyncPointCreationSystem, ref _lockEndCreationBuffer);
+            ChangeLockState(_beginUnbindingEcbSystem, ref _lockBeginUnbindingBuffer);
+            ChangeLockState(_beginBingingEcbSystem, ref _lockBeginBindingBuffer);
+            ChangeLockState(_endUnbindingEcbSystem, ref _lockEndUnbindingBuffer);
+            ChangeLockState(_endBindingEcbSystem, ref _lockEndBindingBuffer);
         }
 
         private void ChangeLockState(EntityCommandBufferSystem commandBufferSystem, ref EntityCommandBuffer buffer)
