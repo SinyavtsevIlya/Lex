@@ -76,7 +76,6 @@ namespace Nanory.Lex
 
         private static void DeactivateScreen(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage, Type screenType)
         {
-
             var world = system.World;
             var screen = screenStorage.ScreenByType[screenType];
             var closeEventComponentIndex = screenStorage.CloseEventComponentIndexByType[screenType];

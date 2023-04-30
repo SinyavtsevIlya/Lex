@@ -15,15 +15,27 @@ namespace Nanory.Lex.Stats
             foreach (var ownerEntity in Filter()
                          .With<TStat>()
                          .With<TStatMax>()
+                         .With<TStatMaxChanged>()
+                         .With<Mono<TStatWidget>>()
+                         .End())
+            {
+                var widget = Get<Mono<TStatWidget>>(ownerEntity).Value;
+                var maxValue = Get<TStatMax>(ownerEntity).StatValue;
+
+                widget
+                    .SetMaxValue(maxValue);
+            }
+            
+            foreach (var ownerEntity in Filter()
+                         .With<TStat>()
+                         .With<TStatMax>()
                          .With<TStatChanged>()
                          .With<Mono<TStatWidget>>()
                          .End())
             {
                 var widget = Get<Mono<TStatWidget>>(ownerEntity).Value;
-
                 var statValue = Get<TStat>(ownerEntity).StatValue;
-                var maxValue = Get<TStatMax>(ownerEntity).StatValue;
-
+                
                 widget
                     .SetValue(statValue);
             }

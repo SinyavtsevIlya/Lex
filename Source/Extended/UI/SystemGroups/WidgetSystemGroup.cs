@@ -48,6 +48,8 @@ namespace Nanory.Lex
                         if (system is BeginWidgetUnbindingEcbSystem beginWidgetUnbindingEcbSystem)
                             _beginUnbindingEcbSystem = beginWidgetUnbindingEcbSystem;
                     }
+
+                    beginWidgetEcbSystemGroup.IsEnabled = false;
                 }
 
                 if (runSystem is EndWidgetEcbSystemGroup endWidgetEcbSystemGroup)
@@ -59,6 +61,8 @@ namespace Nanory.Lex
                         if (system is EndWidgetUnbindingEcbSystem endUnbindingEcbSystem)
                             _endUnbindingEcbSystem = endUnbindingEcbSystem;
                     }
+
+                    endWidgetEcbSystemGroup.IsEnabled = false;
                 }
             }
         }
@@ -68,10 +72,8 @@ namespace Nanory.Lex
             ResolveWidgetSystems(false, _endUnbindingEcbSystem, _beginUnbindingEcbSystem);
             ResolveWidgetSystems(true, _endBindingEcbSystem, _beginBingingEcbSystem);
 
-            for (var systemIdx = 1; systemIdx < _runSystems.Count - 1; systemIdx++)
-            {
-                _runSystems[systemIdx].Run(systems);
-            }
+            foreach (var runSystem in _runSystems) 
+                runSystem.Run(systems);
         }
 
         private void ResolveWidgetSystems(bool bindPhase, EntityCommandBufferSystem endEcbSystem, EntityCommandBufferSystem beginEcbSystem)
