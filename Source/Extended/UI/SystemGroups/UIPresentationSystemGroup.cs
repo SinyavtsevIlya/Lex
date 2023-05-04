@@ -10,15 +10,15 @@ namespace Nanory.Lex
     {
         public static Type[] Values = new Type[]
         {
-            typeof(BeginWidgetBindingEcbSystem),
-            typeof(BeginWidgetUnbindingEcbSystem),
-            typeof(EndWidgetEcbSystemGroup),
-            typeof(BeginWidgetEcbSystemGroup),
-            typeof(EndWidgetBindingEcbSystem),
-            typeof(EndWidgetUnbindingEcbSystem),
+            typeof(BeginUiBindingEcbSystem),
+            typeof(BeginUiUnbindingEcbSystem),
+            typeof(EndUiEcbSystemGroup),
+            typeof(BeginUiEcbSystemGroup),
+            typeof(EndUiBindingEcbSystem),
+            typeof(EndUiUnbindingEcbSystem),
             typeof(EndPresentationEntityCommandBufferSystem),
             typeof(ScreenSystemGroup),
-            typeof(WidgetSystemGroup)
+            typeof(UiSystemGroup)
         };
     }
 }

@@ -4,12 +4,12 @@ using UnityEngine;
 namespace Nanory.Lex
 {
     [UpdateInGroup(typeof(UIPresentationSystemGroup))]
-    public class WidgetSystemGroup : EcsSystemGroup
+    public class UiSystemGroup : EcsSystemGroup
     {
         private const int MaxDepth = 25;
 
         private EcsSystems _systems;
-        private List<UiSystemBase> _widgetSystems; // mistake here.
+        private List<UiSystemBase> _uiSystems;
         
         private EntityCommandBufferSystem _beginBingingEcbSystem;
         private EntityCommandBufferSystem _beginUnbindingEcbSystem;
@@ -28,7 +28,7 @@ namespace Nanory.Lex
 
             var world = systems.GetWorld();
             _systems = systems;
-            _widgetSystems = new List<UiSystemBase>(_runSystems.Count);
+            _uiSystems = new List<UiSystemBase>(_runSystems.Count);
             _lockBeginBindingBuffer = new EntityCommandBuffer(world);
             _lockBeginUnbindingBuffer = new EntityCommandBuffer(world);
             _lockEndBindingBuffer = new EntityCommandBuffer(world);
@@ -40,49 +40,49 @@ namespace Nanory.Lex
                 {
                     foreach (var system in (runSystem as EcsSystemGroup).Systems)
                     {
-                        if (system is UiSystemBase widgetSystem)
-                            _widgetSystems.Add(widgetSystem);
+                        if (system is UiSystemBase uiSystem)
+                            _uiSystems.Add(uiSystem);
                     }
                 }
 
-                if (runSystem is BeginWidgetEcbSystemGroup beginWidgetEcbSystemGroup)
+                if (runSystem is BeginUiEcbSystemGroup beginUiEcbSystemGroup)
                 {
-                    foreach (var system in beginWidgetEcbSystemGroup.Systems)
+                    foreach (var system in beginUiEcbSystemGroup.Systems)
                     {
-                        if (system is BeginWidgetBindingEcbSystem beginWidgetBindingEcbSystem)
-                            _beginBingingEcbSystem = beginWidgetBindingEcbSystem;
-                        if (system is BeginWidgetUnbindingEcbSystem beginWidgetUnbindingEcbSystem)
-                            _beginUnbindingEcbSystem = beginWidgetUnbindingEcbSystem;
+                        if (system is BeginUiBindingEcbSystem beginUiBindingEcbSystem)
+                            _beginBingingEcbSystem = beginUiBindingEcbSystem;
+                        if (system is BeginUiUnbindingEcbSystem beginUiUnbindingEcbSystem)
+                            _beginUnbindingEcbSystem = beginUiUnbindingEcbSystem;
                     }
 
-                    beginWidgetEcbSystemGroup.IsEnabled = false;
+                    beginUiEcbSystemGroup.IsEnabled = false;
                 }
 
-                if (runSystem is EndWidgetEcbSystemGroup endWidgetEcbSystemGroup)
+                if (runSystem is EndUiEcbSystemGroup endUiEcbSystemGroup)
                 {
-                    foreach (var system in endWidgetEcbSystemGroup.Systems)
+                    foreach (var system in endUiEcbSystemGroup.Systems)
                     {
-                        if (system is EndWidgetBindingEcbSystem endBindingEcbSystem)
+                        if (system is EndUiBindingEcbSystem endBindingEcbSystem)
                             _endBindingEcbSystem = endBindingEcbSystem;
-                        if (system is EndWidgetUnbindingEcbSystem endUnbindingEcbSystem)
+                        if (system is EndUiUnbindingEcbSystem endUnbindingEcbSystem)
                             _endUnbindingEcbSystem = endUnbindingEcbSystem;
                     }
 
-                    endWidgetEcbSystemGroup.IsEnabled = false;
+                    endUiEcbSystemGroup.IsEnabled = false;
                 }
             }
         }
 
         protected override void OnUpdate(EcsSystems systems)
         {
-            ResolveWidgetSystems(false, _endUnbindingEcbSystem, _beginUnbindingEcbSystem);
-            ResolveWidgetSystems(true, _endBindingEcbSystem, _beginBingingEcbSystem);
-
             foreach (var runSystem in _runSystems) 
                 runSystem.Run(systems);
+            
+            ResolveUiSystems(false, _endUnbindingEcbSystem, _beginUnbindingEcbSystem);
+            ResolveUiSystems(true, _endBindingEcbSystem, _beginBingingEcbSystem);
         }
 
-        private void ResolveWidgetSystems(bool bindPhase, EntityCommandBufferSystem endEcbSystem, EntityCommandBufferSystem beginEcbSystem)
+        private void ResolveUiSystems(bool bindPhase, EntityCommandBufferSystem endEcbSystem, EntityCommandBufferSystem beginEcbSystem)
         {
             var iterations = 0;
             
@@ -91,12 +91,12 @@ namespace Nanory.Lex
                 beginEcbSystem.Run(_systems);
                 ChangeLockState();
                 
-                foreach (var widgetSystem in _widgetSystems)
+                foreach (var uiSystem in _uiSystems)
                 {
                     if (!bindPhase)
-                        widgetSystem.Unbind();
+                        uiSystem.Unbind();
                     else
-                        widgetSystem.Bind();
+                        uiSystem.Bind();
                 }
 
                 ChangeLockState();

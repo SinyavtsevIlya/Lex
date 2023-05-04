@@ -63,8 +63,8 @@ namespace Nanory.Lex
         #region Private
         private static void ActivateScreen<TScreen>(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage) where TScreen : MonoBehaviour
         {
-            var beginSyncPoint = system.GetCommandBufferFrom<BeginWidgetBindingEcbSystem>();
-            var endSyncPoint = system.GetCommandBufferFrom<EndWidgetBindingEcbSystem>();
+            var beginSyncPoint = system.GetCommandBufferFrom<BeginUiBindingEcbSystem>();
+            var endSyncPoint = system.GetCommandBufferFrom<EndUiBindingEcbSystem>();
             
             var world = system.World;
             var screen = system.GetScreen<TScreen>(ownerEntity);
@@ -78,8 +78,8 @@ namespace Nanory.Lex
 
         private static void DeactivateScreen(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage, Type screenType)
         {
-            var beginSyncPoint = system.GetCommandBufferFrom<BeginWidgetUnbindingEcbSystem>();
-            var endSyncPoint = system.GetCommandBufferFrom<EndWidgetUnbindingEcbSystem>();
+            var beginSyncPoint = system.GetCommandBufferFrom<BeginUiUnbindingEcbSystem>();
+            var endSyncPoint = system.GetCommandBufferFrom<EndUiUnbindingEcbSystem>();
             
             var screen = screenStorage.ScreenByType[screenType];
             var closeEventComponentIndex = screenStorage.CloseEventComponentIndexByType[screenType];
@@ -115,7 +115,7 @@ namespace Nanory.Lex
                 
                 // Also we should cache close event type in the buffer world pool to 
                 // be able access it later by knowing only index (for screen deactivation). 
-                var beginSyncPoint = world.GetCommandBufferFrom<BeginWidgetUnbindingEcbSystem>();
+                var beginSyncPoint = world.GetCommandBufferFrom<BeginUiUnbindingEcbSystem>();
                 beginSyncPoint.BufferWorld.GetPool<CloseEvent<TScreen>>();
             }
         }
