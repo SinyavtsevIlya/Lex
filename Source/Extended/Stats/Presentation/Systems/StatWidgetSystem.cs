@@ -2,7 +2,7 @@
 
 namespace Nanory.Lex.Stats
 {
-    [UpdateInGroup(typeof(WidgetSystemGroup))]
+    [UpdateInGroup(typeof(WidgetsSystemGroup))]
     public class StatWidgetSystem<TStat, TStatChanged, TStatMax, TStatMaxChanged, TStatWidget> : WidgetSystemBase
         where TStat : struct, IStat
         where TStatChanged : struct

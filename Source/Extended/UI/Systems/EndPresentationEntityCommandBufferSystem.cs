@@ -34,4 +34,11 @@
     public class EndWidgetEcbSystemGroup : EcsSystemGroup
     {
     }
+
+    [UpdateInGroup(typeof(WidgetSystemGroup))]
+    public class WidgetsSystemGroup : EcsSystemGroup
+    {
+    }
+    
+    
 }

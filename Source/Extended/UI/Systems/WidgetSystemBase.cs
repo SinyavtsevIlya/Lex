@@ -1,13 +1,17 @@
 namespace Nanory.Lex
 {
-    [UpdateInGroup(typeof(WidgetSystemGroup))]
-    public abstract class WidgetSystemBase : EcsSystemBase
+    [UpdateInGroup(typeof(WidgetsSystemGroup))]
+    public abstract class WidgetSystemBase : UiSystemBase
+    {
+    }
+
+    public abstract class UiSystemBase : EcsSystemBase
     {
         protected abstract void OnBind();
         protected abstract void OnUnbind();
 
-        public void Bind() => OnBind();
+        internal void Bind() => OnBind();
 
-        public void Unbind() => OnUnbind();
+        internal void Unbind() => OnUnbind();
     }
 }

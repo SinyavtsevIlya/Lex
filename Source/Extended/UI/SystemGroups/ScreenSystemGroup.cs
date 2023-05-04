@@ -1,7 +1,7 @@
 ﻿namespace Nanory.Lex
 {
-    [UpdateInGroup(typeof(UIPresentationSystemGroup))]
-    [UpdateBefore(typeof(WidgetSystemGroup))]
+    [UpdateInGroup(typeof(WidgetSystemGroup))]
+    [UpdateBefore(typeof(WidgetsSystemGroup))]
     public class ScreenSystemGroup : EcsSystemGroup
     {
     }

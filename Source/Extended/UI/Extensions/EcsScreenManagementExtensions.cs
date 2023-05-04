@@ -63,35 +63,39 @@ namespace Nanory.Lex
         #region Private
         private static void ActivateScreen<TScreen>(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage) where TScreen : MonoBehaviour
         {
+            var beginSyncPoint = system.GetCommandBufferFrom<BeginWidgetBindingEcbSystem>();
+            var endSyncPoint = system.GetCommandBufferFrom<EndWidgetBindingEcbSystem>();
+            
             var world = system.World;
             var screen = system.GetScreen<TScreen>(ownerEntity);
-            world.Add<MonoScreen<TScreen>>(ownerEntity).Value = screen;
-            world.Add<OpenEvent<TScreen>>(ownerEntity).Value = screen;
+            beginSyncPoint.Add<OpenEvent<TScreen>>(ownerEntity).Value = screen;
+            endSyncPoint.Add<MonoScreen<TScreen>>(ownerEntity).Value = screen;
             screenStorage.ActiveScreen = screen;
             screen.gameObject.SetActive(true);
             world.TryCacheComponentData(ownerEntity, screen);
-            var later = system.GetCommandBufferFrom<EndPresentationEntityCommandBufferSystem>();
-            later.Del<OpenEvent<TScreen>>(ownerEntity);
+            endSyncPoint.Del<OpenEvent<TScreen>>(ownerEntity);
         }
 
         private static void DeactivateScreen(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage, Type screenType)
         {
-            var world = system.World;
+            var beginSyncPoint = system.GetCommandBufferFrom<BeginWidgetUnbindingEcbSystem>();
+            var endSyncPoint = system.GetCommandBufferFrom<EndWidgetUnbindingEcbSystem>();
+            
             var screen = screenStorage.ScreenByType[screenType];
             var closeEventComponentIndex = screenStorage.CloseEventComponentIndexByType[screenType];
             var screenComponentIndex = screenStorage.ComponentIndexByType[screenType];
-            world.PoolsSparse[closeEventComponentIndex].Activate(ownerEntity);
-            world.PoolsSparse[screenComponentIndex].Del(ownerEntity);
+            
+            beginSyncPoint.Activate(ownerEntity, closeEventComponentIndex);
+            endSyncPoint.Del(ownerEntity, screenComponentIndex);
+            endSyncPoint.Del(ownerEntity, closeEventComponentIndex);
             screenStorage.PreviousScreen = screen;
             screen.gameObject.SetActive(false);
-            var later = system.GetCommandBufferFrom<EndPresentationEntityCommandBufferSystem>();
-            later.Del(ownerEntity, closeEventComponentIndex);
         }
 
         // There is no way to get Component Index without explicit Generic declaration.
         // And we don't want to enforce user to type screen types manually. 
         // Thats why we fill Component-Indeces map in a lazy manner.
-        private static void TryCacheComponentData<TScreen>(this EcsWorld world, int ownerEntity, TScreen screen) where TScreen : MonoBehaviour
+        private static void TryCacheComponentData<TScreen>(this EcsWorldBase world, int ownerEntity, TScreen screen) where TScreen : MonoBehaviour
         {
             ref var screenStorage = ref world.Get<ScreensStorage>(ownerEntity);
             var areComponentIndecesRegistered = screenStorage.ComponentIndexByType.TryGetValue(typeof(TScreen), out var _);
@@ -108,6 +112,11 @@ namespace Nanory.Lex
                 // because we have overridden the AutoReset.
                 world.Add<CloseEvent<TScreen>>(ownerEntity).Value = screen;
                 world.Del<CloseEvent<TScreen>>(ownerEntity);
+                
+                // Also we should cache close event type in the buffer world pool to 
+                // be able access it later by knowing only index (for screen deactivation). 
+                var beginSyncPoint = world.GetCommandBufferFrom<BeginWidgetUnbindingEcbSystem>();
+                beginSyncPoint.BufferWorld.GetPool<CloseEvent<TScreen>>();
             }
         }
         #endregion

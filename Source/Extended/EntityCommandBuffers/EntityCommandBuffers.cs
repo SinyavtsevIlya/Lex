@@ -91,6 +91,9 @@ namespace Nanory.Lex
 #endif
                             bufferPool.CpyToDstWorld(op.BufferEntity, dstEntity);
                             break;
+                        case OpType.Activate:
+                            pool.Activate(dstEntity);
+                            break;
                         default:
                             break;
                     }
@@ -123,7 +126,8 @@ namespace Nanory.Lex
             Del,
             AddOrSet,
             Add,
-            Set
+            Set,
+            Activate
         }
     }
 
@@ -221,6 +225,10 @@ namespace Nanory.Lex
             });
         }
 
+        /// <summary>
+        /// <remarks>Component pool of passed <see cref="componentIndex"/> should be previously initialized using
+        /// <see cref="EcsWorld.GetPool{TComponent}"/> otherwise an <see cref="System.Exception"/> will be thrown on Playback</remarks>
+        /// </summary>
         public static void AddOrSet(this EntityCommandBuffer entityCommandBuffer, int entity, int componentIndex)
         {
             var bufferEntity = entityCommandBuffer.BufferWorld.NewEntity();
@@ -235,6 +243,21 @@ namespace Nanory.Lex
 #endif
             });
             entityCommandBuffer.BufferWorld.PoolsSparse[componentIndex].Activate(bufferEntity);
+        }
+        
+        public static void Activate(this EntityCommandBuffer entityCommandBuffer, int entity, int componentIndex)
+        {
+            var bufferEntity = entityCommandBuffer.BufferWorld.NewEntity();
+            entityCommandBuffer.Schedule(new EntityCommandBuffer.Op()
+            {
+                OpType = EntityCommandBuffer.OpType.Activate,
+                ComponentIndex = componentIndex,
+                Entity = entityCommandBuffer.DstWorld.PackEntity(entity),
+                BufferEntity = bufferEntity,
+#if DEBUG && ENABLE_ECB_STACKTRACE
+                CallLocation = GetCallLocation()
+#endif
+            });
         }
 
         public static void DelBuffer<TElement>(this EntityCommandBuffer entityCommandBuffer, int entity) where TElement : struct

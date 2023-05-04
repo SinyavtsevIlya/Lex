@@ -9,7 +9,7 @@ namespace Nanory.Lex
         private const int MaxDepth = 25;
 
         private EcsSystems _systems;
-        private List<WidgetSystemBase> _widgetSystems;
+        private List<UiSystemBase> _widgetSystems; // mistake here.
         
         private EntityCommandBufferSystem _beginBingingEcbSystem;
         private EntityCommandBufferSystem _beginUnbindingEcbSystem;
@@ -28,7 +28,7 @@ namespace Nanory.Lex
 
             var world = systems.GetWorld();
             _systems = systems;
-            _widgetSystems = new List<WidgetSystemBase>(_runSystems.Count);
+            _widgetSystems = new List<UiSystemBase>(_runSystems.Count);
             _lockBeginBindingBuffer = new EntityCommandBuffer(world);
             _lockBeginUnbindingBuffer = new EntityCommandBuffer(world);
             _lockEndBindingBuffer = new EntityCommandBuffer(world);
@@ -36,9 +36,15 @@ namespace Nanory.Lex
 
             foreach (var runSystem in _runSystems)
             {
-                if (runSystem is WidgetSystemBase widgetSystem)
-                    _widgetSystems.Add(widgetSystem);
-                
+                if (runSystem is ScreenSystemGroup or WidgetsSystemGroup)
+                {
+                    foreach (var system in (runSystem as EcsSystemGroup).Systems)
+                    {
+                        if (system is UiSystemBase widgetSystem)
+                            _widgetSystems.Add(widgetSystem);
+                    }
+                }
+
                 if (runSystem is BeginWidgetEcbSystemGroup beginWidgetEcbSystemGroup)
                 {
                     foreach (var system in beginWidgetEcbSystemGroup.Systems)

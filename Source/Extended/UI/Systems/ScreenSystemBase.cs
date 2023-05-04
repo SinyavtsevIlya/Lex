@@ -1,7 +1,7 @@
 namespace Nanory.Lex
 {
-    public abstract class ScreenSystemBase : EcsSystemBase
+    [UpdateInGroup(typeof(ScreenSystemGroup))]
+    public abstract class ScreenSystemBase : UiSystemBase
     {
- 
     }
 }
