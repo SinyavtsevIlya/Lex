@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Nanory.Lex
 {
-    [UpdateInGroup(typeof(UIPresentationSystemGroup))]
+    [UpdateInGroup(typeof(PresentationSystemGroup))]
     public class UiSystemGroup : EcsSystemGroup
     {
         private const int MaxDepth = 25;
