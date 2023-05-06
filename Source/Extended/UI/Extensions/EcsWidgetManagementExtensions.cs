@@ -4,6 +4,14 @@ namespace Nanory.Lex
 {
     public static class EcsWidgetManagementExtensions
     {
+        public static void BindOrUnbind<TWidget>(this EcsSystemBase system, int ownerEntity, TWidget widget, bool value) where TWidget : MonoBehaviour
+        {
+            if (value)
+                BindWidget(system, ownerEntity,widget);
+            else 
+                UnbindWidget(system,ownerEntity,widget);
+        }
+        
         public static void BindWidget<TWidget>(this EcsSystemBase system, int ownerEntity, TWidget widget) where TWidget : MonoBehaviour
         {
             var beginSyncPoint = system.GetCommandBufferFrom<BeginUiBindingEcbSystem>();

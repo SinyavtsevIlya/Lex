@@ -9,21 +9,12 @@ namespace Nanory.Lex
         public TWidget Value;
     }
 
-    public struct UnbindEvent<TWidget> where TWidget : MonoBehaviour
+    public struct UnbindEvent<TWidget> : IEcsAutoReset<UnbindEvent<TWidget>> where TWidget : MonoBehaviour
     {
         public TWidget Value;
-    }
-
-    public struct OpenEvent<TScreen> where TScreen : MonoBehaviour
-    {
-        public TScreen Value;
-    }
-
-    public struct CloseEvent<TScreen> : IEcsAutoReset<CloseEvent<TScreen>> where TScreen : MonoBehaviour
-    {
-        public TScreen Value;
-
-        public void AutoReset(ref CloseEvent<TScreen> c)
+        
+        // NOTE: REIMPLEMENT ASAP
+        public void AutoReset(ref UnbindEvent<TWidget> c)
         {
             // NOTE: We implement IEcsAutoReset to 
             // prevent automatic cleaning the component 
@@ -31,17 +22,12 @@ namespace Nanory.Lex
         }
     }
 
-    public struct MonoScreen<TMonoComponent> where TMonoComponent : Component
-    {
-        public TMonoComponent Value;
-    }
-
     public struct ScreensStorage : IEcsAutoReset<ScreensStorage>
     {
         public Dictionary<Type, MonoBehaviour> ScreenByType;
         public Dictionary<Type, int> ComponentIndexByType;
-        public Dictionary<Type, int> OpenEventComponentIndexByType;
-        public Dictionary<Type, int> CloseEventComponentIndexByType;
+        public Dictionary<Type, int> BindEventComponentIndexByType;
+        public Dictionary<Type, int> UnbindEventComponentIndexByType;
         public MonoBehaviour ActiveScreen;
         public MonoBehaviour PreviousScreen;
 
@@ -49,8 +35,8 @@ namespace Nanory.Lex
         {
             ScreenByType = new Dictionary<Type, MonoBehaviour>(capacity);
             ComponentIndexByType = new Dictionary<Type, int>(capacity);
-            OpenEventComponentIndexByType = new Dictionary<Type, int>(capacity);
-            CloseEventComponentIndexByType = new Dictionary<Type, int>(capacity);
+            BindEventComponentIndexByType = new Dictionary<Type, int>(capacity);
+            UnbindEventComponentIndexByType = new Dictionary<Type, int>(capacity);
             ActiveScreen = null;
             PreviousScreen = null;
         }
@@ -59,8 +45,8 @@ namespace Nanory.Lex
         {
             c.ScreenByType = null;
             c.ComponentIndexByType = null;
-            c.OpenEventComponentIndexByType = null;
-            c.CloseEventComponentIndexByType = null;
+            c.BindEventComponentIndexByType = null;
+            c.UnbindEventComponentIndexByType = null;
             c.ActiveScreen = null;
             c.PreviousScreen = null;
         }
