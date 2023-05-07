@@ -32,16 +32,10 @@ namespace Nanory.Lex
         /// <param name="ownerEntity"></param>
         public static void OpenScreen<TScreen>(this EcsSystemBase system, int ownerEntity) where TScreen : MonoBehaviour
         {
-            var world = system.World;
-            ref var screenStorage = ref world.Get<ScreensStorage>(ownerEntity);
-
-            var hasActiveScreen = screenStorage.ActiveScreen != null;
-
-            if (hasActiveScreen)
-            {
-                DeactivateScreen(ownerEntity, system, ref screenStorage, screenStorage.ActiveScreen.GetType());
-            }
-            ActivateScreen<TScreen>(ownerEntity, system, ref screenStorage);
+            ref var screenStorage = ref system.World.Get<ScreensStorage>(ownerEntity);
+            screenStorage.Deactivation?.Invoke();
+            var screen = system.GetScreen<TScreen>(ownerEntity);
+            ActivateScreen<TScreen>(ownerEntity, system, ref screenStorage, screen);
         }
 
         public static TScreen GetScreen<TScreen>(this EcsSystemBase system, int ownerEntity) where TScreen : MonoBehaviour
@@ -53,71 +47,24 @@ namespace Nanory.Lex
             {
                 return screen as TScreen;
             }
-            else
-            {
-                throw new Exception($"No screen {typeof(TScreen).Name} is registered for entity-{ownerEntity}");
-            }
+
+            throw new Exception($"No screen {typeof(TScreen).Name} is registered for entity-{ownerEntity}");
         }
         #endregion
 
         #region Private
-        private static void ActivateScreen<TScreen>(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage) where TScreen : MonoBehaviour
+        private static void ActivateScreen<TScreen>(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage, TScreen screen) where TScreen : MonoBehaviour
         {
-            var beginSyncPoint = system.GetCommandBufferFrom<BeginUiBindingEcbSystem>();
-            var endSyncPoint = system.GetCommandBufferFrom<EndUiBindingEcbSystem>();
+            system.BindWidget(ownerEntity, screen);
             
-            var world = system.World;
-            var screen = system.GetScreen<TScreen>(ownerEntity);
-            beginSyncPoint.Add<BindEvent<TScreen>>(ownerEntity).Value = screen;
-            endSyncPoint.Add<Mono<TScreen>>(ownerEntity).Value = screen;
             screenStorage.ActiveScreen = screen;
             screen.gameObject.SetActive(true);
-            world.TryCacheComponentData(ownerEntity, screen);
-            endSyncPoint.Del<BindEvent<TScreen>>(ownerEntity);
-        }
 
-        private static void DeactivateScreen(int ownerEntity, EcsSystemBase system, ref ScreensStorage screenStorage, Type screenType)
-        {
-            var beginSyncPoint = system.GetCommandBufferFrom<BeginUiUnbindingEcbSystem>();
-            var endSyncPoint = system.GetCommandBufferFrom<EndUiUnbindingEcbSystem>();
-            
-            var screen = screenStorage.ScreenByType[screenType];
-            var UnbindEventComponentIndex = screenStorage.UnbindEventComponentIndexByType[screenType];
-            var screenComponentIndex = screenStorage.ComponentIndexByType[screenType];
-            
-            beginSyncPoint.Activate(ownerEntity, UnbindEventComponentIndex);
-            endSyncPoint.Del(ownerEntity, screenComponentIndex);
-            endSyncPoint.Del(ownerEntity, UnbindEventComponentIndex);
-            screenStorage.PreviousScreen = screen;
-            screen.gameObject.SetActive(false);
-        }
-
-        // There is no way to get Component Index without explicit Generic declaration.
-        // And we don't want to enforce user to type screen types manually. 
-        // Thats why we fill Component-Indeces map in a lazy manner.
-        private static void TryCacheComponentData<TScreen>(this EcsWorldBase world, int ownerEntity, TScreen screen) where TScreen : MonoBehaviour
-        {
-            ref var screenStorage = ref world.Get<ScreensStorage>(ownerEntity);
-            var areComponentIndecesRegistered = screenStorage.ComponentIndexByType.TryGetValue(typeof(TScreen), out var _);
-
-            if (!areComponentIndecesRegistered)
+            screenStorage.Deactivation = () =>
             {
-                screenStorage.ComponentIndexByType[typeof(TScreen)] = EcsComponent<Mono<TScreen>>.TypeIndex;
-                screenStorage.BindEventComponentIndexByType[typeof(TScreen)] = EcsComponent<BindEvent<TScreen>>.TypeIndex;
-                screenStorage.UnbindEventComponentIndexByType[typeof(TScreen)] = EcsComponent<UnbindEvent<TScreen>>.TypeIndex;
-
-                // We have to somehow pass a "screen" value into the UnbindEvent component
-                // and the easiest way is to add and immediately delete the component.
-                // even when the component is removed it's value is still inside it, 
-                // because we have overridden the AutoReset.
-                world.Add<UnbindEvent<TScreen>>(ownerEntity).Value = screen;
-                world.Del<UnbindEvent<TScreen>>(ownerEntity);
-                
-                // Also we should cache close event type in the buffer world pool to 
-                // be able access it later by knowing only index (for screen deactivation). 
-                var beginSyncPoint = world.GetCommandBufferFrom<BeginUiUnbindingEcbSystem>();
-                beginSyncPoint.BufferWorld.GetPool<UnbindEvent<TScreen>>();
-            }
+                system.UnbindWidget(ownerEntity, screen);
+                screen.gameObject.SetActive(false);
+            };
         }
         #endregion
     }
