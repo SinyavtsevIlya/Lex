@@ -14,23 +14,44 @@ namespace Nanory.Lex
         public TWidget Value;
     }
 
-    public struct ScreensStorage : IEcsAutoReset<ScreensStorage>
+    public struct Replaceables : IEcsAutoReset<Replaceables>
     {
-        public Dictionary<Type, MonoBehaviour> ScreenByType;
-        public MonoBehaviour ActiveScreen;
+        public List<MonoBehaviour> Elements;
+        public MonoBehaviour ActiveElement;
         public Action Deactivation;
 
-        public ScreensStorage(int capacity)
+        public Replaceables(int capacity)
         {
-            ScreenByType = new Dictionary<Type, MonoBehaviour>(capacity);
-            ActiveScreen = null;
+            Elements = new List<MonoBehaviour>(capacity);
+            ActiveElement = null;
             Deactivation = null;
         }
 
-        public void AutoReset(ref ScreensStorage c)
+        public void AutoReset(ref Replaceables c)
         {
-            c.ScreenByType = null;
-            c.ActiveScreen = null;
+            c.Elements = null;
+            c.ActiveElement = null;
+            c.Deactivation?.Invoke();
+            c.Deactivation = null;
+        }
+    }
+
+    public struct Screens : IEcsAutoReset<Screens>
+    {
+        public Replaceables Value;
+        public void AutoReset(ref Screens c)
+        {
+            c.Value.AutoReset(ref c.Value);
+        }
+    }
+    
+    public struct Tabs : IEcsAutoReset<Tabs>
+    {
+        public Replaceables Value;
+        
+        public void AutoReset(ref Tabs c)
+        {
+            c.Value.AutoReset(ref c.Value);
         }
     }
 }

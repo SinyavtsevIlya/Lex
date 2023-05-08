@@ -2,7 +2,7 @@
 
 namespace Nanory.Lex
 {
-    public static class EcsWidgetManagementExtensions
+    public static class EcsUiWidgetExtensions
     {
         public static void BindOrUnbind<TWidget>(this EcsSystemBase system, int ownerEntity, TWidget widget, bool value) where TWidget : MonoBehaviour
         {
