@@ -75,11 +75,11 @@ namespace Nanory.Lex
 
         protected override void OnUpdate(EcsSystems systems)
         {
-            foreach (var runSystem in _runSystems) 
-                runSystem.Run(systems);
-            
             ResolveUiSystems(false, _endUnbindingEcbSystem, _beginUnbindingEcbSystem);
             ResolveUiSystems(true, _endBindingEcbSystem, _beginBingingEcbSystem);
+            
+            foreach (var runSystem in _runSystems) 
+                runSystem.Run(systems);
         }
 
         private void ResolveUiSystems(bool bindPhase, EntityCommandBufferSystem endEcbSystem, EntityCommandBufferSystem beginEcbSystem)
