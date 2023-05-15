@@ -140,18 +140,7 @@ namespace Nanory.Lex.Conversion
 
         public EcsConversionWorldWrapper World => _conversionWorldWrapper;
 
-        public int Convert(IConvertToEntity convertToEntity, ConversionMode conversionMode)
-        {
-            switch (conversionMode)
-            {
-                case ConversionMode.Instanced: return ConvertAsInstansedEntity(convertToEntity);
-                case ConversionMode.Unique: return ConvertAsUniqueEntity(convertToEntity);
-                case ConversionMode.Prefab: return ConvertAsPrefabEntity(convertToEntity);
-                default: throw new ArgumentOutOfRangeException(nameof(conversionMode));
-            }
-        }
-
-        public int ConvertAsInstansedEntity(IConvertToEntity convertToEntity)
+        public int ConvertAsInstancedEntity(IConvertToEntity convertToEntity)
         {
             if (convertToEntity == null)
                 throw new ArgumentNullException(nameof(convertToEntity));
@@ -165,62 +154,16 @@ namespace Nanory.Lex.Conversion
             return entity;
         }
 
-        public int ConvertAsUniqueEntity(IConvertToEntity convertToEntity)
-        {
-            if (convertToEntity == null)
-                throw new ArgumentNullException(nameof(convertToEntity));
-
-            var entity = GetPrimaryEntity(convertToEntity, out _);
-            convertToEntity.Convert(entity, this);
-            return entity;
-        }
-        
-        public int ConvertAsPrefabEntity(IConvertToEntity convertToEntity)
-        {
-            if (convertToEntity == null)
-                throw new ArgumentNullException(nameof(convertToEntity));
-
-            var entity = GetPrimaryEntity(convertToEntity, out _);
-            
-            World.Dst.SetAsPrefab(entity);
-            
-            convertToEntity.Convert(entity, this);
-            return entity;
-        }
-
         public int ConvertOrGetAsPrefabEntity(IConvertToEntity convertToEntity) => ConvertOrGetPrimaryEntity(convertToEntity, true);
 
         public int ConvertOrGetAsUniqueEntity(IConvertToEntity convertToEntity) => ConvertOrGetPrimaryEntity(convertToEntity, false);
 
-        public int ConvertOrGetPrimaryEntity(IConvertToEntity convertToEntity, bool isPrefab)
-        {
-            if (convertToEntity == null)
-                throw new ArgumentNullException(nameof(convertToEntity));
-
-            var entity = GetPrimaryEntity(convertToEntity, out var isNew);
-
-            if (!isNew)
-            {
-                return entity;
-            }
-
-            if (isPrefab)
-            {
-                World.Dst.SetAsPrefab(entity);
-            }
-
-            convertToEntity.Convert(entity, this);
-
-            return entity;
-        }
-
-        public int GetPrimaryEntity(IConvertToEntity convertToEntity, out bool isNew)
+        public int GetPrimaryEntity(IConvertToEntity convertToEntity)
         {
             if (_conversionMap.TryGetValue(convertToEntity.GetHashCode(), out var newPackedEntity))
             {
                 if (newPackedEntity.Unpack(World.Dst, out var newUnpackedEntity))
                 {
-                    isNew = false;
                     return newUnpackedEntity;
                 }
             }
@@ -229,7 +172,6 @@ namespace Nanory.Lex.Conversion
             newPackedEntity = World.Dst.PackEntity(newEntity);
             _conversionMap[convertToEntity.GetHashCode()] = newPackedEntity;
 
-            isNew = true;
             return newEntity;
         }
 
@@ -268,6 +210,62 @@ namespace Nanory.Lex.Conversion
             }
 
             throw new Exception($"no system {typeof(TSystem)} presented in the entityCommandBufferSystems lookup");
+        }
+        
+        private int Convert(IConvertToEntity convertToEntity, ConversionMode conversionMode)
+        {
+            switch (conversionMode)
+            {
+                case ConversionMode.Instanced: return ConvertAsInstancedEntity(convertToEntity);
+                case ConversionMode.Unique: return ConvertAsUniqueEntity(convertToEntity);
+                case ConversionMode.Prefab: return ConvertAsPrefabEntity(convertToEntity);
+                default: throw new ArgumentOutOfRangeException(nameof(conversionMode));
+            }
+        }
+        
+        private int ConvertAsUniqueEntity(IConvertToEntity convertToEntity)
+        {
+            if (convertToEntity == null)
+                throw new ArgumentNullException(nameof(convertToEntity));
+
+            var entity = GetPrimaryEntity(convertToEntity);
+            convertToEntity.Convert(entity, this);
+            return entity;
+        }
+        
+        private int ConvertOrGetPrimaryEntity(IConvertToEntity convertToEntity, bool isPrefab)
+        {
+            if (convertToEntity == null)
+                throw new ArgumentNullException(nameof(convertToEntity));
+
+            var entity = GetPrimaryEntity(convertToEntity);
+
+            if (World.Dst.GetComponentsCount(entity) > 0)
+            {
+                return entity;
+            }
+
+            if (isPrefab)
+            {
+                World.Dst.SetAsPrefab(entity);
+            }
+
+            convertToEntity.Convert(entity, this);
+
+            return entity;
+        }
+        
+        private int ConvertAsPrefabEntity(IConvertToEntity convertToEntity)
+        {
+            if (convertToEntity == null)
+                throw new ArgumentNullException(nameof(convertToEntity));
+
+            var entity = GetPrimaryEntity(convertToEntity);
+            
+            World.Dst.SetAsPrefab(entity);
+            
+            convertToEntity.Convert(entity, this);
+            return entity;
         }
     }
 }
