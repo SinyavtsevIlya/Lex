@@ -107,6 +107,9 @@ namespace Nanory.Lex.Conversion
                     throw new System.Exception($"Component {c} is already on a {this}");
             }
             _components.Add(component);
+
+            // ensure Components property to be rescanned   
+            _overallComponents = null;
             return this;
         }
 
