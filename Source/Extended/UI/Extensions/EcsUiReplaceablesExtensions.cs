@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Nanory.Lex
 {
@@ -10,13 +11,13 @@ namespace Nanory.Lex
             system.BindWidget(ownerEntity, replaceable);
             
             replaceables.ActiveElement = replaceable;
-            replaceable.gameObject.SetActive(true);
+            replaceable.GetComponent<Canvas>().enabled = true;
 
             replaceables.Deactivation?.Invoke();
             replaceables.Deactivation = () =>
             {
                 system.UnbindWidget(ownerEntity, replaceable);
-                replaceable.gameObject.SetActive(false);
+                replaceable.GetComponent<Canvas>().enabled = false;
             };
         }
     }

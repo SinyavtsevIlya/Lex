@@ -66,6 +66,8 @@ namespace Nanory.Lex
             return result;
         }
 
+        public static implicit operator List<TElement>(Buffer<TElement> buffer) => buffer.Values;
+
         public static class Pool
         {
             public static Stack<List<TElement>> Values = new Stack<List<TElement>>(64);
