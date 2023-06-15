@@ -14,7 +14,7 @@ namespace Nanory.Lex.Stats
     public abstract class AdditiveStatAuthoringBase<TStatComponent> : AuthoringComponent
         where TStatComponent : struct, IStat
     {
-        [SerializeField] private int _value;
+        [SerializeField] protected int _value;
 
         public override void Convert(int statContextEntity, ConvertToEntitySystem convertToEntitySystem)
         {
