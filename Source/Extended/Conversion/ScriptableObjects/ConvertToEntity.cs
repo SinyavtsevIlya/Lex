@@ -19,6 +19,10 @@ namespace Nanory.Lex.Conversion
         public abstract void Convert(int entity, ConvertToEntitySystem convertToEntitySystem);
     }
 
+    public struct ConvertedTag
+    {
+    }
+
     public interface IPrimaryPreviewTexture
     {
         Texture2D GetPreviewTexture();
@@ -144,13 +148,9 @@ namespace Nanory.Lex.Conversion
         {
             if (convertToEntity == null)
                 throw new ArgumentNullException(nameof(convertToEntity));
-#if DEBUG
-            // TODO: cache an instanced entity int the debug
-            // InstancedRegistry to prevent user from trying to convert 
-            // instanced entity as prefab or unique entity.
-#endif
+
             var entity = World.NewEntity();
-            convertToEntity.Convert(entity, this);
+            Convert(convertToEntity, entity);
             return entity;
         }
 
@@ -163,9 +163,7 @@ namespace Nanory.Lex.Conversion
             if (_conversionMap.TryGetValue(convertToEntity.GetHashCode(), out var newPackedEntity))
             {
                 if (newPackedEntity.Unpack(World.Dst, out var newUnpackedEntity))
-                {
                     return newUnpackedEntity;
-                }
             }
 
             var newEntity = _conversionWorldWrapper.NewEntity();
@@ -222,17 +220,7 @@ namespace Nanory.Lex.Conversion
                 default: throw new ArgumentOutOfRangeException(nameof(conversionMode));
             }
         }
-        
-        private int ConvertAsUniqueEntity(IConvertToEntity convertToEntity)
-        {
-            if (convertToEntity == null)
-                throw new ArgumentNullException(nameof(convertToEntity));
 
-            var entity = GetPrimaryEntity(convertToEntity);
-            convertToEntity.Convert(entity, this);
-            return entity;
-        }
-        
         private int ConvertOrGetPrimaryEntity(IConvertToEntity convertToEntity, bool isPrefab)
         {
             if (convertToEntity == null)
@@ -240,32 +228,58 @@ namespace Nanory.Lex.Conversion
 
             var entity = GetPrimaryEntity(convertToEntity);
 
-            if (World.Dst.GetComponentsCount(entity) > 0)
-            {
+            if (IsEntityConverted(entity))
                 return entity;
-            }
 
-            if (isPrefab)
-            {
+            if (isPrefab) 
                 World.Dst.SetAsPrefab(entity);
-            }
 
-            convertToEntity.Convert(entity, this);
+            Convert(convertToEntity, entity);
 
             return entity;
         }
         
-        private int ConvertAsPrefabEntity(IConvertToEntity convertToEntity)
+        private int ConvertAsUniqueEntity(IConvertToEntity convertToEntity)
         {
             if (convertToEntity == null)
                 throw new ArgumentNullException(nameof(convertToEntity));
 
             var entity = GetPrimaryEntity(convertToEntity);
             
-            World.Dst.SetAsPrefab(entity);
+            if (IsEntityConverted(entity))
+                return entity;
             
-            convertToEntity.Convert(entity, this);
+            Convert(convertToEntity, entity);
             return entity;
         }
+
+        private int ConvertAsPrefabEntity(IConvertToEntity convertToEntity)
+        {
+            if (convertToEntity == null)
+                throw new ArgumentNullException(nameof(convertToEntity));
+
+            var entity = GetPrimaryEntity(convertToEntity);
+
+            if (IsEntityConverted(entity))
+                return entity;
+            
+            World.Dst.SetAsPrefab(entity);
+
+            Convert(convertToEntity, entity);
+            return entity;
+        }
+
+        private void Convert(IConvertToEntity convertToEntity, int entity)
+        {
+            World.Dst.Add<ConvertedTag>(entity);
+            convertToEntity.Convert(entity, this);
+        }
+        
+        /// <summary>
+        ///  Determines whether the entity has been converted or not yet.
+        /// <remarks>Note, that <see cref="GetPrimaryEntity"/> calls do not ensure that entity is converted.</remarks>
+        /// </summary>
+        private bool IsEntityConverted(int entity) => World.Dst.Has<ConvertedTag>(entity);
+
     }
 }
