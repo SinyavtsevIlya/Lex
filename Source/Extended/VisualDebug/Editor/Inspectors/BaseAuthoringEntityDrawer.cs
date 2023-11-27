@@ -32,7 +32,7 @@ namespace Nanory.Lex.UnityEditorIntegration
             if (baseAuthoringEntity != null)
             {
                 var results = new List<AuthoringComponent>();
-                baseAuthoringEntity.GetBaseComponentsNonAlloc(results);
+                baseAuthoringEntity.MergeNonAlloc(results);
                 var list = new ReorderableList(results, typeof(AuthoringComponent), false, true, false, false);
                 ReorderableList.ElementCallbackDelegate onDrawElement = (Rect rect, int index, bool isActive, bool isFocused) =>
                 {

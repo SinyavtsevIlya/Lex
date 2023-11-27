@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Nanory.Lex.Conversion
@@ -8,6 +9,10 @@ namespace Nanory.Lex.Conversion
     [CreateAssetMenu(fileName = "AuthoringEntity", menuName = "Lex/AuthoringEntity")]
     public class AuthoringEntity : ScriptableObject, IConvertToEntity
     {
+        private static IConversionStrategy _fallbackConversionStrategy = DefaultConversionStrategy.Value;
+        
+        private IConversionStrategy _customConversionStrategy;
+        
         /// <summary>
         /// List of components of <b>this</b> Authoring-Entity (components of base Authoring-entities are not included)
         /// </summary>
@@ -27,6 +32,12 @@ namespace Nanory.Lex.Conversion
 
         [SerializeField] private AuthoringEntity _baseAuthoringEntity;
 
+        public static void OverrideFallbackConversionStrategy(IConversionStrategy conversionStrategy) =>
+            _fallbackConversionStrategy = conversionStrategy;
+
+        public void OverrideCustomConversionStrategy(IConversionStrategy conversionStrategy) =>
+            _customConversionStrategy = conversionStrategy;
+
         /// <summary>
         /// Complete list of components of this Authoring-Entity and all its base Authoring-entities.
         /// </summary>
@@ -37,7 +48,7 @@ namespace Nanory.Lex.Conversion
                 if (_overallComponents == null)
                 {
                     _overallComponents = new List<AuthoringComponent>();
-                    GetBaseComponentsNonAlloc(_overallComponents);
+                    MergeNonAlloc(_overallComponents);
                 }
                 return _overallComponents;
             }
@@ -48,12 +59,9 @@ namespace Nanory.Lex.Conversion
             var components = includeBase ? Components : _components;
             
             foreach (var component in components)
-            {
                 if (component is TAuthoringComponent)
-                {
                     return true;
-                }
-            }
+
             return false;
         }
         
@@ -62,12 +70,9 @@ namespace Nanory.Lex.Conversion
             var components = includeBase ? Components : _components;
             
             foreach (var component in components)
-            {
                 if (component.GetType() == componentType)
-                {
                     return true;
-                }
-            }
+
             return false;
         }
 
@@ -76,12 +81,9 @@ namespace Nanory.Lex.Conversion
             var components = includeBase ? Components : _components;
             
             foreach (var value in components)
-            {
                 if (value is TAuthoringComponent c)
-                {
                     return c;
-                }
-            }
+
             throw new Exception($"entity {this.name} doesn't have {typeof(TAuthoringComponent)} component");
         }
 
@@ -102,52 +104,28 @@ namespace Nanory.Lex.Conversion
         public AuthoringEntity Add<TAuthoringComponent>(TAuthoringComponent component) where TAuthoringComponent : AuthoringComponent
         {
             foreach (var c in _components)
-            {
                 if (c is TAuthoringComponent)
                     throw new System.Exception($"Component {c} is already on a {this}");
-            }
+            
             _components.Add(component);
 
-            // ensure Components property to be rescanned   
+            // ensure Components property to be rescanned, and all Merges be called.  
             _overallComponents = null;
             return this;
         }
 
         public void Convert(int entity, ConvertToEntitySystem convertToEntitySystem)
         {
-            foreach (var component in Components)
-            {
-                component.Convert(entity, convertToEntitySystem);
-            }
+            var strategy = _customConversionStrategy ?? _fallbackConversionStrategy;
+            strategy.Convert(this, entity, convertToEntitySystem);
         }
         
-        /// TODO: replace with <see cref="AuthoringComponentExtensions.MergeNonAlloc"/>
-        public void GetBaseComponentsNonAlloc(List<AuthoringComponent> result)
+        public void MergeNonAlloc(List<AuthoringComponent> result)
         {
-            if (_baseAuthoringEntity != null)
-            {
-                _baseAuthoringEntity.GetBaseComponentsNonAlloc(result);
-            }
+            if (_baseAuthoringEntity != null) 
+                _baseAuthoringEntity.MergeNonAlloc(result);
 
-            foreach (var overrideComponent in _components)
-            {
-                var hasFound = false;
-                for (var idx = 0; idx < result.Count; idx++)
-                {
-                    var component = result[idx];
-                    if (component.GetType().Equals(overrideComponent.GetType()))
-                    {
-                        result[idx] = overrideComponent;
-                        hasFound = true;
-                        break;
-                    }
-                }
-
-                if (!hasFound)
-                {
-                    result.Add(overrideComponent);
-                }
-            }
+            result.MergeNonAllocDestructive(_components);
         }
 
 #if UNITY_EDITOR

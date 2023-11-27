@@ -80,14 +80,8 @@ namespace Nanory.Lex
 
             public static List<TElement> Pop()
             {
-                if (Values.Count > 0)
-                {
-                    return Values.Pop();
-                }
-                else
-                {
-                    return new List<TElement>();
-                }
+                return Values.Count > 0 ?
+                    Values.Pop() : new List<TElement>();
             }
         }
     }
