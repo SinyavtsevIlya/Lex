@@ -1,5 +1,4 @@
-﻿using Nanory.Lex.Conversion;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -80,14 +79,8 @@ namespace Nanory.Lex
                 typeof(BeginSimulationECBSystem),
             };
 
-            var conversionSystemTypes = new Type[]
-            {
-                typeof(ConvertToEntitySystem)
-            };
-
             SystemTypes = systemTypes
                 .Union(defaultSystemGroupTypes)
-                .Union(conversionSystemTypes)
                 .Union(UISystemTypesRegistry.Values)
                 .ToArray();
 
