@@ -29,6 +29,12 @@ namespace Nanory.Lex.Conversion
                 for (var idx = 0; idx < mergedResult.Count; idx++)
                 {
                     var component = mergedResult[idx];
+                    if (component == null)
+                        continue;
+
+                    if (overrideComponent == null)
+                        continue;
+                    
                     var isSameType = component.GetType() == overrideComponent.GetType();
                     var isReplacementType =
                         overrideComponent is IReplaceAuthoringComponent replacement &&

@@ -4,33 +4,36 @@ using System.Collections.Generic;
 namespace Nanory.Lex.Conversion
 {
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    public class ConvertToEntitySystem : IEcsRunSystem, IEcsPreInitSystem, IEcsEntityCommandBufferLookup
+    public class ConvertToEntitySystem : IEcsRunSystem, IEcsEntityCommandBufferLookup
     {
         private Dictionary<int, EcsPackedEntity> _conversionMap = new();
         private EcsConversionWorldWrapper _conversionWorldWrapper;
-        private EcsPool<ConvertRequest> _requestsPool;
         private EcsFilter _requestsFilter;
         protected List<EntityCommandBufferSystem> _entityCommandBufferSystems;
 
         public EcsConversionWorldWrapper World => _conversionWorldWrapper;
-
-        public int ConvertAsInstancedEntity(IConvertToEntity convertToEntity)
+        
+        public void Run(EcsSystems systems)
         {
-            if (convertToEntity == null)
-                throw new ArgumentNullException(nameof(convertToEntity));
+        }
+
+        public int ConvertAsInstancedEntity(AuthoringEntity authoringEntity)
+        {
+            if (authoringEntity == null)
+                throw new ArgumentNullException(nameof(authoringEntity));
 
             var entity = World.NewEntity();
-            Convert(convertToEntity, entity);
+            Convert(authoringEntity, entity);
             return entity;
         }
 
-        public int ConvertOrGetAsPrefabEntity(IConvertToEntity convertToEntity) => ConvertOrGetPrimaryEntity(convertToEntity, true);
+        public int ConvertOrGetAsPrefabEntity(AuthoringEntity authoringEntity) => ConvertOrGetPrimaryEntity(authoringEntity, true);
 
-        public int ConvertOrGetAsUniqueEntity(IConvertToEntity convertToEntity) => ConvertOrGetPrimaryEntity(convertToEntity, false);
+        public int ConvertOrGetAsUniqueEntity(AuthoringEntity authoringEntity) => ConvertOrGetPrimaryEntity(authoringEntity, false);
 
-        public int GetPrimaryEntity(IConvertToEntity convertToEntity)
+        public int GetPrimaryEntity(AuthoringEntity authoringEntity)
         {
-            if (_conversionMap.TryGetValue(convertToEntity.GetHashCode(), out var newPackedEntity))
+            if (_conversionMap.TryGetValue(authoringEntity.GetHashCode(), out var newPackedEntity))
             {
                 if (newPackedEntity.Unpack(World.Dst, out var newUnpackedEntity))
                     return newUnpackedEntity;
@@ -38,7 +41,7 @@ namespace Nanory.Lex.Conversion
 
             var newEntity = _conversionWorldWrapper.NewEntity();
             newPackedEntity = World.Dst.PackEntity(newEntity);
-            _conversionMap[convertToEntity.GetHashCode()] = newPackedEntity;
+            _conversionMap[authoringEntity.GetHashCode()] = newPackedEntity;
 
             return newEntity;
         }
@@ -46,20 +49,6 @@ namespace Nanory.Lex.Conversion
         public void PreInit(EcsSystems systems)
         {
             _conversionWorldWrapper = new EcsConversionWorldWrapper(systems.GetWorld());
-            _requestsPool = _conversionWorldWrapper.Dst.GetPool<ConvertRequest>();
-            _requestsFilter = _conversionWorldWrapper.Dst.Filter<ConvertRequest>().End();
-        }
-
-        public void Run(EcsSystems systems)
-        {
-            var later = GetCommandBufferFrom<BeginSimulationECBSystem>();
-
-            foreach (var requestEntity in _requestsFilter)
-            {
-                ref var request = ref _requestsPool.Get(requestEntity);
-                Convert(request.Value, request.Mode);
-                later.DelEntity(requestEntity);
-            }
         }
 
         public IEcsEntityCommandBufferLookup SetEntityCommandBufferSystemsLookup(List<EntityCommandBufferSystem> systems)
@@ -78,24 +67,13 @@ namespace Nanory.Lex.Conversion
 
             throw new Exception($"no system {typeof(TSystem)} presented in the entityCommandBufferSystems lookup");
         }
-        
-        private int Convert(IConvertToEntity convertToEntity, ConversionMode conversionMode)
-        {
-            switch (conversionMode)
-            {
-                case ConversionMode.Instanced: return ConvertAsInstancedEntity(convertToEntity);
-                case ConversionMode.Unique: return ConvertOrGetPrimaryEntity(convertToEntity, false);
-                case ConversionMode.Prefab: return ConvertOrGetPrimaryEntity(convertToEntity, true);
-                default: throw new ArgumentOutOfRangeException(nameof(conversionMode));
-            }
-        }
 
-        private int ConvertOrGetPrimaryEntity(IConvertToEntity convertToEntity, bool isPrefab)
+        private int ConvertOrGetPrimaryEntity(AuthoringEntity authoringEntity, bool isPrefab)
         {
-            if (convertToEntity == null)
-                throw new ArgumentNullException(nameof(convertToEntity));
+            if (authoringEntity == null)
+                throw new ArgumentNullException(nameof(authoringEntity));
 
-            var entity = GetPrimaryEntity(convertToEntity);
+            var entity = GetPrimaryEntity(authoringEntity);
 
             if (IsEntityConverted(entity))
                 return entity;
@@ -103,14 +81,14 @@ namespace Nanory.Lex.Conversion
             if (isPrefab) 
                 World.Dst.SetAsPrefab(entity);
 
-            Convert(convertToEntity, entity);
+            Convert(authoringEntity, entity);
             return entity;
         }
         
-        private void Convert(IConvertToEntity convertToEntity, int entity)
+        private void Convert(AuthoringEntity authoringEntity, int entity)
         {
             World.Dst.Add<ConvertedTag>(entity);
-            convertToEntity.Convert(entity, this);
+            authoringEntity.Convert(entity, this);
         }
 
         /// <summary>
@@ -118,6 +96,5 @@ namespace Nanory.Lex.Conversion
         /// <remarks>Note, that <see cref="GetPrimaryEntity"/> calls do not ensure that entity is converted.</remarks>
         /// </summary>
         private bool IsEntityConverted(int entity) => World.Dst.Has<ConvertedTag>(entity);
-
     }
 }
