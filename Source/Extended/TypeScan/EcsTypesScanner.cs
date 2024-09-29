@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Sirenix.Utilities;
 using UnityEngine;
 
 namespace Nanory.Lex
@@ -37,7 +36,8 @@ namespace Nanory.Lex
         public IEnumerable<Type> ScanSystemTypes(params Type[] targetFeatureTypes)
         {
             var invalidTypes = targetFeatureTypes
-                .Where(featureType => !typeof(FeatureBase).IsAssignableFrom(featureType));
+                .Where(featureType => !typeof(FeatureBase).IsAssignableFrom(featureType))
+                .ToList();
             
             invalidTypes
                 .ForEach(featureType =>  Debug.LogError($"{featureType.FullName} must be inherited from {nameof(FeatureBase)}"));
