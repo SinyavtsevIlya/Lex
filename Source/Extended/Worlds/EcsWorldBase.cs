@@ -56,7 +56,7 @@ namespace Nanory.Lex
                 return system as TSystem;
             }
 
-            throw new System.Exception($"{nameof(TSystem)} was not found in {this}");
+            throw new System.Exception($"{typeof(TSystem)} was not found in {this.Name}");
         }
     }
 }
