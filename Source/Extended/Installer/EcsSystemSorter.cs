@@ -338,19 +338,5 @@ namespace Nanory.Lex
                 }
             }
         }
-
-#if UNITY_EDITOR
-        public static bool TryGetSourceHyperLink(this IEcsSystem system, out string result)
-        {
-            var results = UnityEditor.AssetDatabase.FindAssets(system.GetType().Name);
-            foreach (var guid in results)
-            {
-                result = $"<a href=\"{UnityEditor.AssetDatabase.GUIDToAssetPath(guid)}\" line=\"7\">{UnityEditor.AssetDatabase.GUIDToAssetPath(guid)}:7</a>";
-                return true;
-            }
-            result = string.Empty;
-            return false;
-        }
-#endif
     }
 }
