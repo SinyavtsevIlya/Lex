@@ -89,11 +89,13 @@ public static class {featureName}SystemTypesLookup
             var worldSystemTypes = scanner.GetSystemTypesByFeature(new Type[] { featureType });
             var oneFrameSystemTypes = scanner.GetOneFrameSystemTypesGenericArgumentsByFeature(new Type[] { featureType });
 
-            var baseSystemsSeq = worldSystemTypes.Count() == 0 ? null : $"// Base Systems{Format.NewLine(2)}" + worldSystemTypes
+            var systemTypes = worldSystemTypes.ToList();
+            
+            var baseSystemsSeq = !systemTypes.Any() ? null : $"// Base Systems{Format.NewLine(2)}" + systemTypes
                 .Select(type => $"typeof({type.ToGenericTypeString()})")
                 .Aggregate((a, b) => $"{a},{Format.NewLine(2)}{b}");
 
-            var cleanupSystemsSeq = oneFrameSystemTypes.Count() == 0 ? null : $"// OneFrame Systems{Format.NewLine(2)}" + oneFrameSystemTypes
+            var cleanupSystemsSeq = !oneFrameSystemTypes.Any() ? null : $"// OneFrame Systems{Format.NewLine(2)}" + oneFrameSystemTypes
                 .Select(type =>
                 {
                     var typeName = type.IsGenericType ? type.ToGenericTypeString() : type.FullName.Replace("+", ".");
@@ -105,7 +107,7 @@ public static class {featureName}SystemTypesLookup
 
             var namespacesHashSet = new HashSet<string>();
 
-            worldSystemTypes
+            systemTypes
                 .Union(oneFrameSystemTypes)
                 .SelectMany(t => GetNamespacesRecursive(t))
                 .Where(n => n != null).ToList()
