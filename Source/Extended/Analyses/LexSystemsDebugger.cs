@@ -13,15 +13,17 @@ namespace Nanory.Lex.UnityEditorIntegration
 
         static LexSystemsDebugger()
         {
-            EditorApplication.playModeStateChanged += (state) => TryDraw();
+            EditorApplication.playModeStateChanged += state =>
+            {
+                if (state == PlayModeStateChange.EnteredPlayMode)
+                    TryDraw();
+            };
         }
 
         private static void TryDraw()
         {
-            if (HasOpenInstances<LexSystemsDebugger>())
-            {
-                GetWindow<LexSystemsDebugger>().Draw();
-            }
+            if (HasOpenInstances<LexSystemsDebugger>()) 
+                GetWindow<LexSystemsDebugger>(false, nameof(LexSystemsDebugger), false).Draw();
         }
 
         public static List<EcsSystemGroup> _rootSystemGroups = new List<EcsSystemGroup>();
