@@ -16,3 +16,16 @@ namespace Nanory.Lex
         }
     }
 }
+
+namespace Nanory.Lex.View
+{
+    [OneFrame]
+    public struct InworldViewBindEvent
+    {
+    }
+
+    [OneFrame] 
+    public struct InworldViewUnbindEvent
+    {
+    }
+}
