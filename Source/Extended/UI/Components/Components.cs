@@ -14,6 +14,10 @@ namespace Nanory.Lex
         public TWidget Value;
     }
 
+    public struct CloseScreenEvent
+    {
+    }
+
     public struct Replaceables : IEcsAutoReset<Replaceables>
     {
         public List<MonoBehaviour> Elements;

@@ -35,6 +35,11 @@ namespace Nanory.Lex
 
             throw new Exception($"No screen {typeof(TScreen).Name} is registered for entity-{ownerEntity}");
         }
+        
+        public static void CloseScreen(this EcsSystemBase system, int ownerEntity)
+        {
+            system.Later.Add<CloseScreenEvent>(ownerEntity);
+        }
         #endregion
     }
 }
