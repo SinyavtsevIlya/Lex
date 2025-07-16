@@ -16,6 +16,15 @@ namespace Nanory.Lex
             replaceables.Deactivation?.Invoke();
             replaceables.Deactivation = () =>
             {
+                if (!system.World.IsAlive())
+                    return;
+
+                if (replaceable == null)
+                {
+                    Debug.LogError("Unable to unbind widget. Replaceable is destroyed");
+                    return;
+                }
+                
                 system.UnbindWidget(ownerEntity, replaceable);
                 replaceable.GetComponent<Canvas>().enabled = false;
             };

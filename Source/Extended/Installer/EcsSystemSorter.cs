@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Nanory.Lex
 {
@@ -28,45 +29,6 @@ namespace Nanory.Lex
             World = world;
             SystemMap = new Dictionary<Type, IEcsSystem>();
             Creator = creator;
-        }
-
-        public EcsSystemGroup GetFeaturedSystems<TFeature1>(EcsTypesScanner ecsTypesScanner = null)
-            where TFeature1 : FeatureBase
-        {
-            return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[] { typeof(TFeature1) }));
-        }
-
-        public EcsSystemGroup GetFeaturedSystems<TFeature1, TFeature2>(EcsTypesScanner ecsTypesScanner = null)
-            where TFeature1 : FeatureBase
-            where TFeature2 : FeatureBase
-        {
-            return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[]
-            {
-                typeof(TFeature1), typeof(TFeature2)
-            }));
-        }
-
-        public EcsSystemGroup GetFeaturedSystems<TFeature1, TFeature2, TFeature3>(EcsTypesScanner ecsTypesScanner = null)
-            where TFeature1 : FeatureBase
-            where TFeature2 : FeatureBase
-            where TFeature3 : FeatureBase
-        {
-            return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[]
-            {
-                typeof(TFeature1), typeof(TFeature2), typeof(TFeature3)
-            }));
-        }
-
-        public EcsSystemGroup GetFeaturedSystems<TFeature1, TFeature2, TFeature3, TFeature4>(EcsTypesScanner ecsTypesScanner = null)
-            where TFeature1 : FeatureBase
-            where TFeature2 : FeatureBase
-            where TFeature3 : FeatureBase
-            where TFeature4 : FeatureBase
-        {
-            return GetSortedSystems(GetTypesByScanner(ecsTypesScanner, new Type[]
-            {
-                typeof(TFeature1), typeof(TFeature2), typeof(TFeature3), typeof(TFeature4)
-            }));
         }
 
         public EcsSystemGroup GetSortedSystems(IEnumerable<Type> systemTypes)
@@ -120,6 +82,32 @@ namespace Nanory.Lex
             foreach (var systemGroup in systemGroups)
             {
                 SortSystemGroup(systemGroup);
+
+                for (var index = 0; index < systemGroup.Systems.Count; index++)
+                {
+                    var system = systemGroup.Systems[index];
+
+                    var shift = 0;
+
+                    foreach (var attribute in system.GetType().GetCustomAttributes())
+                    {
+                        if (attribute is EventSystemAttribute eventSystemAttribute)
+                        {
+                            var systemType = typeof(OneFrameSystem<>).MakeGenericType(eventSystemAttribute.EventComponentType);
+                            var eventSystem = GetSystemByType(systemType);
+                            systemGroup.Insert(index++, eventSystem);
+                        }
+                        else if (attribute is RequestSystemAttribute requestSystemAttribute)
+                        {
+                            var systemType = typeof(OneFrameSystem<>).MakeGenericType(requestSystemAttribute.RequestComponentType);
+                            var eventSystem = GetSystemByType(systemType);
+                            systemGroup.Insert(index + 1, eventSystem);
+                            shift++;
+                        }
+                    }
+                    
+                    index += shift;
+                }
             }
 
             void TryCreateSystemRecursive(Type systemType)

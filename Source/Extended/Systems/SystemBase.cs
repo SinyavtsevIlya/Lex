@@ -73,6 +73,27 @@ namespace Nanory.Lex
             if (system is IEcsDestroySystem destroySystem)
                 _destroySystems.Add(destroySystem);
         }
+        
+        public void Insert(int idx, IEcsSystem system)
+        {
+#if DEBUG
+            if (system == this)
+                throw new Exception($"<b>{system.GetType().Name}</b> Trying to pass itself to systems list");
+            if (_ecsSystems.Contains(system))
+                throw new Exception($"Trying to add a duplicate <b>{system.GetType().Name}</b> to a <b>{GetType().Name}</b> ");
+#endif
+
+            _ecsSystems.Insert(idx, system);
+
+            if (system is IEcsRunSystem runSystem)
+                _runSystems.Insert(idx, runSystem);
+            if (system is IEcsPreInitSystem preInitSystem)
+                _preInitSystems.Insert(idx, preInitSystem);
+            if (system is IEcsInitSystem initSystem)
+                _initSystems.Insert(idx, initSystem);
+            if (system is IEcsDestroySystem destroySystem)
+                _destroySystems.Insert(idx, destroySystem);
+        }
 
         public void Init(EcsSystems systems)
         {

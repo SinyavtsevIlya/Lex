@@ -41,7 +41,7 @@ namespace Nanory.Lex.UnityEditorIntegration
         }
 
         [MenuItem("Window/Lex/Debugger")]
-        public static void ShowExample()
+        public static void ShowWindow()
         {
             LexSystemsDebugger wnd = GetWindow<LexSystemsDebugger>();
             wnd.titleContent = new GUIContent("Lex Systems Debugger");
