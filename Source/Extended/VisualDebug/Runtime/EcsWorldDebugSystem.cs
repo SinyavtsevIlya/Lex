@@ -41,12 +41,12 @@ namespace Nanory.Lex.UnityEditorIntegration
 
         public void Init(EcsSystems systems)
         {
-            LexSystemsDebugger.AddEcsSystems(systems.AllSystems[0] as EcsSystemGroup);
+            LexSystemsDebuggerWindow.AddEcsSystems(systems.AllSystems[0] as EcsSystemGroup);
         }
 
         public void Destroy(EcsSystems systems)
         {
-            LexSystemsDebugger.RemoveEcsSystems(systems.AllSystems[0] as EcsSystemGroup);
+            LexSystemsDebuggerWindow.RemoveEcsSystems(systems.AllSystems[0] as EcsSystemGroup);
         }
 
         public void Run(EcsSystems systems)

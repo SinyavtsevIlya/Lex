@@ -1,0 +1,6 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center;">
+        <engine:VisualElement style="flex-grow: 0; width: 16px; height: 16px; flex-shrink: 0; background-image: url(&quot;project://database/Packages/com.nanory.lex/Source/Extended/Analyses/SystemThumbnail.png?fileID=2800000&amp;guid=9ea6b1aa84cd3944888d4ad896e81034&amp;type=3#SystemThumbnail&quot;);" />
+        <engine:Label text="System name" />
+    </engine:VisualElement>
+</engine:UXML>
