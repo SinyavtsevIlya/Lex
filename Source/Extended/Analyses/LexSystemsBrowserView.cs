@@ -10,12 +10,12 @@ namespace Nanory.Lex.UnityEditorIntegration
         public const string AssetsRootPath = "Packages/com.nanory.lex/Source/Extended/Analyses/";
     }
     
-    public class LexSystemsDebuggerView : VisualElement
+    public class LexSystemsBrowserView : VisualElement
     {
         public ToolbarSearchField SearchField;
         public MultiColumnTreeView TreeView;
 
-        public LexSystemsDebuggerView(VisualElement parent)
+        public LexSystemsBrowserView(VisualElement parent)
         {
             parent.Add(this);
             

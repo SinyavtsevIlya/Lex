@@ -7,9 +7,9 @@ using UnityEngine.UIElements;
 
 namespace Nanory.Lex.UnityEditorIntegration
 {
-    public class LexSystemsDebuggerWindow : EditorWindow
+    public class LexSystemsBrowserWindow : EditorWindow
     {
-        static LexSystemsDebuggerWindow()
+        static LexSystemsBrowserWindow()
         {
             EditorApplication.playModeStateChanged += state =>
             {
@@ -20,8 +20,8 @@ namespace Nanory.Lex.UnityEditorIntegration
 
         private static void TryDraw()
         {
-            if (HasOpenInstances<LexSystemsDebuggerWindow>()) 
-                GetWindow<LexSystemsDebuggerWindow>(false, nameof(LexSystemsDebuggerWindow), false).Draw();
+            if (HasOpenInstances<LexSystemsBrowserWindow>()) 
+                GetWindow<LexSystemsBrowserWindow>(false, nameof(LexSystemsBrowserWindow), false).Draw();
         }
 
         public static List<EcsSystemGroup> _rootSystemGroups = new List<EcsSystemGroup>();
@@ -38,11 +38,11 @@ namespace Nanory.Lex.UnityEditorIntegration
             TryDraw();
         }
 
-        [MenuItem("Window/Lex/Debugger")]
+        [MenuItem("Lex/Systems Browser")]
         public static void ShowWindow()
         {
-            LexSystemsDebuggerWindow wnd = GetWindow<LexSystemsDebuggerWindow>();
-            wnd.titleContent = new GUIContent("Lex Systems Debugger");
+            LexSystemsBrowserWindow wnd = GetWindow<LexSystemsBrowserWindow>();
+            wnd.titleContent = new GUIContent("Lex: Systems Browser");
         }
 
         private void OnEnable()
@@ -68,7 +68,7 @@ namespace Nanory.Lex.UnityEditorIntegration
             var scroll = new ScrollView(ScrollViewMode.Vertical);
             root.Add(scroll);
             
-            var view = new LexSystemsDebuggerView(scroll);
+            var view = new LexSystemsBrowserView(scroll);
 
             if (_rootSystemGroups.Count == 0)
                 return;
