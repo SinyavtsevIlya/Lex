@@ -13,8 +13,7 @@ namespace Nanory.Lex.UnityEditorIntegration
         {
             EditorApplication.playModeStateChanged += state =>
             {
-                if (state == PlayModeStateChange.EnteredPlayMode)
-                    TryDraw();
+                TryDraw();
             };
         }
 
@@ -54,7 +53,7 @@ namespace Nanory.Lex.UnityEditorIntegration
         {
             Draw();
         }
-
+        
         private void Awake()
         {
             Draw();
@@ -65,38 +64,59 @@ namespace Nanory.Lex.UnityEditorIntegration
             rootVisualElement.Clear();
             var root = rootVisualElement;
             
-            var scroll = new ScrollView(ScrollViewMode.Vertical);
-            root.Add(scroll);
+            var view = new LexSystemsBrowserView(root);
             
-            var view = new LexSystemsBrowserView(scroll);
+            view.EditModeStub.style.display = Application.isPlaying ? DisplayStyle.None : DisplayStyle.Flex;
 
-            if (_rootSystemGroups.Count == 0)
-                return;
-            
-            var treeItems = BuildTree(_rootSystemGroups.First(), 0);
-            
-            view.TreeView.columns.Add(new Column
+            view.SearchField.RegisterValueChangedCallback(e =>
             {
-                title = "Name",
-                makeCell = () =>
-                {
-                    var visualElement = new VisualElement();
-                    var view = new SystemItemView(visualElement);
-                    return visualElement;
-                },
-                bindCell = (element, index) =>
-                {
-                    var label = element.Q<Label>();
-                    var system = view.TreeView.GetItemDataForIndex<IEcsSystem>(index);
-                    label.text = GetSystemName(system);
-                },
-                resizable = true,
-                stretchable = true
+                DisplayTree();
             });
 
             view.TreeView.columns.Add(new Column
             {
-                title = "Type",
+                title = "Systems",
+                makeCell = () => new SystemItemView(),
+                bindCell = (element, index) =>
+                {
+                    var itemView = (SystemItemView)element;
+                    var system = view.TreeView.GetItemDataForIndex<IEcsSystem>(index);
+                    var systemClass = GetSystemClassName(system);
+                    
+                    itemView.Thumbnail.ClearClassList();
+                    itemView.Thumbnail.AddToClassList(systemClass);
+                    itemView.Label.text = GetSystemName(system);
+
+                    var contextualMenuManipulator = new ContextualMenuManipulator(e =>
+                    {
+                        e.menu.AppendAction("Edit script", a =>
+                        {
+                            if (!TryGetSourceAsset(system.GetType(), out var scriptPath))
+                            {
+                                ShowNotification(new GUIContent("Can't find the related script file."));
+                                return;
+                            }
+
+                            var scriptAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(scriptPath);
+                            AssetDatabase.OpenAsset(scriptAsset);
+                        });
+                    });
+                    itemView.userData = contextualMenuManipulator;
+                    itemView.AddManipulator(contextualMenuManipulator);
+                },
+                unbindCell = (element, index) =>
+                {
+                    var manipulator = (ContextualMenuManipulator)element.userData;
+                    manipulator.target = null;
+                },
+                resizable = true,
+                stretchable = true,
+                width = 300,
+            });
+
+            view.TreeView.columns.Add(new Column
+            {
+                title = "Namespace",
                 makeCell = () => new Label(),
                 bindCell = (element, index) =>
                 {
@@ -104,46 +124,102 @@ namespace Nanory.Lex.UnityEditorIntegration
                     var system = view.TreeView.GetItemDataForIndex<IEcsSystem>(index);
                     label.text = system.GetType().Namespace;
                 },
-                width = 500,
+                width = 100,
                 resizable = true
             });
 
+            DisplayTree();
 
-            view.TreeView.SetRootItems(treeItems);
-            view.TreeView.Rebuild();
-
-            string GetSystemName(IEcsSystem system)
+            void DisplayTree()
             {
-                var type = system.GetType();
-                if (type.IsGenericType)
-                    return type.ToGenericTypeString();
+                if (_rootSystemGroups.Count == 0)
+                    return;
 
-                return type.Name;
+                var treeItems = BuildTree(_rootSystemGroups.First(), 0);
+                view.TreeView.SetRootItems(treeItems);
+                view.TreeView.Rebuild();
+                view.TreeView.ExpandAll();
+            }
+            
+            List<TreeViewItemData<IEcsSystem>> BuildTree(IEcsSystem rootSystem, int idStart)
+            {
+                var items = new List<TreeViewItemData<IEcsSystem>>();
+                var idCounter = idStart;
+                var filter = view.SearchField.value?.ToLowerInvariant();
+
+                bool TryBuildItem(IEcsSystem sys, out TreeViewItemData<IEcsSystem> item)
+                {
+                    var id = idCounter++;
+                    var children = new List<TreeViewItemData<IEcsSystem>>();
+                    var hasMatchingChildren = false;
+
+                    if (sys is EcsSystemGroup group)
+                    {
+                        foreach (var child in group.Systems)
+                        {
+                            if (TryBuildItem(child, out var childItem))
+                            {
+                                hasMatchingChildren = true;
+                                children.Add(childItem);
+                            }
+                        }
+                    }
+
+                    var matchesFilter = string.IsNullOrEmpty(filter) ||
+                                         GetSystemName(sys).ToLowerInvariant().Contains(filter);
+
+                    if (matchesFilter || hasMatchingChildren)
+                    {
+                        item = new TreeViewItemData<IEcsSystem>(id, sys, children);
+                        return true;
+                    }
+
+                    item = default;
+                    return false;
+                }
+
+                if (TryBuildItem(rootSystem, out var rootItem))
+                {
+                    items.Add(rootItem);
+                }
+
+                return items;
             }
         }
         
-        private List<TreeViewItemData<IEcsSystem>> BuildTree(IEcsSystem system, int idStart)
+        private string GetSystemName(IEcsSystem system)
         {
-            var items = new List<TreeViewItemData<IEcsSystem>>();
-            var idCounter = idStart;
+            var type = system.GetType();
+            if (type.IsGenericType)
+                return type.ToGenericTypeString();
 
-            TreeViewItemData<IEcsSystem> BuildItem(IEcsSystem sys)
+            return type.Name;
+        }
+
+        private string GetSystemClassName(IEcsSystem system)
+        {
+            if (system is EcsSystemGroup) 
+                return "system-group";
+
+            if (system.GetType().IsGenericType &&
+                system.GetType().GetGenericTypeDefinition() == typeof(OneFrameSystem<>))
+                return "system-one-frame";
+            
+            return "system-default";
+        }
+        
+        private static bool TryGetSourceAsset(System.Type type, out string result)
+        {
+            var typeName = type.IsGenericType ? type.GetGenericTypeDefinition().Name.Split('`')[0]: type.Name;
+            var results = AssetDatabase.FindAssets(typeName);
+            foreach (var guid in results)
             {
-                int id = idCounter++;
-                var children = new List<TreeViewItemData<IEcsSystem>>();
-                if (sys is EcsSystemGroup group)
-                {
-                    foreach (var child in group.Systems)
-                    {
-                        children.Add(BuildItem(child));
-                    }
-                }
-
-                return new TreeViewItemData<IEcsSystem>(id, sys, children);
+                result = AssetDatabase.GUIDToAssetPath(guid);
+                return true;
             }
 
-            items.Add(BuildItem(system));
-            return items;
+            result = null;
+            return false;
         }
     }
 }

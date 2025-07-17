@@ -14,6 +14,7 @@ namespace Nanory.Lex.UnityEditorIntegration
     {
         public ToolbarSearchField SearchField;
         public MultiColumnTreeView TreeView;
+        public VisualElement EditModeStub;
 
         public LexSystemsBrowserView(VisualElement parent)
         {
@@ -28,17 +29,19 @@ namespace Nanory.Lex.UnityEditorIntegration
             
             SearchField = this.Q<ToolbarSearchField>();
             TreeView = this.Q<MultiColumnTreeView>();
+            EditModeStub = this.Q("EditModeStub");
+
+            TreeView.reorderable = false;
         }
     }
 
     public class SystemItemView : VisualElement
     {
         public Label Label;
+        public VisualElement Thumbnail;
 
-        public SystemItemView(VisualElement parent)
+        public SystemItemView()
         {
-            parent.Add(this);
-            
             this.style.flexGrow = 1f;
             
             var assetPath = LexSystemsDebuggerConstants.AssetsRootPath + "SystemsItemView.uxml";
@@ -47,6 +50,7 @@ namespace Nanory.Lex.UnityEditorIntegration
             asset.CloneTree(this);
 
             Label = this.Q<Label>();
+            Thumbnail = this.Q("Thumbnail");
         }
     }
 }

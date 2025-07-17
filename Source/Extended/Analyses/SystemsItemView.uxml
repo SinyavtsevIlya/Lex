@@ -1,6 +1,7 @@
-<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <engine:VisualElement style="flex-grow: 0; flex-direction: row; align-items: center; height: 18px;">
-        <engine:VisualElement style="flex-grow: 0; width: 16px; height: 16px; flex-shrink: 0; background-image: url(&quot;project://database/Packages/com.nanory.lex/Source/Extended/Analyses/system-default.png?fileID=2800000&amp;guid=9111de5ef75f8bc4a9ce641d21290a2d&amp;type=3#system-default&quot;);" />
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Packages/com.nanory.lex/Source/Extended/Analyses/lex_systems_browser.uss?fileID=7433441132597879392&amp;guid=b01e8909f957fa1419649c4922c8ba5e&amp;type=3#lex_systems_browser" />
+    <engine:VisualElement style="flex-grow: 0; flex-direction: row; align-items: center; height: 20px;">
+        <engine:VisualElement name="Thumbnail" style="flex-grow: 0; width: 16px; height: 16px; flex-shrink: 0;" />
         <engine:Label text="System name" style="margin-left: 6px;" />
     </engine:VisualElement>
 </engine:UXML>
