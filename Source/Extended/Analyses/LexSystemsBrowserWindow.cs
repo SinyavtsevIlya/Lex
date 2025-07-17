@@ -67,7 +67,9 @@ namespace Nanory.Lex.UnityEditorIntegration
             var view = new LexSystemsBrowserView(root);
             
             view.EditModeStub.style.display = Application.isPlaying ? DisplayStyle.None : DisplayStyle.Flex;
-
+            
+            view.TreeView.setupDragAndDrop += _ => new StartDragArgs("rejected", DragVisualMode.Rejected);
+            
             view.SearchField.RegisterValueChangedCallback(e =>
             {
                 DisplayTree();
@@ -83,17 +85,21 @@ namespace Nanory.Lex.UnityEditorIntegration
                     var system = view.TreeView.GetItemDataForIndex<IEcsSystem>(index);
                     var systemClass = GetSystemClassName(system);
                     
-                    itemView.Thumbnail.ClearClassList();
-                    itemView.Thumbnail.AddToClassList(systemClass);
-                    itemView.Label.text = GetSystemName(system);
+                    itemView.ClearClassList();
+                    itemView.AddToClassList(systemClass);
+                    itemView.Label.text = ToSpacesCase(GetSystemName(system));
 
                     var contextualMenuManipulator = new ContextualMenuManipulator(e =>
                     {
                         e.menu.AppendAction("Edit script", a =>
                         {
-                            if (!TryGetSourceAsset(system.GetType(), out var scriptPath))
+                            var systemType = system.GetType();
+                            
+                            var targetType = IsOneFrameSystem(system) ? systemType.GetGenericArguments().First() : systemType;
+                            
+                            if (!TryGetSourceAsset(targetType, out var scriptPath))
                             {
-                                ShowNotification(new GUIContent("Can't find the related script file."));
+                                ShowNotification(new GUIContent($"Can't find the related script file with name {targetType.Name}. {System.Environment.NewLine} Target type is likely different from filename."));
                                 return;
                             }
 
@@ -201,13 +207,16 @@ namespace Nanory.Lex.UnityEditorIntegration
             if (system is EcsSystemGroup) 
                 return "system-group";
 
-            if (system.GetType().IsGenericType &&
-                system.GetType().GetGenericTypeDefinition() == typeof(OneFrameSystem<>))
+            if (IsOneFrameSystem(system))
                 return "system-one-frame";
             
             return "system-default";
         }
-        
+
+        private static bool IsOneFrameSystem(IEcsSystem system) =>
+            system.GetType().IsGenericType &&
+            system.GetType().GetGenericTypeDefinition() == typeof(OneFrameSystem<>);
+
         private static bool TryGetSourceAsset(System.Type type, out string result)
         {
             var typeName = type.IsGenericType ? type.GetGenericTypeDefinition().Name.Split('`')[0]: type.Name;
@@ -221,6 +230,13 @@ namespace Nanory.Lex.UnityEditorIntegration
             result = null;
             return false;
         }
+        
+        private static string ToSpacesCase(string str) =>
+            string.Concat(
+                str.Select((x, i) =>
+                    i > 0 && char.IsUpper(x) && (char.IsLower(str[i - 1]) || i < str.Length - 1 && char.IsLower(str[i + 1]))
+                        ? " " + x
+                        : x.ToString()));
     }
 }
 #endif

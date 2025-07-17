@@ -1,12 +1,20 @@
-.system-default {
+.system-default .system-thumbnail {
     background-image: url("project://database/Packages/com.nanory.lex/Source/Extended/Analyses/system-default.png?fileID=2800000&guid=9111de5ef75f8bc4a9ce641d21290a2d&type=3#system-default");
 }
 
-.system-group {
+.system-group .system-thumbnail {
     background-image: url("project://database/Packages/com.nanory.lex/Source/Extended/Analyses/open-file.png?fileID=2800000&guid=b8d23d8c406d0214abb5867359a76cef&type=3#open-file");
 }
 
-.system-one-frame {
+.system-one-frame .system-thumbnail {
     background-image: url("project://database/Packages/com.nanory.lex/Source/Extended/Analyses/system-one-frame-tr.png?fileID=2800000&guid=0fadb0f355fb647449124d09fb9fa695&type=3#system-one-frame-tr");
     margin-left: 8px;
+}
+
+.system-group .system-label {
+    -unity-font-style: bold;
+}
+
+.system-one-frame .system-label {
+    opacity: 0.5;
 }

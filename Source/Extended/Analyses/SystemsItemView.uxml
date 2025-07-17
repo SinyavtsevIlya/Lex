@@ -1,7 +1,7 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <Style src="project://database/Packages/com.nanory.lex/Source/Extended/Analyses/lex_systems_browser.uss?fileID=7433441132597879392&amp;guid=b01e8909f957fa1419649c4922c8ba5e&amp;type=3#lex_systems_browser" />
     <engine:VisualElement style="flex-grow: 0; flex-direction: row; align-items: center; height: 20px;">
-        <engine:VisualElement name="Thumbnail" style="flex-grow: 0; width: 16px; height: 16px; flex-shrink: 0;" />
-        <engine:Label text="System name" style="margin-left: 6px;" />
+        <engine:VisualElement name="Thumbnail" class="system-thumbnail" style="flex-grow: 0; width: 16px; height: 16px; flex-shrink: 0;" />
+        <engine:Label text="System name" class="system-label" style="margin-left: 6px;" />
     </engine:VisualElement>
 </engine:UXML>
