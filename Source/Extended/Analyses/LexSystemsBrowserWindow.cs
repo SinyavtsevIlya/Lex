@@ -90,7 +90,7 @@ namespace Nanory.Lex.UnityEditorIntegration
                     var systemName = GetSystemName(system);
                     if (IsOneFrameSystem(system))
                     {
-                        var prefix = IsRequestSystem(system) ? "RequestSystem" : "EventSystem";
+                        var prefix = "Remove : ";
                         systemName = systemName.Replace("OneFrameSystem", prefix);
                     }
                     itemView.Label.text = ToSpacesCase(systemName);
@@ -199,20 +199,6 @@ namespace Nanory.Lex.UnityEditorIntegration
             }
         }
 
-        // TODO: temp
-        private bool IsRequestSystem(IEcsSystem system)
-        {
-            var systemName = GetSystemName(system);
-            return systemName.Contains("Request");
-        }
-
-        // TODO: temp
-        private bool IsEventSystem(IEcsSystem system)
-        {
-            var systemName = GetSystemName(system);
-            return systemName.Contains("Event");
-        }
-
         private string GetSystemName(IEcsSystem system)
         {
             var type = system.GetType();
@@ -229,12 +215,6 @@ namespace Nanory.Lex.UnityEditorIntegration
 
             if (IsOneFrameSystem(system))
             {
-                if (IsRequestSystem(system))
-                    return "system-request";
-
-                if (IsEventSystem(system))
-                    return "system-event";
-                
                 return "system-one-frame";
             }
             
