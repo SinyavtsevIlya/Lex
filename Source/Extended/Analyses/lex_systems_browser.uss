@@ -6,15 +6,34 @@
     background-image: url("project://database/Packages/com.nanory.lex/Source/Extended/Analyses/open-file.png?fileID=2800000&guid=b8d23d8c406d0214abb5867359a76cef&type=3#open-file");
 }
 
-.system-one-frame .system-thumbnail {
-    background-image: url("project://database/Packages/com.nanory.lex/Source/Extended/Analyses/system-one-frame-tr.png?fileID=2800000&guid=0fadb0f355fb647449124d09fb9fa695&type=3#system-one-frame-tr");
-    margin-left: 8px;
-}
-
 .system-group .system-label {
     -unity-font-style: bold;
 }
 
+.system-one-frame .system-thumbnail {
+    background-image: url("project://database/Packages/com.nanory.lex/Source/Extended/Analyses/system-one-frame-tr.png?fileID=2800000&guid=0fadb0f355fb647449124d09fb9fa695&type=3#system-one-frame-tr");
+    margin-left: 0;
+}
+
 .system-one-frame .system-label {
     opacity: 0.5;
+}
+
+.system-event .system-thumbnail {
+    background-image: url("project://database/Packages/com.nanory.lex/Source/Extended/Analyses/system-event.png?fileID=2800000&guid=7ed16d87b6c05d94d9077324024e8744&type=3#system-event");
+    -unity-background-image-tint-color: rgb(127, 214, 252);
+}
+
+.system-event .system-label {
+    color: rgb(127, 214, 252);
+}
+
+.system-request .system-thumbnail {
+    background-image: url("project://database/Packages/com.nanory.lex/Source/Extended/Analyses/system-request.png?fileID=2800000&guid=e779683a1bd42004cbb9ef2983e10c6c&type=3#system-request");
+    -unity-background-image-tint-color: rgb(117, 255, 126);
+}
+
+.system-request .system-label {
+    color: rgb(117, 255, 126);
+    -unity-background-image-tint-color: rgb(117, 255, 126);
 }

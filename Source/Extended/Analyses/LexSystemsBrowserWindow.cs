@@ -87,7 +87,13 @@ namespace Nanory.Lex.UnityEditorIntegration
                     
                     itemView.ClearClassList();
                     itemView.AddToClassList(systemClass);
-                    itemView.Label.text = ToSpacesCase(GetSystemName(system));
+                    var systemName = GetSystemName(system);
+                    if (IsOneFrameSystem(system))
+                    {
+                        var prefix = IsRequestSystem(system) ? "RequestSystem" : "EventSystem";
+                        systemName = systemName.Replace("OneFrameSystem", prefix);
+                    }
+                    itemView.Label.text = ToSpacesCase(systemName);
 
                     var contextualMenuManipulator = new ContextualMenuManipulator(e =>
                     {
@@ -192,7 +198,21 @@ namespace Nanory.Lex.UnityEditorIntegration
                 return items;
             }
         }
-        
+
+        // TODO: temp
+        private bool IsRequestSystem(IEcsSystem system)
+        {
+            var systemName = GetSystemName(system);
+            return systemName.Contains("Request");
+        }
+
+        // TODO: temp
+        private bool IsEventSystem(IEcsSystem system)
+        {
+            var systemName = GetSystemName(system);
+            return systemName.Contains("Event");
+        }
+
         private string GetSystemName(IEcsSystem system)
         {
             var type = system.GetType();
@@ -208,7 +228,15 @@ namespace Nanory.Lex.UnityEditorIntegration
                 return "system-group";
 
             if (IsOneFrameSystem(system))
+            {
+                if (IsRequestSystem(system))
+                    return "system-request";
+
+                if (IsEventSystem(system))
+                    return "system-event";
+                
                 return "system-one-frame";
+            }
             
             return "system-default";
         }
@@ -234,7 +262,8 @@ namespace Nanory.Lex.UnityEditorIntegration
         private static string ToSpacesCase(string str) =>
             string.Concat(
                 str.Select((x, i) =>
-                    i > 0 && char.IsUpper(x) && (char.IsLower(str[i - 1]) || i < str.Length - 1 && char.IsLower(str[i + 1]))
+                    i > 0 && char.IsUpper(x) && (char.IsLower(str[i - 1]) || 
+                    i < str.Length - 1 && char.IsLower(str[i + 1]) && char.IsLetter(str[i - 1]))
                         ? " " + x
                         : x.ToString()));
     }
