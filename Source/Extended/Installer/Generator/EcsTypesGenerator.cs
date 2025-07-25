@@ -15,7 +15,7 @@ namespace Nanory.Lex.Generation
         private const string FeatureTemplate = 
 @"using System;
 using Nanory.Lex;
-{namespaces}    
+{namespaces}
 
 public static class {featureName}SystemTypesLookup
 {
@@ -90,7 +90,7 @@ public static class {featureName}SystemTypesLookup
                 .Where(ns => ns != null)
                 .Distinct();
 
-            var namespaceString = string.Join(Format.NewLine(1), allNamespaces.Select(ns => $"using {ns};"));
+            var namespaceString = string.Join(Format.NewLine(), allNamespaces.Select(ns => $"using {ns};"));
             var systemTypesString = string.Join("," + Format.NewLine(2), new[] { baseSystems, oneFrameSystems, eventSystems }.Where(s => !string.IsNullOrEmpty(s)));
             var featureName = featureType.Namespace.SolidifyNamespace();
 
