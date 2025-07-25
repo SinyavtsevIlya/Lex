@@ -1,6 +1,7 @@
 ﻿#if UNITY_EDITOR
 using Nanory.Lex.AssetsManagement;
 using System;
+using System.Reflection;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -43,24 +44,22 @@ public static class {featureName}SystemTypesLookup
                 .Where(type => type != typeof(UnityEditorIntegration.Feature))
                 .Where(type => typeof(FeatureBase).IsAssignableFrom(type))
                 .Where(type => type != typeof(FeatureBase))
-                .SelectMany(featureType => (
-                    new GeneratedFile[]
-                    {
-                        GetSystemTypesLookup(featureType)
-                    }
-                ))
+                .SelectMany(featureType => new[]
+                {
+                    GetSystemTypesLookup(featureType)
+                })
                 .ToList()
                 .ForEach(file => WriteOnDisk(file.Content, file.Name));
 
             GeneratedFile GetSystemTypesLookup(Type featureType) =>
-                new GeneratedFile()
+                new()
                 {
                     Name = featureType.Namespace.SolidifyNamespace(),
                     Content = GenerateSystemTypes(featureType, scanner)
                 };
         }
 
-        public class GeneratedFile
+        private class GeneratedFile
         {
             public string Name;
             public string Content;
@@ -88,9 +87,30 @@ public static class {featureName}SystemTypesLookup
         {
             var worldSystemTypes = scanner.GetSystemTypesByFeature(new Type[] { featureType });
             var oneFrameSystemTypes = scanner.GetOneFrameSystemTypesGenericArgumentsByFeature(new Type[] { featureType });
-
             var systemTypes = worldSystemTypes.ToList();
-            
+            var eventSystemTypes = systemTypes
+                .SelectMany(type =>
+                {
+                    var resultTypes = new List<Type>();
+                    
+                    foreach (var attribute in type.GetCustomAttributes())
+                    {
+                        if (attribute is EventSystemAttribute eventSystemAttribute)
+                        {
+                            var systemType = typeof(OneFrameSystem<>).MakeGenericType(eventSystemAttribute.EventComponentType);
+                            resultTypes.Add(systemType);
+                        }
+
+                        if (attribute is RequestSystemAttribute requestSystemAttribute)
+                        {
+                            var systemType = typeof(OneFrameSystem<>).MakeGenericType(requestSystemAttribute.RequestComponentType);
+                            resultTypes.Add(systemType);
+                        }
+                    }
+
+                    return resultTypes;
+                }).ToList();
+
             var baseSystemsSeq = !systemTypes.Any() ? null : $"// Base Systems{Format.NewLine(2)}" + systemTypes
                 .Select(type => $"typeof({type.ToGenericTypeString()})")
                 .Aggregate((a, b) => $"{a},{Format.NewLine(2)}{b}");
@@ -105,11 +125,16 @@ public static class {featureName}SystemTypesLookup
                 .Select(cleanupArgs => $"typeof({cleanupArgs.systemName}<{cleanupArgs.typeName}>)")
                 .Aggregate((a, b) => $"{a},{Format.NewLine(2)}{b}");
 
+            var eventSystemsSeq = eventSystemTypes
+                .Select(type => $"typeof({type.ToGenericTypeString()})")
+                .Aggregate($"// Event/Request Systems", (a, b) => $"{a},{Format.NewLine(2)}{b}");
+            
             var namespacesHashSet = new HashSet<string>();
-
+            
             systemTypes
                 .Union(oneFrameSystemTypes)
-                .SelectMany(t => GetNamespacesRecursive(t))
+                .Union(eventSystemTypes)
+                .SelectMany(GetNamespacesRecursive)
                 .Where(n => n != null).ToList()
                 .ForEach(ns => namespacesHashSet.Add(ns));
 
@@ -117,10 +142,10 @@ public static class {featureName}SystemTypesLookup
 
             var featureName = featureType.Namespace.SolidifyNamespace();
 
-            var systems = new string[] { baseSystemsSeq, cleanupSystemsSeq }
+            var systems = new[] { baseSystemsSeq, cleanupSystemsSeq, eventSystemsSeq }
             .Where(s => s != null);
 
-            var systemsSeq = systems.Count() == 0 ? null : systems
+            var systemsSeq = !systems.Any() ? null : systems
             .Aggregate((a, b) => $"{a},{Format.NewLine(2)}{b}");
 
             var result = _fatureTemplate
@@ -162,18 +187,12 @@ public static class {featureName}SystemTypesLookup
             return System.Environment.NewLine + Spaces(TabLength * tabs);
         }
 
-        public static string Space
-        {
-            get
-            {
-                return " ";
-            }
-        }
+        private static string Space => " ";
 
-        public static string Spaces(int count)
+        private static string Spaces(int count)
         {
-            string result = string.Empty;
-            for (int i = 0; i < count; i++)
+            var result = string.Empty;
+            for (var idx = 0; idx < count; idx++)
             {
                 result += Space;
             }

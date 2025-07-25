@@ -47,17 +47,7 @@ namespace Nanory.Lex
 
             foreach (var item in inputTypes)
             {
-                if (item.IsGenericType)
-                {
-                    //var genericChildTypes = AppDomain.CurrentDomain.GetAssemblies()
-                    //    .SelectMany(s => s.GetCustomAttributes(typeof(RegisterGenericComponentTypeAttribute))
-                    //    .Select(a => (a as RegisterGenericComponentTypeAttribute).ConcreteType))
-                    //    .Where(a => a.GetGenericTypeDefinition() == item)
-                    //    .ToArray();
-
-                    //resultTypes.AddRange(genericChildTypes);
-                }
-                else
+                if (!item.IsGenericType)
                     resultTypes.Add(item);
             }
 
@@ -72,15 +62,23 @@ namespace Nanory.Lex
         public static string ToGenericTypeString(this Type t)
         {
             if (!t.IsGenericType)
-                return t.Name;
-            string genericTypeName = t.GetGenericTypeDefinition().Name;
+                return t.GetNestedTypeName();
+            var genericTypeName = t.GetGenericTypeDefinition().GetNestedTypeName();
 
             genericTypeName = genericTypeName.Substring(0,
                 genericTypeName.IndexOf('`'));
-            string genericArgs = string.Join(",",
+            var genericArgs = string.Join(",",
                 t.GetGenericArguments()
                     .Select(ta => ToGenericTypeString(ta)).ToArray());
             return genericTypeName + "<" + genericArgs + ">";
+        }
+        
+        public static string GetNestedTypeName(this Type type)
+        {
+            if (type.DeclaringType == null)
+                return type.Name;
+
+            return $"{type.DeclaringType.GetNestedTypeName()}.{type.Name}";
         }
 
         public static IEnumerable<Assembly> GetAssembliesByName(this AppDomain appDomain, params string[] names)
