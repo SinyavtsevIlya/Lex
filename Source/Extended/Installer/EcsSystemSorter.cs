@@ -32,7 +32,7 @@ namespace Nanory.Lex
             handledSystems.Add(typeof(RootSystemGroup));
 
             foreach (var systemType in _systemTypes)
-                CreateSystemRecursive(systemType, handledSystems);
+                CreateSystemHierarchy(systemType, handledSystems);
 
             SetupWorldLookups();
 
@@ -57,25 +57,26 @@ namespace Nanory.Lex
                 .ToArray();
         }
 
-        private void CreateSystemRecursive(Type systemType, HashSet<Type> handledSystems)
+        private void CreateSystemHierarchy(Type systemType, HashSet<Type> handledSystems)
         {
-            if (!handledSystems.Add(systemType))
-                return;
+            while (true)
+            {
+                if (!handledSystems.Add(systemType)) return;
 
-            var updateInGroup = GetCachedAttribute<UpdateInGroup>(systemType);
-            var targetGroupType = updateInGroup?.TargetGroupType ?? typeof(SimulationSystemGroup);
+                var updateInGroup = GetCachedAttribute<UpdateInGroup>(systemType);
+                var targetGroupType = updateInGroup?.TargetGroupType ?? typeof(SimulationSystemGroup);
 
-            var instance = GetSystemByType(systemType);
-            var parentInstance = (EcsSystemGroup)GetSystemByType(targetGroupType);
+                var instance = GetSystemByType(systemType);
+                var parentInstance = (EcsSystemGroup)GetSystemByType(targetGroupType);
 
 #if DEBUG
-            if (instance is EcsSystemGroup group && group.Systems.Contains(parentInstance))
-                throw new Exception($"<b>{instance}</b> and <b>{parentInstance}</b> have circular dependency.");
+                if (instance is EcsSystemGroup group && group.Systems.Contains(parentInstance)) throw new Exception($"<b>{instance}</b> and <b>{parentInstance}</b> have circular dependency.");
 #endif
 
-            parentInstance.Add(instance);
+                parentInstance.Add(instance);
 
-            CreateSystemRecursive(targetGroupType, handledSystems);
+                systemType = targetGroupType;
+            }
         }
 
         private void SetupWorldLookups()
@@ -138,7 +139,7 @@ namespace Nanory.Lex
         private void SortSystemGroup(EcsSystemGroup group)
         {
             var unsorted = new List<IEcsSystem>(group.Systems);
-            var dependencyTable = new List<List<IEcsSystem>> { new() };
+            var executionLayers = new List<List<IEcsSystem>> { new() };
             var orderFirst = new List<IEcsSystem>();
             var orderLast = new List<IEcsSystem>();
 
@@ -155,18 +156,18 @@ namespace Nanory.Lex
             {
                 if (GetCachedAttribute<UpdateBefore>(unsorted[i].GetType()) == null)
                 {
-                    dependencyTable[0].Add(unsorted[i]);
+                    executionLayers[0].Add(unsorted[i]);
                     unsorted.RemoveAt(i);
                 }
             }
 
-            SortRecursive(unsorted, dependencyTable, 1);
-            dependencyTable.Reverse();
+            SortRecursive(unsorted, executionLayers, 1);
+            executionLayers.Reverse();
 
             foreach (var sys in orderFirst)
-                dependencyTable[0].Insert(0, sys);
+                executionLayers[0].Insert(0, sys);
 
-            group.Systems = dependencyTable.SelectMany(l => l).ToList();
+            group.Systems = executionLayers.SelectMany(l => l).ToList();
 
             foreach (var sys in orderLast)
                 group.Add(sys);

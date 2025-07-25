@@ -2,140 +2,150 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using System.Reflection;
 
 namespace Nanory.Lex
 {
     public class EcsTypesScanner
+{
+    private readonly string[] _clientAssemblyNames;
+
+    #region State
+    private readonly List<Type> _cachedTypes;
+    private readonly List<Type> _componentTypes;
+    #endregion
+
+    public EcsTypesScanner(EcsScanSettings settings)
     {
-        private readonly string[] _clientAssemblyNames;
+        _clientAssemblyNames = settings.ClientAssemblyNames;
 
-        #region State
-        private List<Type> _cachedTypes;
-        private List<Type> _componentTypes;
-        #endregion
+        _cachedTypes = CacheAssemblyTypes();
+        _componentTypes = GetComponentTypesInternal().ToList();
+    }
 
-        public EcsTypesScanner(EcsScanSettings settings)
-        {
-            _clientAssemblyNames = settings.ClientAssemblyNames;
+    public EcsTypesScanner() : this(EcsScanSettings.Default)
+    {
+    }
+    
+    public static List<Type> ScanAssembliesTypes()
+    {
+        return AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(s => s.GetTypes())
+            .ToList();
+    }
 
-            _cachedTypes = CacheAssemblyTypes();
-            _componentTypes = GetAssignableTypes(typeof(IComponentContract)).ToList();
-        }
+    private List<Type> CacheAssemblyTypes()
+    {
+        var assemblies = AppDomain.CurrentDomain.GetAssembliesByName(_clientAssemblyNames).ToList();
 
-        public EcsTypesScanner() : this(settings: EcsScanSettings.Default)
-        {
-        }
+        if (!assemblies.Any())
+            throw new InvalidOperationException($"Check your _clientAssemblyNames: {string.Join(", ", _clientAssemblyNames)}");
 
-        public static List<Type> ScanAssembliesTypes()
-        {
-            return AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(s => s.GetTypes())
-                .ToList();
-        }
-
-        public IEnumerable<Type> ScanSystemTypes(params Type[] targetFeatureTypes)
-        {
-            var invalidTypes = targetFeatureTypes
-                .Where(featureType => !typeof(FeatureBase).IsAssignableFrom(featureType))
-                .ToList();
-            
-            invalidTypes
-                .ForEach(featureType =>  Debug.LogError($"{featureType.FullName} must be inherited from {nameof(FeatureBase)}"));
-
-            if (invalidTypes.Any())
-                throw new ArgumentException("Invalid types was passed");
-            
-
-            return GetSystemTypesByFeature(targetFeatureTypes)
-                .Union(GetOneFrameSystemTypesFeaturesGeneric(targetFeatureTypes));
-        }
-
-        public IEnumerable<Type> GetSystemTypesByFeature(IEnumerable<Type> featureTypes)
-        {
-            var providedSystemTypes = featureTypes
-                .Where(ft => GetTypesByFeature(typeof(SystemTypesProviderBase), featureTypes).Any())
-                .SelectMany(ft => GetTypesByFeature(typeof(SystemTypesProviderBase), featureTypes))
-                .SelectMany(systemProviderType => (Activator.CreateInstance(systemProviderType) as SystemTypesProviderBase).GetSystemTypes(this));
-
-            return GetTypesByFeature(typeof(IEcsSystem), featureTypes)
-                .Union(providedSystemTypes);
-        }
-
-        public IEnumerable<Type> GetOneFrameSystemTypesFeaturesGeneric(IEnumerable<Type> featureTypes)
-        {
-            return GetOneFrameSystemTypesGenericArgumentsByFeature(featureTypes).Select(t =>
-            {
-                var genericSystemType = typeof(OneFrameSystem<>);
-                return genericSystemType.MakeGenericType(t);
-            });
-        }
-
-        public List<Type> GetOneFrameSystemTypesGenericArgumentsByFeature(IEnumerable<Type> featureTypes)
-        {
-            return GetAssignableTypes(typeof(IComponentContract))
-                .FilterGenericTypesByAttribute<OneFrame>()
-                .FilterTypesByFeature(featureTypes)
-                .ToList();
-        }
-
-        private IEnumerable<Type> GetTypesByFeature(Type ecsType, IEnumerable<Type> targetFeatureTypes)
-        {
-            var customTypes = GetAssignableTypes(ecsType);
-            return customTypes.FilterTypesByFeature(targetFeatureTypes);
-        }
-
-        private List<Type> CacheAssemblyTypes()
-        {
-            return AppDomain.CurrentDomain.GetAssembliesByName(_clientAssemblyNames)
-                .AssertIsEmpty($"Check your _clientAssemblyNames: {_clientAssemblyNames}")
-                .SelectMany(s => s.GetTypes())
-                .ToList();
-        }
-
-        public List<Type> GetTypes() => _cachedTypes;
-
-        /// <summary>
-        /// Returns types that <b>possibly</b> can be components. (non primitive value types)
-        /// </summary>
-        public List<Type> GetComponentTypes() => _componentTypes;
-
-        public IEnumerable<Type> GetAssignableTypes(params Type[] typesToScan)
-        {
-            return _cachedTypes
-                .Where(type =>
-                {
-                    if (type.Namespace == null)
-                    {
-                        //UnityEngine.Debug.LogWarning($"{type} has no namespace.");
-                    }
-
-                    if (typesToScan.Any(t => t == typeof(IComponentContract)))
-                    {
-                        return type.IsValueType && 
-                        !type.IsPrimitive && 
-                        type.Namespace != null && 
-                        !type.Namespace.StartsWith("System") && 
-                        !type.IsEnum;
-                    }
-
-                    if (type.IsGenericTypeDefinition || type.IsInterface)
-                        return false;
-
-                    if (type.CustomAttributes.Any(a => a.AttributeType == typeof(PreserveAutoCreationAttribute)))
-                        return false;
-
-                    if (type.IsAbstract)
-                        return false;
-
-                    return typesToScan.Any(t => t.IsAssignableFrom(type));
-                });
-        }
+        return assemblies.SelectMany(a => a.GetTypes()).ToList();
     }
 
     [UnityEngine.Scripting.Preserve]
+    public IReadOnlyList<Type> GetTypes() => _cachedTypes;
+
+    public IReadOnlyList<Type> GetComponentTypes() => _componentTypes;
+
+    private IEnumerable<Type> GetComponentTypesInternal()
+    {
+        return _cachedTypes.Where(type =>
+            type.IsValueType &&
+            !type.IsPrimitive &&
+            type.Namespace != null &&
+            !type.Namespace.StartsWith("System") &&
+            !type.IsEnum);
+    }
+
+    public IEnumerable<Type> GetAssignableTypes(params Type[] baseTypes)
+    {
+        foreach (var type in _cachedTypes)
+        {
+            if (baseTypes.Contains(typeof(IComponentContract)))
+            {
+                if (type.IsValueType &&
+                    !type.IsPrimitive &&
+                    type.Namespace != null &&
+                    !type.Namespace.StartsWith("System") &&
+                    !type.IsEnum)
+                    yield return type;
+
+                continue;
+            }
+
+            if (type.IsGenericTypeDefinition || type.IsInterface || type.IsAbstract)
+                continue;
+
+            if (type.CustomAttributes.Any(a => a.AttributeType == typeof(PreserveAutoCreationAttribute)))
+                continue;
+
+            if (baseTypes.Any(baseType => baseType.IsAssignableFrom(type)))
+                yield return type;
+        }
+    }
+
+    public IEnumerable<Type> ScanSystemTypes(params Type[] targetFeatureTypes)
+    {
+        var invalidTypes = targetFeatureTypes
+            .Where(ft => !typeof(FeatureBase).IsAssignableFrom(ft))
+            .ToList();
+
+        foreach (var invalidType in invalidTypes)
+            Debug.LogError($"{invalidType.FullName} must be inherited from {nameof(FeatureBase)}");
+
+        if (invalidTypes.Any())
+            throw new ArgumentException("Invalid feature types passed to ScanSystemTypes.");
+
+        return GetSystemTypesByFeature(targetFeatureTypes)
+            .Union(GetOneFrameSystemTypesFeaturesGeneric(targetFeatureTypes));
+    }
+
+    public IEnumerable<Type> GetSystemTypesByFeature(IEnumerable<Type> featureTypes)
+    {
+        var systemProviderTypes = GetTypesByFeature(typeof(SystemTypesProviderBase), featureTypes).ToList();
+
+        var providedSystemTypes = systemProviderTypes.SelectMany(spType =>
+        {
+            if (Activator.CreateInstance(spType) is SystemTypesProviderBase provider)
+                return provider.GetSystemTypes(this);
+
+            Debug.LogError($"Failed to create instance of {spType.FullName}");
+            return Enumerable.Empty<Type>();
+        });
+
+        var ecsSystemTypes = GetTypesByFeature(typeof(IEcsSystem), featureTypes);
+
+        return ecsSystemTypes.Union(providedSystemTypes);
+    }
+
+    public IEnumerable<Type> GetOneFrameSystemTypesFeaturesGeneric(IEnumerable<Type> featureTypes)
+    {
+        var genericArgs = GetOneFrameSystemTypesGenericArgumentsByFeature(featureTypes);
+
+        foreach (var arg in genericArgs)
+        {
+            yield return typeof(OneFrameSystem<>).MakeGenericType(arg);
+        }
+    }
+
+    public List<Type> GetOneFrameSystemTypesGenericArgumentsByFeature(IEnumerable<Type> featureTypes)
+    {
+        return GetAssignableTypes(typeof(IComponentContract))
+            .FilterGenericTypesByAttribute<OneFrame>()
+            .FilterTypesByFeature(featureTypes)
+            .ToList();
+    }
+
+    private IEnumerable<Type> GetTypesByFeature(Type baseType, IEnumerable<Type> featureTypes)
+    {
+        var candidates = GetAssignableTypes(baseType);
+        return candidates.FilterTypesByFeature(featureTypes);
+    }
+    
+    [UnityEngine.Scripting.Preserve]
     // Only for internal scanning
     internal interface IComponentContract { }
-
-    public class PreserveAutoCreationAttribute : Attribute { }
+    
+}
 }
