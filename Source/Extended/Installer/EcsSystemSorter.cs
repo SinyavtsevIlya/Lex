@@ -5,26 +5,22 @@ using System.Reflection;
 
 namespace Nanory.Lex
 {
-    public abstract class SystemTypesProviderBase
-    {
-        public abstract IEnumerable<Type> GetSystemTypes(EcsTypesScanner scanner);
-    }
-
-    public abstract class FeatureBase { }
-
     public class EcsSystemSorter : IDisposable
     {
-        protected EcsWorld World { get; private set; }
-        protected EcsSystemGroup RootSystemGroup { get; private set; }
-        protected Dictionary<Type, IEcsSystem> SystemMap { get; private set; }
-        protected Func<Type, IEcsSystem> Creator { get; private set; }
-        protected Type[] SystemTypes { get; set; }
+        private EcsWorld _world;
+        private Dictionary<Type, IEcsSystem> _systemMap;
+        private Func<Type, IEcsSystem> _creator;
+        
+        private EcsSystemGroup _rootSystemGroup;
+        private Type[] _systemTypes;
+
+        private readonly Dictionary<(Type type, Type attrType), Attribute> _attributeCache = new();
 
         public EcsSystemSorter(EcsWorld world, Func<Type, IEcsSystem> creator = null)
         {
-            World = world;
-            SystemMap = new Dictionary<Type, IEcsSystem>();
-            Creator = creator;
+            _world = world;
+            _systemMap = new Dictionary<Type, IEcsSystem>();
+            _creator = creator;
         }
 
         public EcsSystemGroup GetSortedSystems(IEnumerable<Type> systemTypes)
@@ -32,36 +28,17 @@ namespace Nanory.Lex
             InitializeSystemTypes(systemTypes);
 
             var handledSystems = new HashSet<Type>();
-            RootSystemGroup = (EcsSystemGroup)GetSystemByType(typeof(RootSystemGroup));
+            _rootSystemGroup = (EcsSystemGroup)GetSystemByType(typeof(RootSystemGroup));
             handledSystems.Add(typeof(RootSystemGroup));
 
-            foreach (var systemType in SystemTypes)
-                TryCreateSystemRecursive(systemType);
+            foreach (var systemType in _systemTypes)
+                CreateSystemRecursive(systemType, handledSystems);
 
             SetupWorldLookups();
-            SortAllSystemGroups();
 
-            return RootSystemGroup;
+            SortAndInsertOneFrameSystems();
 
-            void TryCreateSystemRecursive(Type systemType)
-            {
-                if (!handledSystems.Add(systemType))
-                    return;
-
-                var updateInGroup = systemType.GetCustomAttribute<UpdateInGroup>();
-                var targetGroupType = updateInGroup?.TargetGroupType ?? typeof(SimulationSystemGroup);
-
-                var instance = GetSystemByType(systemType);
-                var parentInstance = (EcsSystemGroup)GetSystemByType(targetGroupType);
-
-#if DEBUG
-                if (instance is EcsSystemGroup group && group.Systems.Contains(parentInstance))
-                    throw new Exception($"<b>{instance}</b> and <b>{parentInstance}</b> have circular dependency.");
-#endif
-                parentInstance.Add(instance);
-
-                TryCreateSystemRecursive(targetGroupType);
-            }
+            return _rootSystemGroup;
         }
 
         private void InitializeSystemTypes(IEnumerable<Type> systemTypes)
@@ -74,35 +51,58 @@ namespace Nanory.Lex
                 typeof(BeginSimulationECBSystem)
             };
 
-            SystemTypes = systemTypes
+            _systemTypes = systemTypes
                 .Union(defaultSystemGroupTypes)
                 .Union(UISystemTypesRegistry.Values)
                 .ToArray();
         }
 
+        private void CreateSystemRecursive(Type systemType, HashSet<Type> handledSystems)
+        {
+            if (!handledSystems.Add(systemType))
+                return;
+
+            var updateInGroup = GetCachedAttribute<UpdateInGroup>(systemType);
+            var targetGroupType = updateInGroup?.TargetGroupType ?? typeof(SimulationSystemGroup);
+
+            var instance = GetSystemByType(systemType);
+            var parentInstance = (EcsSystemGroup)GetSystemByType(targetGroupType);
+
+#if DEBUG
+            if (instance is EcsSystemGroup group && group.Systems.Contains(parentInstance))
+                throw new Exception($"<b>{instance}</b> and <b>{parentInstance}</b> have circular dependency.");
+#endif
+
+            parentInstance.Add(instance);
+
+            CreateSystemRecursive(targetGroupType, handledSystems);
+        }
+
         private void SetupWorldLookups()
         {
-            if (World is EcsWorldBase worldBase)
+            if (_world is EcsWorldBase worldBase)
             {
-                worldBase.SetSystemsLookup(SystemMap);
-                worldBase.SetEntityCommandBufferSystemsLookup(SystemMap.Values.OfType<EntityCommandBufferSystem>().ToList());
+                worldBase.SetSystemsLookup(_systemMap);
+                worldBase.SetEntityCommandBufferSystemsLookup(_systemMap.Values.OfType<EntityCommandBufferSystem>().ToList());
             }
 
-            foreach (var cbs in SystemMap.Values.OfType<EntityCommandBufferSystem>())
-                cbs.SetDstWorld(World);
+            foreach (var cbs in _systemMap.Values.OfType<EntityCommandBufferSystem>())
+                cbs.SetDstWorld(_world);
 
-            foreach (var lookup in SystemMap.Values.OfType<IEcsEntityCommandBufferLookup>())
+            foreach (var lookup in _systemMap.Values.OfType<IEcsEntityCommandBufferLookup>())
             {
-                lookup.SetEntityCommandBufferSystemsLookup(SystemMap.Values.OfType<EntityCommandBufferSystem>().ToList());
+                lookup.SetEntityCommandBufferSystemsLookup(_systemMap.Values.OfType<EntityCommandBufferSystem>().ToList());
 
                 if (lookup is EcsSystemBase systemBase)
-                    systemBase.Later = SystemMap.Values.OfType<BeginSimulationECBSystem>().First().GetBuffer();
+                    systemBase.Later = _systemMap.Values.OfType<BeginSimulationECBSystem>().First().GetBuffer();
             }
         }
 
-        private void SortAllSystemGroups()
+        private void SortAndInsertOneFrameSystems()
         {
-            foreach (var group in SystemMap.Values.OfType<EcsSystemGroup>().ToList())
+            var systemGroups = _systemMap.Values.OfType<EcsSystemGroup>().ToList();
+
+            foreach (var group in systemGroups)
             {
                 SortSystemGroup(group);
                 InsertOneFrameSystems(group);
@@ -111,30 +111,28 @@ namespace Nanory.Lex
 
         private void InsertOneFrameSystems(EcsSystemGroup systemGroup)
         {
-            for (var index = 0; index < systemGroup.Systems.Count; index++)
+            for (var i = 0; i < systemGroup.Systems.Count; i++)
             {
-                var system = systemGroup.Systems[index];
-
+                var system = systemGroup.Systems[i];
                 var shift = 0;
 
-                foreach (var attribute in system.GetType().GetCustomAttributes())
+                foreach (var attr in system.GetType().GetCustomAttributes())
                 {
-                    if (attribute is EventSystemAttribute eventSystemAttribute)
+                    if (attr is EventSystemAttribute eAttr)
                     {
-                        var systemType = typeof(OneFrameSystem<>).MakeGenericType(eventSystemAttribute.EventComponentType);
-                        systemGroup.Insert(index++, GetSystemByType(systemType));
+                        var type = typeof(OneFrameSystem<>).MakeGenericType(eAttr.EventComponentType);
+                        systemGroup.Insert(i++, GetSystemByType(type));
                     }
-                    else if (attribute is RequestSystemAttribute requestSystemAttribute)
+                    else if (attr is RequestSystemAttribute rAttr)
                     {
-                        var systemType = typeof(OneFrameSystem<>).MakeGenericType(requestSystemAttribute.RequestComponentType);
-                        systemGroup.Insert(index + 1, GetSystemByType(systemType));
+                        var type = typeof(OneFrameSystem<>).MakeGenericType(rAttr.RequestComponentType);
+                        systemGroup.Insert(i + 1, GetSystemByType(type));
                         shift++;
                     }
                 }
-                    
-                index += shift;
-            }
 
+                i += shift;
+            }
         }
 
         private void SortSystemGroup(EcsSystemGroup group)
@@ -144,18 +142,18 @@ namespace Nanory.Lex
             var orderFirst = new List<IEcsSystem>();
             var orderLast = new List<IEcsSystem>();
 
-            for (int i = unsorted.Count - 1; i >= 0; i--)
+            for (var i = unsorted.Count - 1; i >= 0; i--)
             {
                 var sys = unsorted[i];
-                var attr = sys.GetType().GetCustomAttribute<UpdateInGroup>();
+                var attr = GetCachedAttribute<UpdateInGroup>(sys.GetType());
 
                 if (attr?.OrderFirst == true) { orderFirst.Add(sys); unsorted.RemoveAt(i); }
                 else if (attr?.OrderLast == true) { orderLast.Add(sys); unsorted.RemoveAt(i); }
             }
 
-            for (int i = unsorted.Count - 1; i >= 0; i--)
+            for (var i = unsorted.Count - 1; i >= 0; i--)
             {
-                if (unsorted[i].GetType().GetCustomAttribute<UpdateBefore>() == null)
+                if (GetCachedAttribute<UpdateBefore>(unsorted[i].GetType()) == null)
                 {
                     dependencyTable[0].Add(unsorted[i]);
                     unsorted.RemoveAt(i);
@@ -179,14 +177,14 @@ namespace Nanory.Lex
             var layer = new List<IEcsSystem>();
             table.Add(layer);
 
-            for (int i = unsorted.Count - 1; i >= 0; i--)
+            for (var i = unsorted.Count - 1; i >= 0; i--)
             {
                 var sys = unsorted[i];
-                var beforeAttr = sys.GetType().GetCustomAttribute<UpdateBefore>();
+                var beforeAttr = GetCachedAttribute<UpdateBefore>(sys.GetType());
 
                 if (beforeAttr != null)
                 {
-                    if (!SystemMap.TryGetValue(beforeAttr.TargetSystemType, out var target))
+                    if (!_systemMap.TryGetValue(beforeAttr.TargetSystemType, out var target))
                     {
                         layer.Add(sys);
                         unsorted.RemoveAt(i);
@@ -205,56 +203,35 @@ namespace Nanory.Lex
                 SortRecursive(unsorted, table, level + 1);
         }
 
-        protected IEcsSystem GetSystemByType(Type systemType)
+        private IEcsSystem GetSystemByType(Type systemType)
         {
-            if (!SystemMap.TryGetValue(systemType, out var system))
+            if (!_systemMap.TryGetValue(systemType, out var system))
             {
-                system = Creator?.Invoke(systemType) ?? (IEcsSystem)Activator.CreateInstance(systemType);
-                SystemMap[systemType] = system;
+                system = _creator?.Invoke(systemType) ?? (IEcsSystem)Activator.CreateInstance(systemType);
+                _systemMap[systemType] = system;
             }
 
             return system;
         }
 
+        private T GetCachedAttribute<T>(Type type) where T : Attribute
+        {
+            var key = (type, typeof(T));
+            if (_attributeCache.TryGetValue(key, out var attr))
+                return (T)attr;
+
+            var attribute = type.GetCustomAttribute<T>();
+            _attributeCache[key] = attribute;
+            return attribute;
+        }
+
         public void Dispose()
         {
-            World = null;
-            RootSystemGroup = null;
-            SystemMap = null;
-            SystemTypes = null;
-        }
-    }
-
-    public static class EcsSystemsExtensions
-    {
-        public static TTargetSystem FindSystem<TTargetSystem>(this List<IEcsSystem> systems) where TTargetSystem : IEcsSystem
-        {
-            foreach (var system in systems)
-            {
-                if (system is TTargetSystem match)
-                    return match;
-
-                if (system is EcsSystemGroup group)
-                {
-                    var result = FindSystem<TTargetSystem>(group.Systems);
-                    if (result != null)
-                        return result;
-                }
-            }
-
-            return default;
-        }
-
-        public static void FindAllSystemsNonAlloc<TTargetSystem>(this List<IEcsSystem> input, List<TTargetSystem> output)
-        {
-            foreach (var system in input)
-            {
-                if (system is TTargetSystem match)
-                    output.Add(match);
-
-                if (system is EcsSystemGroup group)
-                    FindAllSystemsNonAlloc(group.Systems, output);
-            }
+            _world = null;
+            _rootSystemGroup = null;
+            _systemMap = null;
+            _systemTypes = null;
+            _attributeCache.Clear();
         }
     }
 }
