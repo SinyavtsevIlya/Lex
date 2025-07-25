@@ -12,10 +12,6 @@ namespace Nanory.Lex
 
     public abstract class FeatureBase { }
 
-    /// <summary>
-    /// Sorts systems in a hierarchical manner based on special Ordering attributes
-    /// (<see cref="UpdateInGroup"/> and <see cref="UpdateBefore"/>). 
-    /// </summary>
     public class EcsSystemSorter : IDisposable
     {
         protected EcsWorld World { get; private set; }
@@ -33,250 +29,191 @@ namespace Nanory.Lex
 
         public EcsSystemGroup GetSortedSystems(IEnumerable<Type> systemTypes)
         {
-            var defaultSystemGroupTypes = new Type[]
+            InitializeSystemTypes(systemTypes);
+
+            var handledSystems = new HashSet<Type>();
+            RootSystemGroup = (EcsSystemGroup)GetSystemByType(typeof(RootSystemGroup));
+            handledSystems.Add(typeof(RootSystemGroup));
+
+            foreach (var systemType in SystemTypes)
+                TryCreateSystemRecursive(systemType);
+
+            SetupWorldLookups();
+            SortAllSystemGroups();
+
+            return RootSystemGroup;
+
+            void TryCreateSystemRecursive(Type systemType)
+            {
+                if (!handledSystems.Add(systemType))
+                    return;
+
+                var updateInGroup = systemType.GetCustomAttribute<UpdateInGroup>();
+                var targetGroupType = updateInGroup?.TargetGroupType ?? typeof(SimulationSystemGroup);
+
+                var instance = GetSystemByType(systemType);
+                var parentInstance = (EcsSystemGroup)GetSystemByType(targetGroupType);
+
+#if DEBUG
+                if (instance is EcsSystemGroup group && group.Systems.Contains(parentInstance))
+                    throw new Exception($"<b>{instance}</b> and <b>{parentInstance}</b> have circular dependency.");
+#endif
+                parentInstance.Add(instance);
+
+                TryCreateSystemRecursive(targetGroupType);
+            }
+        }
+
+        private void InitializeSystemTypes(IEnumerable<Type> systemTypes)
+        {
+            var defaultSystemGroupTypes = new[]
             {
                 typeof(InitializationSystemGroup),
                 typeof(SimulationSystemGroup),
                 typeof(PresentationSystemGroup),
-                typeof(BeginSimulationECBSystem),
+                typeof(BeginSimulationECBSystem)
             };
 
             SystemTypes = systemTypes
                 .Union(defaultSystemGroupTypes)
                 .Union(UISystemTypesRegistry.Values)
                 .ToArray();
+        }
 
-
-            var handledSystems = new HashSet<Type>();
-            // Add a root
-            var rootSystemGroup = (EcsSystemGroup)GetSystemByType(typeof(RootSystemGroup));
-            handledSystems.Add(typeof(RootSystemGroup));
-
-            foreach (var systemType in SystemTypes)
-            {
-                TryCreateSystemRecursive(systemType);
-            }
-
-            var commandBufferSystems = SystemMap.Values.OfType<EntityCommandBufferSystem>().ToList();
-            var commandBufferLookupSystems = SystemMap.Values.OfType<IEcsEntityCommandBufferLookup>().ToList();
-
+        private void SetupWorldLookups()
+        {
             if (World is EcsWorldBase worldBase)
             {
                 worldBase.SetSystemsLookup(SystemMap);
-                worldBase.SetEntityCommandBufferSystemsLookup(commandBufferSystems);
+                worldBase.SetEntityCommandBufferSystemsLookup(SystemMap.Values.OfType<EntityCommandBufferSystem>().ToList());
             }
 
-            commandBufferSystems.ForEach(cbs => cbs.SetDstWorld(World));
-            commandBufferLookupSystems.ForEach(bs =>
+            foreach (var cbs in SystemMap.Values.OfType<EntityCommandBufferSystem>())
+                cbs.SetDstWorld(World);
+
+            foreach (var lookup in SystemMap.Values.OfType<IEcsEntityCommandBufferLookup>())
             {
-                bs.SetEntityCommandBufferSystemsLookup(commandBufferSystems);
-                if (bs is EcsSystemBase systemBase)
-                {
-                    // NOTE: set default command buffer system via constructor
-                    systemBase.Later = commandBufferSystems.First(b => b is BeginSimulationECBSystem).GetBuffer();
-                }
-            });
+                lookup.SetEntityCommandBufferSystemsLookup(SystemMap.Values.OfType<EntityCommandBufferSystem>().ToList());
 
-            var systemGroups = SystemMap.Values.OfType<EcsSystemGroup>().ToList();
-
-            foreach (var systemGroup in systemGroups)
-            {
-                SortSystemGroup(systemGroup);
-
-                for (var index = 0; index < systemGroup.Systems.Count; index++)
-                {
-                    var system = systemGroup.Systems[index];
-
-                    var shift = 0;
-
-                    foreach (var attribute in system.GetType().GetCustomAttributes())
-                    {
-                        if (attribute is EventSystemAttribute eventSystemAttribute)
-                        {
-                            var systemType = typeof(OneFrameSystem<>).MakeGenericType(eventSystemAttribute.EventComponentType);
-                            var eventSystem = GetSystemByType(systemType);
-                            systemGroup.Insert(index++, eventSystem);
-                        }
-                        else if (attribute is RequestSystemAttribute requestSystemAttribute)
-                        {
-                            var systemType = typeof(OneFrameSystem<>).MakeGenericType(requestSystemAttribute.RequestComponentType);
-                            var eventSystem = GetSystemByType(systemType);
-                            systemGroup.Insert(index + 1, eventSystem);
-                            shift++;
-                        }
-                    }
-                    
-                    index += shift;
-                }
+                if (lookup is EcsSystemBase systemBase)
+                    systemBase.Later = SystemMap.Values.OfType<BeginSimulationECBSystem>().First().GetBuffer();
             }
-
-            void TryCreateSystemRecursive(Type systemType)
-            {
-                if (handledSystems.Contains(systemType))
-                    return;
-
-                var updateInGroup = (UpdateInGroup)Attribute.GetCustomAttribute(systemType, typeof(UpdateInGroup));
-                var targetGroup = updateInGroup != null ? updateInGroup.TargetGroupType : typeof(SimulationSystemGroup);
-
-                var instance = GetSystemByType(systemType);
-                var parentInstance = (EcsSystemGroup)GetSystemByType(targetGroup);
-
-#if DEBUG
-                if (instance is EcsSystemGroup instanceSystemGroup)
-                {
-                    if (instanceSystemGroup.Systems.Contains(parentInstance))
-                        throw new Exception($"<b>{instance}</b> and <b>{parentInstance}</b> have circular dependency. Check your {nameof(UpdateInGroup)} attributes");
-                }
-#endif
-                parentInstance.Add(instance);
-                handledSystems.Add(systemType);
-
-                if (updateInGroup != null)
-                    TryCreateSystemRecursive(targetGroup);
-            }
-
-            void SortSystemGroup(EcsSystemGroup systemGroup)
-            {
-                var unsorted = new List<IEcsSystem>(systemGroup.Systems);
-
-                var dependencyTable = new List<List<IEcsSystem>>();
-                // Add a root dependency level
-                dependencyTable.Add(new List<IEcsSystem>());
-
-                var orderFirstSystems = new List<IEcsSystem>();
-                var orderLastSystems = new List<IEcsSystem>();
-
-                // Check for special attributes parameters OrderFirst/Last...
-                for (int idx = unsorted.Count - 1; idx >= 0; idx--)
-                {
-                    var currentSystem = unsorted[idx];
-
-                    var updateInGroup = (UpdateInGroup)Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateInGroup));
-                    if (updateInGroup != null)
-                    {
-                        // exclude special "OrderFirst" systems to insert them later to the very beginning 
-                        if (updateInGroup.OrderFirst)
-                        {
-                            orderFirstSystems.Add(currentSystem);
-                            unsorted.RemoveAt(idx);
-                        }
-
-                        // exclude special "OrderLast" systems to add them later to the very end
-                        if (updateInGroup.OrderLast)
-                        {
-                            orderLastSystems.Add(currentSystem);
-                            unsorted.RemoveAt(idx);
-                        }
-                    }
-                }
-
-                // Order first systems without attributes...
-                for (int idx = unsorted.Count - 1; idx >= 0; idx--)
-                {
-                    var currentSystem = unsorted[idx];
-
-                    var updateBefore = (UpdateBefore)Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateBefore));
-
-                    if (updateBefore == null)
-                    {
-                        dependencyTable[0].Add(currentSystem);
-                        unsorted.RemoveAt(idx);
-                    }
-                }
-
-                SortRecursive(unsorted, dependencyTable, 1);
-
-                dependencyTable.Reverse();
-
-                // insert "OrderFirst" systems
-                foreach (var firstSystem in orderFirstSystems)
-                {
-                    dependencyTable[0].Insert(0, firstSystem);
-                }
-                systemGroup.Systems = dependencyTable.SelectMany(layer => layer).ToList();
-
-                // And in the end add "OrderLast" systems
-                foreach (var lastSystems in orderLastSystems)
-                {
-                    systemGroup.Add(lastSystems);
-                }
-
-            }
-
-            return rootSystemGroup;
         }
 
-        // TODO: Add cycle dependencies check, valid cast check (to not mess UpdateBefore and Update in Group)
-        private void SortRecursive(List<IEcsSystem> unsorted, List<List<IEcsSystem>> dependencyTable, int dependencyLevel)
+        private void SortAllSystemGroups()
         {
-            var dependencyLayer = new List<IEcsSystem>();
-            dependencyTable.Add(dependencyLayer);
-
-            for (int idx = unsorted.Count - 1; idx >= 0; idx--)
+            foreach (var group in SystemMap.Values.OfType<EcsSystemGroup>().ToList())
             {
-                var currentSystem = unsorted[idx];
+                SortSystemGroup(group);
+                InsertOneFrameSystems(group);
+            }
+        }
 
-                var updateBefore = (UpdateBefore)Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateBefore));
-                if (updateBefore != null)
+        private void InsertOneFrameSystems(EcsSystemGroup systemGroup)
+        {
+            for (var index = 0; index < systemGroup.Systems.Count; index++)
+            {
+                var system = systemGroup.Systems[index];
+
+                var shift = 0;
+
+                foreach (var attribute in system.GetType().GetCustomAttributes())
                 {
-                    if (SystemMap.TryGetValue(updateBefore.TargetSystemType, out var beforeSystem))
+                    if (attribute is EventSystemAttribute eventSystemAttribute)
                     {
-                        if (dependencyTable[dependencyLevel - 1].Contains(beforeSystem))
-                        {
-                            dependencyLayer.Add(currentSystem);
-                            unsorted.RemoveAt(idx);
-                        }
-                        //else
-                        //{
-                        //    var currentSystemParentGroup = ((UpdateInGroup) Attribute.GetCustomAttribute(currentSystem.GetType(), typeof(UpdateInGroup))).TargetGroupType;
-                        //    var beforeSystemParentGroup = ((UpdateInGroup) Attribute.GetCustomAttribute(beforeSystem.GetType(), typeof(UpdateInGroup))).TargetGroupType;
-                        //    throw new Exception($"System <b>{currentSystem}</b> is in group {currentSystemParentGroup.Name} and <b>{updateBefore.TargetSystemType}</b> is in group {beforeSystemParentGroup.Name}. Only systems are in the same group can be ordered using {nameof(UpdateBefore)} Attribute.");
-                        //}
+                        var systemType = typeof(OneFrameSystem<>).MakeGenericType(eventSystemAttribute.EventComponentType);
+                        systemGroup.Insert(index++, GetSystemByType(systemType));
                     }
-                    else
+                    else if (attribute is RequestSystemAttribute requestSystemAttribute)
                     {
-                        //throw new Exception($"<b> {currentSystem}</b> has an {nameof(UpdateBefore)} <b>{updateBefore.TargetSystemType}</b> attribute. But <b>{updateBefore.TargetSystemType}</b> is not exist. Use {nameof(UpdateInGroup)} attribute");
-                        dependencyLayer.Add(currentSystem);
-                        unsorted.RemoveAt(idx);
+                        var systemType = typeof(OneFrameSystem<>).MakeGenericType(requestSystemAttribute.RequestComponentType);
+                        systemGroup.Insert(index + 1, GetSystemByType(systemType));
+                        shift++;
+                    }
+                }
+                    
+                index += shift;
+            }
+
+        }
+
+        private void SortSystemGroup(EcsSystemGroup group)
+        {
+            var unsorted = new List<IEcsSystem>(group.Systems);
+            var dependencyTable = new List<List<IEcsSystem>> { new() };
+            var orderFirst = new List<IEcsSystem>();
+            var orderLast = new List<IEcsSystem>();
+
+            for (int i = unsorted.Count - 1; i >= 0; i--)
+            {
+                var sys = unsorted[i];
+                var attr = sys.GetType().GetCustomAttribute<UpdateInGroup>();
+
+                if (attr?.OrderFirst == true) { orderFirst.Add(sys); unsorted.RemoveAt(i); }
+                else if (attr?.OrderLast == true) { orderLast.Add(sys); unsorted.RemoveAt(i); }
+            }
+
+            for (int i = unsorted.Count - 1; i >= 0; i--)
+            {
+                if (unsorted[i].GetType().GetCustomAttribute<UpdateBefore>() == null)
+                {
+                    dependencyTable[0].Add(unsorted[i]);
+                    unsorted.RemoveAt(i);
+                }
+            }
+
+            SortRecursive(unsorted, dependencyTable, 1);
+            dependencyTable.Reverse();
+
+            foreach (var sys in orderFirst)
+                dependencyTable[0].Insert(0, sys);
+
+            group.Systems = dependencyTable.SelectMany(l => l).ToList();
+
+            foreach (var sys in orderLast)
+                group.Add(sys);
+        }
+
+        private void SortRecursive(List<IEcsSystem> unsorted, List<List<IEcsSystem>> table, int level)
+        {
+            var layer = new List<IEcsSystem>();
+            table.Add(layer);
+
+            for (int i = unsorted.Count - 1; i >= 0; i--)
+            {
+                var sys = unsorted[i];
+                var beforeAttr = sys.GetType().GetCustomAttribute<UpdateBefore>();
+
+                if (beforeAttr != null)
+                {
+                    if (!SystemMap.TryGetValue(beforeAttr.TargetSystemType, out var target))
+                    {
+                        layer.Add(sys);
+                        unsorted.RemoveAt(i);
+                        continue;
+                    }
+
+                    if (table[level - 1].Contains(target))
+                    {
+                        layer.Add(sys);
+                        unsorted.RemoveAt(i);
                     }
                 }
             }
 
             if (unsorted.Count > 0)
-                SortRecursive(unsorted, dependencyTable, ++dependencyLevel);
+                SortRecursive(unsorted, table, level + 1);
         }
 
         protected IEcsSystem GetSystemByType(Type systemType)
         {
-            if (SystemMap.TryGetValue(systemType, out var result))
+            if (!SystemMap.TryGetValue(systemType, out var system))
             {
-                return result;
+                system = Creator?.Invoke(systemType) ?? (IEcsSystem)Activator.CreateInstance(systemType);
+                SystemMap[systemType] = system;
             }
 
-            IEcsSystem system = null;
-
-            if (Creator != null)
-            {
-                system = Creator(systemType);
-            }
-
-            // Use Activator as a fall-back for the system creation. 
-            // It gives user an ability to create manually only those systems 
-            // that have dependencies
-            if (system == null)
-            {
-                system = (IEcsSystem)Activator.CreateInstance(systemType);
-            }
-
-            SystemMap[systemType] = system;
             return system;
-        }
-
-
-        private static IEnumerable<Type> GetTypesByScanner(EcsTypesScanner ecsTypesScanner, Type[] featureTypes)
-        {
-            var scanner = ecsTypesScanner == null ? new EcsTypesScanner(EcsScanSettings.Default) : ecsTypesScanner;
-            return scanner.ScanSystemTypes(featureTypes);
         }
 
         public void Dispose()
@@ -294,36 +231,29 @@ namespace Nanory.Lex
         {
             foreach (var system in systems)
             {
-                if (system is TTargetSystem targetSystem)
-                {
-                    return targetSystem;
-                }
+                if (system is TTargetSystem match)
+                    return match;
 
-                if (system is EcsSystemGroup systemGroup)
+                if (system is EcsSystemGroup group)
                 {
-                    var result = FindSystem<TTargetSystem>(systemGroup.Systems);
+                    var result = FindSystem<TTargetSystem>(group.Systems);
                     if (result != null)
-                    {
                         return result;
-                    }
                 }
             }
+
             return default;
         }
 
-        public static void FindAllSystemsNonAlloc<TTargetSystem>(this List<IEcsSystem> inputSystems, List<TTargetSystem> outputSystems)
+        public static void FindAllSystemsNonAlloc<TTargetSystem>(this List<IEcsSystem> input, List<TTargetSystem> output)
         {
-            foreach (var system in inputSystems)
+            foreach (var system in input)
             {
-                if (system is TTargetSystem targetSystem)
-                {
-                    outputSystems.Add(targetSystem);
-                }
+                if (system is TTargetSystem match)
+                    output.Add(match);
 
-                if (system is EcsSystemGroup systemGroup)
-                {
-                    FindAllSystemsNonAlloc(systemGroup.Systems, outputSystems);
-                }
+                if (system is EcsSystemGroup group)
+                    FindAllSystemsNonAlloc(group.Systems, output);
             }
         }
     }
