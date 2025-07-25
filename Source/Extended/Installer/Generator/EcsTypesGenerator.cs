@@ -1,5 +1,4 @@
-﻿#if UNITY_EDITOR
-using Nanory.Lex.AssetsManagement;
+﻿using Nanory.Lex.AssetsManagement;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
@@ -13,7 +12,7 @@ namespace Nanory.Lex.Generation
     public class EcsTypesGenerator
     {
         private readonly string _generationPath;
-        private static string _fatureTemplate =
+        private const string FeatureTemplate = 
 @"using System;
 using Nanory.Lex;
 {namespaces}    
@@ -26,8 +25,8 @@ public static class {featureName}SystemTypesLookup
     };
 
     public static Type[] GetTypes() => _types;
-}
-";
+}";
+
         public EcsTypesGenerator(string generationPath)
         {
             _generationPath = Path.Combine(generationPath, "GeneratedCode/");
@@ -35,144 +34,101 @@ public static class {featureName}SystemTypesLookup
 
         public void Generate()
         {
-            if (!Directory.Exists(_generationPath.ToGlobalPath()))
-                Directory.CreateDirectory(_generationPath.ToGlobalPath());
-
+            EnsureDirectoryExists();
             var scanner = new EcsTypesScanner();
 
-            scanner.GetAssignableTypes(typeof(FeatureBase))
-                .Where(type => type != typeof(UnityEditorIntegration.Feature))
-                .Where(type => typeof(FeatureBase).IsAssignableFrom(type))
-                .Where(type => type != typeof(FeatureBase))
-                .SelectMany(featureType => new[]
-                {
-                    GetSystemTypesLookup(featureType)
-                })
-                .ToList()
-                .ForEach(file => WriteOnDisk(file.Content, file.Name));
+            var featureTypes = scanner.GetAssignableTypes(typeof(FeatureBase))
+                .Where(type => type != typeof(FeatureBase) && type != typeof(UnityEditorIntegration.Feature));
 
-            GeneratedFile GetSystemTypesLookup(Type featureType) =>
-                new()
-                {
-                    Name = featureType.Namespace.SolidifyNamespace(),
-                    Content = GenerateSystemTypes(featureType, scanner)
-                };
-        }
-
-        private class GeneratedFile
-        {
-            public string Name;
-            public string Content;
+            foreach (var featureType in featureTypes)
+            {
+                var content = GenerateSystemTypes(featureType, scanner);
+                var name = featureType.Namespace.SolidifyNamespace();
+                WriteOnDisk(content, name);
+            }
         }
 
         public void Clear()
         {
             var path = _generationPath.ToGlobalPath();
-            var meta = path.Substring(0, path.Length - 1) + ".meta";
+            var meta = path.TrimEnd('/') + ".meta";
             FileUtil.DeleteFileOrDirectory(path);
             FileUtil.DeleteFileOrDirectory(meta);
             AssetDatabase.Refresh();
         }
 
+        private void EnsureDirectoryExists()
+        {
+            var path = _generationPath.ToGlobalPath();
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
+
         private void WriteOnDisk(string content, string name)
         {
-            using (StreamWriter streamWriter = new StreamWriter(_generationPath.ToGlobalPath() + name + ".cs"))
-            {
-                streamWriter.WriteLine(content);
-            }
+            var filePath = Path.Combine(_generationPath.ToGlobalPath(), name + ".cs");
+            File.WriteAllText(filePath, content);
             AssetDatabase.Refresh();
         }
 
         private static string GenerateSystemTypes(Type featureType, EcsTypesScanner scanner)
         {
-            var worldSystemTypes = scanner.GetSystemTypesByFeature(new Type[] { featureType });
-            var oneFrameSystemTypes = scanner.GetOneFrameSystemTypesGenericArgumentsByFeature(new Type[] { featureType });
-            var systemTypes = worldSystemTypes.ToList();
-            var eventSystemTypes = systemTypes
-                .SelectMany(type =>
-                {
-                    var resultTypes = new List<Type>();
-                    
-                    foreach (var attribute in type.GetCustomAttributes())
-                    {
-                        if (attribute is EventSystemAttribute eventSystemAttribute)
-                        {
-                            var systemType = typeof(OneFrameSystem<>).MakeGenericType(eventSystemAttribute.EventComponentType);
-                            resultTypes.Add(systemType);
-                        }
+            var worldSystemTypes = scanner.GetSystemTypesByFeature(new[] { featureType });
+            var oneFrameSystemTypes = scanner.GetOneFrameSystemTypesGenericArgumentsByFeature(new[] { featureType });
+            var eventSystemTypes = GetEventSystemTypes(worldSystemTypes);
 
-                        if (attribute is RequestSystemAttribute requestSystemAttribute)
-                        {
-                            var systemType = typeof(OneFrameSystem<>).MakeGenericType(requestSystemAttribute.RequestComponentType);
-                            resultTypes.Add(systemType);
-                        }
-                    }
+            var baseSystems = FormatSystemTypes("// Base Systems", worldSystemTypes);
+            var oneFrameSystems = FormatSystemTypes("// OneFrame Systems", oneFrameSystemTypes, isGeneric: true);
+            var eventSystems = FormatSystemTypes("// Event/Request Systems", eventSystemTypes);
 
-                    return resultTypes;
-                }).ToList();
-
-            var baseSystemsSeq = !systemTypes.Any() ? null : $"// Base Systems{Format.NewLine(2)}" + systemTypes
-                .Select(type => $"typeof({type.ToGenericTypeString()})")
-                .Aggregate((a, b) => $"{a},{Format.NewLine(2)}{b}");
-
-            var cleanupSystemsSeq = !oneFrameSystemTypes.Any() ? null : $"// OneFrame Systems{Format.NewLine(2)}" + oneFrameSystemTypes
-                .Select(type =>
-                {
-                    var typeName = type.IsGenericType ? type.ToGenericTypeString() : type.FullName.Replace("+", ".");
-                    var systemName = "OneFrameSystem";
-                    return (typeName, systemName);
-                })
-                .Select(cleanupArgs => $"typeof({cleanupArgs.systemName}<{cleanupArgs.typeName}>)")
-                .Aggregate((a, b) => $"{a},{Format.NewLine(2)}{b}");
-
-            var eventSystemsSeq = eventSystemTypes
-                .Select(type => $"typeof({type.ToGenericTypeString()})")
-                .Aggregate($"// Event/Request Systems", (a, b) => $"{a},{Format.NewLine(2)}{b}");
-            
-            var namespacesHashSet = new HashSet<string>();
-            
-            systemTypes
+            var allNamespaces = worldSystemTypes
                 .Union(oneFrameSystemTypes)
                 .Union(eventSystemTypes)
                 .SelectMany(GetNamespacesRecursive)
-                .Where(n => n != null).ToList()
-                .ForEach(ns => namespacesHashSet.Add(ns));
+                .Where(ns => ns != null)
+                .Distinct();
 
-            var namespacesSeq = namespacesHashSet.Count == 0 ? string.Empty : namespacesHashSet.Select(t => $"using {t};").Aggregate((a, b) => $"{a}{Format.NewLine(1)}{b}");
-
+            var namespaceString = string.Join(Format.NewLine(1), allNamespaces.Select(ns => $"using {ns};"));
+            var systemTypesString = string.Join("," + Format.NewLine(2), new[] { baseSystems, oneFrameSystems, eventSystems }.Where(s => !string.IsNullOrEmpty(s)));
             var featureName = featureType.Namespace.SolidifyNamespace();
 
-            var systems = new[] { baseSystemsSeq, cleanupSystemsSeq, eventSystemsSeq }
-            .Where(s => s != null);
-
-            var systemsSeq = !systems.Any() ? null : systems
-            .Aggregate((a, b) => $"{a},{Format.NewLine(2)}{b}");
-
-            var result = _fatureTemplate
+            return FeatureTemplate
                 .Replace("{featureName}", featureName)
-                .Replace("{namespaces}", namespacesSeq)
-                .Replace("{systemTypes}", systemsSeq);
+                .Replace("{namespaces}", namespaceString)
+                .Replace("{systemTypes}", systemTypesString);
+        }
 
-            return result;
+        private static string FormatSystemTypes(string comment, IEnumerable<Type> types, bool isGeneric = false)
+        {
+            if (!types.Any()) return null;
+
+            var formatted = types.Select(type =>
+            {
+                var typeName = type.IsGenericType ? type.ToGenericTypeString() : type.FullName.Replace("+", ".");
+                return isGeneric ? $"typeof(OneFrameSystem<{typeName}>)" : $"typeof({typeName})";
+            });
+
+            return comment + Format.NewLine(2) + string.Join("," + Format.NewLine(2), formatted);
+        }
+
+        private static IEnumerable<Type> GetEventSystemTypes(IEnumerable<Type> types)
+        {
+            return types.SelectMany(type => type.GetCustomAttributes()
+                .Where(attr => attr is EventSystemAttribute or RequestSystemAttribute)
+                .Select(attr =>
+                {
+                    var componentType = attr is EventSystemAttribute e ? e.EventComponentType : ((RequestSystemAttribute)attr).RequestComponentType;
+                    return typeof(OneFrameSystem<>).MakeGenericType(componentType);
+                }));
         }
 
         private static IEnumerable<string> GetNamespacesRecursive(Type type)
         {
-            var result = new List<string>();
-
-            if (type.GetGenericArguments().Count() > 0)
-            {
-                foreach (var arg in type.GetGenericArguments())
-                {
-                    result.AddRange(GetNamespacesRecursive(arg));
-                }
-            }
-            else
-            {
-                result.Add(type.Namespace);
-            }
-
-            return result;
+            return type.IsGenericType
+                ? type.GetGenericArguments().SelectMany(GetNamespacesRecursive)
+                : new[] { type.Namespace };
         }
     }
 
@@ -182,22 +138,7 @@ public static class {featureName}SystemTypesLookup
 
         public static string SolidifyNamespace(this string namespaceName) => namespaceName.Replace(".", "");
 
-        public static string NewLine(int tabs = 0)
-        {
-            return System.Environment.NewLine + Spaces(TabLength * tabs);
-        }
-
-        private static string Space => " ";
-
-        private static string Spaces(int count)
-        {
-            var result = string.Empty;
-            for (var idx = 0; idx < count; idx++)
-            {
-                result += Space;
-            }
-            return result;
-        }
+        public static string NewLine(int tabs = 0) => Environment.NewLine + new string(' ', TabLength * tabs);
     }
 }
 
@@ -207,10 +148,8 @@ namespace Nanory.Lex.AssetsManagement
     {
         public static string ToGlobalPath(this string localPath)
         {
-            var global = Application.dataPath.Substring(0, Application.dataPath.Length - "/Assets".Length);
-            return global + "/" + localPath;
+            var basePath = Application.dataPath[..^"/Assets".Length];
+            return Path.Combine(basePath, localPath);
         }
     }
 }
-
-#endif
