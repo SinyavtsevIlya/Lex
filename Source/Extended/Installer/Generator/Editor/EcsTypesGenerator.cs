@@ -1,9 +1,11 @@
-﻿using Nanory.Lex.AssetsManagement;
+﻿#if UNITY_EDITOR
+using Nanory.Lex.AssetsManagement;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Nanory.Lex.UnityEditorIntegration;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,7 +15,7 @@ namespace Nanory.Lex.Generation
     {
         private readonly string _generationPath;
         private const string FeatureTemplate = 
-@"using System;
+            @"using System;
 using Nanory.Lex;
 {namespaces}
 
@@ -38,7 +40,7 @@ public static class {featureName}SystemTypesLookup
             var scanner = new EcsTypesScanner();
 
             var featureTypes = scanner.GetAssignableTypes(typeof(FeatureBase))
-                .Where(type => type != typeof(FeatureBase) && type != typeof(UnityEditorIntegration.Feature));
+                .Where(type => type != typeof(FeatureBase) && type != typeof(Feature));
 
             foreach (var featureType in featureTypes)
             {
@@ -153,3 +155,5 @@ namespace Nanory.Lex.AssetsManagement
         }
     }
 }
+
+#endif
