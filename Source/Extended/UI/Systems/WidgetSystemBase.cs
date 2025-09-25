@@ -5,7 +5,7 @@ namespace Nanory.Lex
     {
     }
 
-    public abstract class UiSystemBase : EcsSystemBase
+    public abstract class UiSystemBase : EcsRunSystemBase
     {
         protected EntityCommandBuffer BeginUiEcb => World.GetCommandBufferFrom<BeginUiBindingEcbSystem>();
         protected EntityCommandBuffer EndUiEcb => World.GetCommandBufferFrom<EndUiUnbindingEcbSystem>();

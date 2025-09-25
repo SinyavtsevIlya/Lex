@@ -184,12 +184,17 @@ namespace Nanory.Lex
         EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem;
     }
 
-    public abstract class EcsRunSystemBase : EcsSystemBase
+    public abstract class EcsRunSystemBase : EcsSystemBase, IEcsRunSystem
     {
+        public void Run(EcsSystems systems)
+        {
+            OnUpdate();
+        }
         
+        protected abstract void OnUpdate();
     }
 
-    public abstract class EcsSystemBase : IEcsRunSystem, IEcsPreInitSystem, IEcsInitSystem, IEcsDestroySystem, IEcsEntityCommandBufferLookup
+    public abstract class EcsSystemBase : IEcsPreInitSystem, IEcsInitSystem, IEcsDestroySystem, IEcsEntityCommandBufferLookup
     {
         private readonly List<EcsLocalFilterContainer> _localFilterContainers = new List<EcsLocalFilterContainer>(8);
         protected List<EntityCommandBufferSystem> _entityCommandBufferSystems;
@@ -202,7 +207,7 @@ namespace Nanory.Lex
         public EcsWorldBase World;
         public EcsSystems EcsSystems;
         #endregion
-
+        
         public void PreInit(EcsSystems systems)
         {
             EcsSystems = systems;
@@ -218,11 +223,7 @@ namespace Nanory.Lex
         {
             OnDestroy();
         }
-
-        public void Run(EcsSystems systems)
-        {
-            OnUpdate();
-        }
+        
         public IEcsEntityCommandBufferLookup SetEntityCommandBufferSystemsLookup(List<EntityCommandBufferSystem> systems)
         {
             _entityCommandBufferSystems = systems;
@@ -239,9 +240,7 @@ namespace Nanory.Lex
 
             throw new Exception($"no system {typeof(TSystem)} presented in the entityCommandBufferSystems lookup");
         }
-
-        protected abstract void OnUpdate();
-
+        
         protected virtual void OnCreate() { }
         
         protected virtual void OnDestroy() { }

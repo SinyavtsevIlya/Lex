@@ -2,7 +2,7 @@ using Nanory.Lex;
 
 namespace Client
 {
-    public sealed class {itemname}System : EcsSystemBase
+    public sealed class {itemname}System : EcsRunSystemBase
     {
         protected override void OnUpdate()
         {

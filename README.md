@@ -22,7 +22,7 @@ Just add this line in Packages/manifest.json:
 ```c#
 namespace Client.Battle
 {
-    public sealed class AttackSystem : EcsSystemBase
+    public sealed class AttackSystem : EcsRunSystemBase
     {
         protected override void OnUpdate()
         {
@@ -91,7 +91,7 @@ namespace Client.Some
 ```c#
 namespace Client.Some // note: the namespace is the same
 {
-    public class SomeSystem : EcsSystemBase 
+    public class SomeSystem : EcsRunSystemBase 
     {
         public override void OnUpdate() 
         {

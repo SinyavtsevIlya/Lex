@@ -3,7 +3,7 @@
 namespace Nanory.Lex.Timer
 {
     [UpdateInGroup(typeof(TimersSystemGroup))]
-    public class TimerSystem : EcsSystemBase
+    public class TimerSystem : EcsRunSystemBase
     {
         protected override void OnUpdate()
         {
