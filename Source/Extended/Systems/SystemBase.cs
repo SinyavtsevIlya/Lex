@@ -364,6 +364,14 @@ namespace Nanory.Lex
         /// <param name="entity"></param>
         /// <returns></returns>
         public bool TryUnpack(EcsPackedEntity ecsPackedEntity, out int entity) => ecsPackedEntity.Unpack(World, out entity);
+        
+        public EcsPackedEntity Pack(int entity)
+        {
+            EcsPackedEntity packed;
+            packed.Id = entity;
+            packed.Gen = World.GetEntityGen(entity);
+            return packed;
+        }
     }
 
     public class EntityCommandBufferSystem : IEcsRunSystem

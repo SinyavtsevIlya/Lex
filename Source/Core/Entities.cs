@@ -11,6 +11,11 @@ namespace Nanory.Lex
     {
         internal int Id;
         internal int Gen;
+        
+        public override string ToString()
+        {
+            return $"Id: {Id}, Gen: {Gen}";
+        }
     }
 
     public struct EcsPackedEntityWithWorld
