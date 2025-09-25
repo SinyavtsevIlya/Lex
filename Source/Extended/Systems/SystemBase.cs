@@ -184,6 +184,11 @@ namespace Nanory.Lex
         EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem;
     }
 
+    public abstract class EcsRunSystemBase : EcsSystemBase
+    {
+        
+    }
+
     public abstract class EcsSystemBase : IEcsRunSystem, IEcsPreInitSystem, IEcsInitSystem, IEcsDestroySystem, IEcsEntityCommandBufferLookup
     {
         private readonly List<EcsLocalFilterContainer> _localFilterContainers = new List<EcsLocalFilterContainer>(8);
@@ -345,6 +350,18 @@ namespace Nanory.Lex
         public ref Buffer<TComponent> AddBuffer<TComponent>(int entity) where TComponent : struct
         {
             return ref World.AddBuffer<TComponent>(entity);
+        }
+                
+        public void Emit<TComponent>(int entity, in TComponent component)
+        {
+            if (!World.TryGetReactiveSystems<TComponent>(out var systems))
+                return;
+
+            foreach (var currentSystem in systems)
+            {
+                var reactiveSystem = (EcsReactiveSystemBase<TComponent>)currentSystem;
+                reactiveSystem.OnUpdate(entity, in component);
+            }
         }
 
         public EcsFilter.Mask Filter<T>() where T : struct

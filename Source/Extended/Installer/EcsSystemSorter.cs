@@ -85,6 +85,15 @@ namespace Nanory.Lex
             {
                 worldBase.SetSystemsLookup(_systemMap);
                 worldBase.SetEntityCommandBufferSystemsLookup(_systemMap.Values.OfType<EntityCommandBufferSystem>().ToList());
+                worldBase.SetReactiveSystems(_systemMap.Values
+                    .OfType<EcsReactiveSystemBase>()
+                    .Select(s => new {
+                        Sys = s,
+                        Arg = s.GetType().BaseType?.GetGenericArguments().FirstOrDefault()
+                    })
+                    .Where(x => x.Arg != null)
+                    .GroupBy(x => x.Arg!, x => x.Sys)
+                    .ToDictionary(g => g.Key, g => g.ToList()));
             }
 
             foreach (var cbs in _systemMap.Values.OfType<EntityCommandBufferSystem>())
@@ -97,6 +106,7 @@ namespace Nanory.Lex
                 if (lookup is EcsSystemBase systemBase)
                     systemBase.Later = _systemMap.Values.OfType<BeginSimulationECBSystem>().First().GetBuffer();
             }
+            
         }
 
         private void SortAndInsertOneFrameSystems()

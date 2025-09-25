@@ -9,10 +9,16 @@ namespace Nanory.Lex
 
         private List<EntityCommandBufferSystem> _entityCommandBufferSystems;
         private Dictionary<Type, IEcsSystem> _systemsByTypes;
+        private Dictionary<Type, List<EcsReactiveSystemBase>> _reactiveSystems;
 
         public EcsWorldBase(Config cfg = default, string name = default) : base(cfg)
         {
             _name = name;
+        }
+
+        public bool TryGetReactiveSystems<TComponent>(out List<EcsReactiveSystemBase> systems)
+        {
+            return _reactiveSystems.TryGetValue(typeof(TComponent), out systems);
         }
 
         public EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem
@@ -47,6 +53,11 @@ namespace Nanory.Lex
         public void SetSystemsLookup(Dictionary<Type, IEcsSystem> systemsByType)
         {
             _systemsByTypes = systemsByType;
+        }
+
+        public void SetReactiveSystems(Dictionary<Type, List<EcsReactiveSystemBase>> reactiveSystems)
+        {
+            _reactiveSystems = reactiveSystems;
         }
 
         public TSystem GetSystem<TSystem>() where TSystem : class, IEcsSystem
