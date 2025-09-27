@@ -358,7 +358,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Content: "using Nanory.Lex;\r\nusing Nanory.Lex.Conversion;\r\nusing Nanory.Lex.Lifecycle;\r\nusing
     UnityEngine;\r\n\r\nnamespace {namespace}\r\n{\r\n    \r\n    [UpdateInGroup(typeof(PresentationSystemGroup))]\r\n   
-    public sealed class {itemname}PresentationSystem : EcsRunSystemBase\r\n    {\r\n       
+    public sealed class {itemname}PresentationSystem : EcsSystemBase\r\n    {\r\n       
     protected override void OnUpdate()\r\n        {\r\n            var later = GetCommandBufferFrom<BeginSimulationECBSystem>();\r\n\r\n\r           
     $\r\n        }\r\n    }\r\n}\r\n"
 --- !u!1 &1703641928358364873
@@ -634,7 +634,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\n\rusing Nanory.Lex.Lifecycle;\n\nnamespace
     {namespace}\r\n{\r\n    [UpdateInGroup(typeof(PrimaryWidgetSystemGroup))]\r\n   
-    public sealed class {itemname}WidgetSystem : EcsRunSystemBase\r\n    {\r\n       
+    public sealed class {itemname}WidgetSystem : EcsSystemBase\r\n    {\r\n       
     protected override void OnUpdate()\r\n        {\r\n            foreach (var ownerEntity
     in Filter()\r\n            .With<BindEvent<{itemname}Widget>>()\r\n           
     .End())\r\n            {\r\n                var widget = Get<BindEvent<{itemname}Widget>>(ownerEntity).Value;\r\n               
@@ -871,7 +871,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\nusing Nanory.Lex.Lifecycle;\r\n\nnamespace
     {namespace}\r\n{\r\n    [UpdateInGroup(typeof(ScreenSystemGroup))]\r\n    public
-    sealed class {itemname}ScreenSystem : EcsRunSystemBase\r\n    {\r\n        protected
+    sealed class {itemname}ScreenSystem : EcsSystemBase\r\n    {\r\n        protected
     override void OnUpdate()\r\n        {\r\n            foreach (var ownerEntity
     in Filter()\r\n            .With<ScreensStorage>()\r\n            .With<CreatedEvent>()\r\n           
     .End())\r\n            {\r\n                var screen = this.GetScreen<{itemname}Screen>(ownerEntity); 
@@ -1469,7 +1469,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Content: "using Nanory.Lex;\r\n\rusing Nanory.Lex.Lifecycle;\n\nnamespace {namespace}\r\n{\r\n   
-    public sealed class {itemname}System : EcsRunSystemBase\r\n    {\r\n        protected
+    public sealed class {itemname}System : EcsSystemBase\r\n    {\r\n        protected
     override void OnUpdate()\r\n        {\r\n            $\r\n        }\r\n    }\r\n}\r\n"
 --- !u!1 &6384378381131492007
 GameObject:

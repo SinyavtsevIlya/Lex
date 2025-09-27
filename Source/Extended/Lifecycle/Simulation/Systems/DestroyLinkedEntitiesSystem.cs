@@ -1,7 +1,7 @@
 namespace Nanory.Lex.Lifecycle
 {
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    public class DestroyLinkedEntitiesSystem : EcsRunSystemBase
+    public class DestroyLinkedEntitiesSystem : EcsSystemBase
     {
         protected override void OnUpdate()
         {
