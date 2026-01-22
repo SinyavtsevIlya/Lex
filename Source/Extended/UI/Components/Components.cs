@@ -49,6 +49,8 @@ namespace Nanory.Lex
         }
     }
     
+    public struct ScreensAdded : IEmit {}
+    
     public struct Tabs : IEcsAutoReset<Tabs>
     {
         public Replaceables Value;

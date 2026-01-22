@@ -8,12 +8,13 @@ namespace Nanory.Lex
         public static void Replace<TReplaceable>(this EcsSystemBase system, TReplaceable replaceable, int ownerEntity,
             ref Replaceables replaceables) where TReplaceable : MonoBehaviour
         {
+            replaceables.Deactivation?.Invoke();
+            
             system.BindWidget(ownerEntity, replaceable);
             
             replaceables.ActiveElement = replaceable;
             replaceable.GetComponent<Canvas>().enabled = true;
-
-            replaceables.Deactivation?.Invoke();
+            
             replaceables.Deactivation = () =>
             {
                 if (!system.World.IsAlive())

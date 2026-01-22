@@ -7,13 +7,15 @@ namespace Nanory.Lex
     public static class EcsUiScreenExtensions
     {
         #region API
-        public static void InitializeScreens(this EcsWorld world, int ownerEntity, IEnumerable<MonoBehaviour> screenInstances)
+        public static void InitializeScreens(this EcsWorldBase world, int ownerEntity, IEnumerable<MonoBehaviour> screenInstances)
         {
             ref var screens = ref world.Add<Screens>(ownerEntity);
             screens.Value = new Replaceables(16);
             
             foreach (var screenInstance in screenInstances) 
                 screens.Value.Elements.Add(screenInstance);
+            
+            world.Emit<ScreensAdded>(ownerEntity);
         }
         
         public static void OpenScreen<TScreen>(this EcsSystemBase system, int ownerEntity) where TScreen : MonoBehaviour
