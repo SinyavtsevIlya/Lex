@@ -52,12 +52,12 @@ namespace Client.Battle
 
                         if (blocks.Count == 0)
                         {
-                            Later.Del<Blocks>(targetEntity);
+                            Del<Blocks>(targetEntity);
                         }
                     }
                     else
                     {
-                        Later.AddOrSet<DamageEvent>(targetEntity) = new DamageEvent()
+                        GetOrAdd<DamageEvent>(targetEntity) = new DamageEvent()
                         {
                             Source = World.PackEntity(attackerEntity),
                             Value = Get<Attack>(attackerEntity).Value
@@ -193,7 +193,7 @@ These objects can be anything (Poco objects, Scriptable objects, Gameobjects/mon
 
         public void Convert(int entity, ConvertToEntitySystem converstionSystem)
         {
-            converstionSystem.World.Add<Attack>(entity).Value = _value;
+            converstionSystem.World.Emit(entity, new Attack { Value = _value });
         }
     }
 ```
@@ -244,11 +244,11 @@ You can create, record and playback it manually, but `Lex` by default has a pred
 // resolve EntityCommandBuffer from user-defined system
 var ecb = GetCommandBufferFrom<SomeEntityCommandBufferSystem>();
 // record some ops
-ecb.Add<SomeComponent>(entity).Value = 15;
+ecb.Emit(entity, new SomeComponent { Value = 15 });
 ecb.Del<AnotherComponent>(entity);
 
 // this is a shortcut proprty, returning a EntityCommandBuffer from the default predefined system.
-Later.Add<SomeComponent>(entity).Value = 15;
+Later.Emit(entity, new SomeComponent { Value = 15 });
 ```
 # Lifecycle
 # MonoComponents

@@ -149,7 +149,7 @@ namespace Nanory.Lex
                 _idx = -1;
             }
 
-            public int Current
+            public Entity Current
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get => _entities[_idx];
@@ -339,5 +339,17 @@ namespace Nanory.Lex
             Filter = filter;
             Hash = hash;
         }
+    }
+    
+    public readonly struct Entity
+    {
+        public readonly int Value;
+
+        public Entity(int value) => Value = value;
+
+        public static implicit operator int(Entity mi) => mi.Value;
+        public static implicit operator Entity(int i) => new Entity(i);
+
+        public override string ToString() => Value.ToString();
     }
 }

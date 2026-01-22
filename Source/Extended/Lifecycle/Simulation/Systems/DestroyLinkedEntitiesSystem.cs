@@ -1,31 +1,29 @@
 namespace Nanory.Lex.Lifecycle
 {
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    public class DestroyLinkedEntitiesSystem : EcsSystemBase
+    public class DestroyLinkedEntitiesSystem : EcsSystemBase, IReact<DestroyedEvent>
     {
-        protected override void OnUpdate()
+        public void React(DestroyedEvent _, int entity)
         {
-            foreach (var destroyedEntity in Filter()
-                         .With<DestroyedEvent>()
-                         .With<LinkedEntities>()
-                         .End())
-            {
-                TryDestroyLinkedEntities(this, destroyedEntity);
-            }
+            if (!Has<LinkedEntities>(entity))
+                return;
+            
+            TryDestroyLinkedEntities(this, entity);
+
         }
 
         private static void TryDestroyLinkedEntities(EcsSystemBase system, int entity)
         {
-            if (system.TryGet<LinkedEntities>(entity, out var linkedEntities))
+            if (!system.TryGet<LinkedEntities>(entity, out var linkedEntities))
+                return;
+            
+            foreach (var linkedPackedEntity in linkedEntities.Buffer.Values)
             {
-                foreach (var linkedPackedEntity in linkedEntities.Buffer.Values)
-                {
-                    if (system.TryUnpack(linkedPackedEntity, out var linkedEntity))
-                    {
-                        system.GetOrAdd<DestroyedEvent>(linkedEntity);
-                        TryDestroyLinkedEntities(system, linkedEntity);
-                    } 
-                }
+                if (!system.TryUnpack(linkedPackedEntity, out var linkedEntity)) 
+                    continue;
+                
+                system.Emit<DestroyRequest>(linkedEntity);
+                TryDestroyLinkedEntities(system, linkedEntity);
             }
         }
     }

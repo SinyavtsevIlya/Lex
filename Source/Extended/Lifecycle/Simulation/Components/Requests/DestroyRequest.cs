@@ -1,6 +1,6 @@
 namespace Nanory.Lex.Lifecycle
 {
-    public struct DestroyRequest
+    public struct DestroyRequest : IEmit
     {
 
     }

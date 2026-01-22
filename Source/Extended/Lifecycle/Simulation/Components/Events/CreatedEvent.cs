@@ -1,7 +1,7 @@
 ﻿namespace Nanory.Lex.Lifecycle
 {
     [OneFrame]
-    public struct CreatedEvent
+    public struct CreatedEvent : IEmit
     {
 
     }

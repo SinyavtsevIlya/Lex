@@ -9,16 +9,31 @@ namespace Nanory.Lex
 
         private List<EntityCommandBufferSystem> _entityCommandBufferSystems;
         private Dictionary<Type, IEcsSystem> _systemsByTypes;
-        private Dictionary<Type, List<EcsReactiveSystemBase>> _reactiveSystems;
+        private Dictionary<Type, List<IReact>> _reactiveSystems;
 
         public EcsWorldBase(Config cfg = default, string name = default) : base(cfg)
         {
             _name = name;
         }
 
-        public bool TryGetReactiveSystems<TComponent>(out List<EcsReactiveSystemBase> systems)
+        public void Emit<TEmission>(int entity, in TEmission emission = default) where TEmission : struct, IEmit
         {
-            return _reactiveSystems.TryGetValue(typeof(TComponent), out systems);
+            if (!TryGetReactiveSystems<TEmission>(out var reactions))
+                return;
+
+            foreach (var reaction in reactions)
+            {
+                var reactiveSystem = (IReact<TEmission>)reaction;
+                if (reactiveSystem.IsMatch(entity, this))
+                {
+                    reactiveSystem.React(emission, entity);
+                }
+            }
+        }
+
+        public bool TryGetReactiveSystems<TComponent>(out List<IReact> reactions)
+        {
+            return _reactiveSystems.TryGetValue(typeof(TComponent), out reactions);
         }
 
         public EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem
@@ -55,7 +70,7 @@ namespace Nanory.Lex
             _systemsByTypes = systemsByType;
         }
 
-        public void SetReactiveSystems(Dictionary<Type, List<EcsReactiveSystemBase>> reactiveSystems)
+        public void SetReactiveSystems(Dictionary<Type, List<IReact>> reactiveSystems)
         {
             _reactiveSystems = reactiveSystems;
         }
@@ -67,7 +82,7 @@ namespace Nanory.Lex
                 return system as TSystem;
             }
 
-            throw new System.Exception($"{typeof(TSystem)} was not found in {this.Name}");
+            throw new Exception($"{typeof(TSystem)} was not found in {this.Name}");
         }
     }
 }

@@ -4,17 +4,17 @@ using UnityEngine;
 
 namespace Nanory.Lex
 {
-    public struct BindEvent<TWidget> where TWidget : MonoBehaviour
+    public struct BindEvent<TWidget> : IEmit where TWidget : MonoBehaviour
     {
         public TWidget Value;
     }
 
-    public struct UnbindEvent<TWidget> where TWidget : MonoBehaviour
+    public struct UnbindEvent<TWidget> : IEmit where TWidget : MonoBehaviour
     {
         public TWidget Value;
     }
 
-    public struct CloseScreenEvent
+    public struct CloseScreenEvent : IEmit
     {
     }
 

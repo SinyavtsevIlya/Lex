@@ -1,24 +1,12 @@
 ﻿namespace Nanory.Lex.Lifecycle
 {
     [UpdateInGroup(typeof(OneFrameSystemGroup), OrderFirst = true)]
-    public sealed class DestroySystem : EcsSystemBase
+    public sealed class DestroySystem : EcsSystemBase, IReact<DestroyRequest>
     {
-        protected override void OnUpdate()
+        public void React(DestroyRequest _, int entity)
         {
-            foreach (var destroyedEntity in Filter()
-                        .With<DestroyedEvent>()
-                        .End())
-            {
-                Later.DelEntity(destroyedEntity);
-            }
-            
-            foreach (var requestEntity in Filter()
-                         .With<DestroyRequest>()
-                         .End())
-            {
-                Later.Add<DestroyedEvent>(requestEntity);
-                Del<DestroyRequest>(requestEntity);
-            }
+            Emit<DestroyedEvent>(entity);
+            World.DelEntity(entity);
         }
     }
 }

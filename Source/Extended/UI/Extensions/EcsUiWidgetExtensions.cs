@@ -14,22 +14,14 @@ namespace Nanory.Lex
         
         public static void BindWidget<TWidget>(this EcsSystemBase system, int ownerEntity, TWidget widget) where TWidget : MonoBehaviour
         {
-            var beginSyncPoint = system.GetCommandBufferFrom<BeginUiBindingEcbSystem>();
-            var endSyncPoint = system.GetCommandBufferFrom<EndUiBindingEcbSystem>();
-
-            beginSyncPoint.Add<BindEvent<TWidget>>(ownerEntity).Value = widget;
-            endSyncPoint.Add<Mono<TWidget>>(ownerEntity).Value = widget;
-            endSyncPoint.Del<BindEvent<TWidget>>(ownerEntity);
+            system.World.Add<Mono<TWidget>>(ownerEntity).Value = widget;
+            system.World.Emit(ownerEntity, new BindEvent<TWidget> { Value = widget });
         }
 
         public static void UnbindWidget<TWidget>(this EcsSystemBase system, int ownerEntity, TWidget widget) where TWidget : MonoBehaviour
         {
-            var beginSyncPoint = system.GetCommandBufferFrom<BeginUiUnbindingEcbSystem>();
-            var endSyncPoint = system.GetCommandBufferFrom<EndUiUnbindingEcbSystem>();
-
-            beginSyncPoint.Add<UnbindEvent<TWidget>>(ownerEntity).Value = widget;
-            endSyncPoint.Del<Mono<TWidget>>(ownerEntity);
-            endSyncPoint.Del<UnbindEvent<TWidget>>(ownerEntity);
+            system.World.Emit(ownerEntity, new UnbindEvent<TWidget> { Value = widget });
+            system.World.Del<Mono<TWidget>>(ownerEntity);
         }
     }
 }

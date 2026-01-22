@@ -240,7 +240,7 @@ namespace Nanory.Lex
             throw new Exception($"no system {typeof(TSystem)} presented in the entityCommandBufferSystems lookup");
         }
 
-        protected abstract void OnUpdate();
+        protected virtual void OnUpdate() { }
 
         protected virtual void OnCreate() { }
         
@@ -352,16 +352,14 @@ namespace Nanory.Lex
             return ref World.AddBuffer<TComponent>(entity);
         }
                 
-        public void Emit<TComponent>(int entity, in TComponent component)
+        public void Emit<TEmission>(int entity, in TEmission emission = default) where TEmission : struct, IEmit
         {
-            if (!World.TryGetReactiveSystems<TComponent>(out var systems))
-                return;
+            World.Emit(entity, emission);
+        }
 
-            foreach (var currentSystem in systems)
-            {
-                var reactiveSystem = (EcsReactiveSystemBase<TComponent>)currentSystem;
-                reactiveSystem.OnUpdate(entity, in component);
-            }
+        public List<int> Q(in Type[] filterTypes)
+        {
+            return new List<int>();
         }
 
         public EcsFilter.Mask Filter<T>() where T : struct
@@ -409,6 +407,23 @@ namespace Nanory.Lex
         public void Run(EcsSystems systems)
         {
             _buffer.Playback();
+        }
+    }
+    
+    public struct With<T1, T2, T3>
+    {
+        public static Type[] End = { typeof(T1), typeof(T2), typeof(T3) };
+
+        public static int Idx;
+
+        static With()
+        {
+            Idx = EcsComponent<With<T1, T2, T3>>.TypeIndex;
+        }
+
+        public class Without<T4, T5>
+        {
+            public static Type[] End = { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5) }; 
         }
     }
 }

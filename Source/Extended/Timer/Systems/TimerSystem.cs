@@ -21,12 +21,12 @@ namespace Nanory.Lex.Timer
                 {
                     if (timerOwnerLink.Value.Unpack(World, out var ownerEntity))
                     {
-                        Later.AddOrSet(ownerEntity, timer.TimerContextComponentIndex);
+                        World.PoolsSparse[timer.TimerContextComponentIndex].Activate(ownerEntity);
                     }
 
                     if (timer.IsInfinity == 0)
                     {
-                        Later.DelEntity(timerEntity);
+                        World.DelEntity(timerEntity);
                     }
                     else
                     {

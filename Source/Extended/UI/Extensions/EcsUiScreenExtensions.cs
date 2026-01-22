@@ -38,7 +38,7 @@ namespace Nanory.Lex
         
         public static void CloseScreen(this EcsSystemBase system, int ownerEntity)
         {
-            system.Later.Add<CloseScreenEvent>(ownerEntity);
+            system.Emit<CloseScreenEvent>(ownerEntity);
         }
         #endregion
     }

@@ -36,8 +36,6 @@ namespace Nanory.Lex
 
             SetupWorldLookups();
 
-            SortAndInsertOneFrameSystems();
-
             return _rootSystemGroup;
         }
 
@@ -85,15 +83,22 @@ namespace Nanory.Lex
             {
                 worldBase.SetSystemsLookup(_systemMap);
                 worldBase.SetEntityCommandBufferSystemsLookup(_systemMap.Values.OfType<EntityCommandBufferSystem>().ToList());
-                worldBase.SetReactiveSystems(_systemMap.Values
-                    .OfType<EcsReactiveSystemBase>()
-                    .Select(s => new {
-                        Sys = s,
-                        Arg = s.GetType().BaseType?.GetGenericArguments().FirstOrDefault()
-                    })
-                    .Where(x => x.Arg != null)
-                    .GroupBy(x => x.Arg!, x => x.Sys)
-                    .ToDictionary(g => g.Key, g => g.ToList()));
+                worldBase.SetReactiveSystems(
+                    _systemMap.Values
+                        .OfType<IReact>()
+                        .SelectMany(sys =>
+                            sys.GetType()
+                                .GetInterfaces()
+                                .Where(i => i.IsGenericType &&
+                                            i.GetGenericTypeDefinition() == typeof(IReact<>))
+                                .Select(i => new {
+                                    Sys = sys,
+                                    Arg = i.GetGenericArguments()[0]
+                                }))
+                        .GroupBy(x => x.Arg)
+                        .ToDictionary(g => g.Key, g => g.Select(x => x.Sys).ToList())
+                );
+
             }
 
             foreach (var cbs in _systemMap.Values.OfType<EntityCommandBufferSystem>())
@@ -109,110 +114,6 @@ namespace Nanory.Lex
             
         }
 
-        private void SortAndInsertOneFrameSystems()
-        {
-            var systemGroups = _systemMap.Values.OfType<EcsSystemGroup>().ToList();
-
-            foreach (var group in systemGroups)
-            {
-                SortSystemGroup(group);
-                InsertOneFrameSystems(group);
-            }
-        }
-
-        private void InsertOneFrameSystems(EcsSystemGroup systemGroup)
-        {
-            for (var i = 0; i < systemGroup.Systems.Count; i++)
-            {
-                var system = systemGroup.Systems[i];
-                var shift = 0;
-
-                foreach (var attr in system.GetType().GetCustomAttributes())
-                {
-                    if (attr is EventSystemAttribute eAttr)
-                    {
-                        var type = typeof(OneFrameSystem<>).MakeGenericType(eAttr.EventComponentType);
-                        systemGroup.Insert(i++, GetSystemByType(type));
-                    }
-                    else if (attr is RequestSystemAttribute rAttr)
-                    {
-                        var type = typeof(OneFrameSystem<>).MakeGenericType(rAttr.RequestComponentType);
-                        systemGroup.Insert(i + 1, GetSystemByType(type));
-                        shift++;
-                    }
-                }
-
-                i += shift;
-            }
-        }
-
-        private void SortSystemGroup(EcsSystemGroup group)
-        {
-            var unsorted = new List<IEcsSystem>(group.Systems);
-            var executionLayers = new List<List<IEcsSystem>> { new() };
-            var orderFirst = new List<IEcsSystem>();
-            var orderLast = new List<IEcsSystem>();
-
-            for (var i = unsorted.Count - 1; i >= 0; i--)
-            {
-                var sys = unsorted[i];
-                var attr = GetCachedAttribute<UpdateInGroup>(sys.GetType());
-
-                if (attr?.OrderFirst == true) { orderFirst.Add(sys); unsorted.RemoveAt(i); }
-                else if (attr?.OrderLast == true) { orderLast.Add(sys); unsorted.RemoveAt(i); }
-            }
-
-            for (var i = unsorted.Count - 1; i >= 0; i--)
-            {
-                if (GetCachedAttribute<UpdateBefore>(unsorted[i].GetType()) == null)
-                {
-                    executionLayers[0].Add(unsorted[i]);
-                    unsorted.RemoveAt(i);
-                }
-            }
-
-            SortRecursive(unsorted, executionLayers, 1);
-            executionLayers.Reverse();
-
-            foreach (var sys in orderFirst)
-                executionLayers[0].Insert(0, sys);
-
-            group.Systems = executionLayers.SelectMany(l => l).ToList();
-
-            foreach (var sys in orderLast)
-                group.Add(sys);
-        }
-
-        private void SortRecursive(List<IEcsSystem> unsorted, List<List<IEcsSystem>> table, int level)
-        {
-            var layer = new List<IEcsSystem>();
-            table.Add(layer);
-
-            for (var i = unsorted.Count - 1; i >= 0; i--)
-            {
-                var sys = unsorted[i];
-                var beforeAttr = GetCachedAttribute<UpdateBefore>(sys.GetType());
-
-                if (beforeAttr != null)
-                {
-                    if (!_systemMap.TryGetValue(beforeAttr.TargetSystemType, out var target))
-                    {
-                        layer.Add(sys);
-                        unsorted.RemoveAt(i);
-                        continue;
-                    }
-
-                    if (table[level - 1].Contains(target))
-                    {
-                        layer.Add(sys);
-                        unsorted.RemoveAt(i);
-                    }
-                }
-            }
-
-            if (unsorted.Count > 0)
-                SortRecursive(unsorted, table, level + 1);
-        }
 
         private IEcsSystem GetSystemByType(Type systemType)
         {
