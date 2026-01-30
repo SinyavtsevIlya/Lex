@@ -3,9 +3,6 @@ using System.Collections.Generic;
 
 namespace Nanory.Lex
 {
-    [UpdateInGroup(typeof(BeginSimulationSystemGroup), OrderFirst = true)]
-    public class BeginSimulationECBSystem : EntityCommandBufferSystem { }
-
 
     [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
     public class BeginSimulationSystemGroup : EcsSystemGroup { }
@@ -165,47 +162,25 @@ namespace Nanory.Lex
             }
         }
     }
-
-    public class MissingCommandBufferSystemException<TSystem> : Exception where TSystem : EntityCommandBufferSystem
-    {
-        private readonly IEcsEntityCommandBufferLookup _context;
-
-        public MissingCommandBufferSystemException(IEcsEntityCommandBufferLookup context)
-        {
-            _context = context;
-        }
-
-        public override string Message => $"No {nameof(TSystem)} was found in {nameof(_context)}.";
-    }
-
-    public interface IEcsEntityCommandBufferLookup
-    {
-        IEcsEntityCommandBufferLookup SetEntityCommandBufferSystemsLookup(List<EntityCommandBufferSystem> systems);
-        EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem;
-    }
-
+    
     public abstract class EcsRunSystemBase : EcsSystemBase
     {
         
     }
 
-    public abstract class EcsSystemBase : IEcsRunSystem, IEcsPreInitSystem, IEcsInitSystem, IEcsDestroySystem, IEcsEntityCommandBufferLookup
+    public abstract class EcsSystemBase : IEcsRunSystem, IEcsPreInitSystem, IEcsInitSystem, IEcsDestroySystem
     {
         private readonly List<EcsLocalFilterContainer> _localFilterContainers = new List<EcsLocalFilterContainer>(8);
-        protected List<EntityCommandBufferSystem> _entityCommandBufferSystems;
 
         #region Shortcuts
         /// <summary>
         /// Default predefined entity command buffer shortcut.
         /// </summary>
-        public EntityCommandBuffer Later;
         public EcsWorldBase World;
-        public EcsSystems EcsSystems;
         #endregion
 
         public void PreInit(EcsSystems systems)
         {
-            EcsSystems = systems;
             World = systems.GetWorld() as EcsWorldBase;
         }
 
@@ -222,22 +197,6 @@ namespace Nanory.Lex
         public void Run(EcsSystems systems)
         {
             OnUpdate();
-        }
-        public IEcsEntityCommandBufferLookup SetEntityCommandBufferSystemsLookup(List<EntityCommandBufferSystem> systems)
-        {
-            _entityCommandBufferSystems = systems;
-            return this;
-        }
-
-        public EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem
-        {
-            foreach (var system in _entityCommandBufferSystems)
-            {
-                if (system is TSystem)
-                    return system.GetBuffer();
-            }
-
-            throw new Exception($"no system {typeof(TSystem)} presented in the entityCommandBufferSystems lookup");
         }
 
         protected virtual void OnUpdate() { }
@@ -279,33 +238,6 @@ namespace Nanory.Lex
             }
         }
 
-        public void SwapTag<TComponent>(int a, int b) where TComponent : struct
-        {
-            var hasTagA = Has<TComponent>(a);
-            var hasTagB = Has<TComponent>(b);
-
-            if (hasTagA != hasTagB)
-            {
-                var aa = hasTagA ? a : b;
-                var bb = hasTagA ? b : a;
-
-                Del<TComponent>(aa);
-                Add<TComponent>(bb);
-            }
-        }
-
-        public void Toggle<TComponent>(int entity) where TComponent : struct
-        {
-            if (Has<TComponent>(entity))
-            {
-                Del<TComponent>(entity);
-            }
-            else
-            {
-                Add<TComponent>(entity);
-            }
-        }
-
         public ref TComponent GetOrAdd<TComponent>(int entity) where TComponent : struct
         {
             var pool = World.GetPool<TComponent>();
@@ -340,11 +272,6 @@ namespace Nanory.Lex
         public void Del<TComponent>(int entity) where TComponent : struct
         {
             World.GetPool<TComponent>().Del(entity);
-        }
-
-        public void RemoveBuffer<TComponent>(int entity) where TComponent : struct
-        {
-            World.RemoveBuffer<TComponent>(entity);
         }
 
         public ref Buffer<TComponent> AddBuffer<TComponent>(int entity) where TComponent : struct
@@ -389,26 +316,6 @@ namespace Nanory.Lex
         }
     }
 
-    public class EntityCommandBufferSystem : IEcsRunSystem
-    {
-        private EntityCommandBuffer _buffer;
-
-        public EntityCommandBufferSystem SetDstWorld(EcsWorld dstWorld)
-        {
-            _buffer = new EntityCommandBuffer(dstWorld);
-            return this;
-        }
-
-        public void SetBuffer(EntityCommandBuffer buffer) => _buffer = buffer; 
-            
-        public EntityCommandBuffer GetBuffer() => _buffer;
-        
-
-        public void Run(EcsSystems systems)
-        {
-            _buffer.Playback();
-        }
-    }
     
     public struct With<T1, T2, T3>
     {

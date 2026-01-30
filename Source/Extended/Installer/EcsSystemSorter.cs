@@ -34,7 +34,7 @@ namespace Nanory.Lex
             foreach (var systemType in _systemTypes)
                 CreateSystemHierarchy(systemType, handledSystems);
 
-            SetupWorldLookups();
+            SetupWorldReactives();
 
             return _rootSystemGroup;
         }
@@ -46,7 +46,6 @@ namespace Nanory.Lex
                 typeof(InitializationSystemGroup),
                 typeof(SimulationSystemGroup),
                 typeof(PresentationSystemGroup),
-                typeof(BeginSimulationECBSystem)
             };
 
             _systemTypes = systemTypes
@@ -77,12 +76,11 @@ namespace Nanory.Lex
             }
         }
 
-        private void SetupWorldLookups()
+        private void SetupWorldReactives()
         {
             if (_world is EcsWorldBase worldBase)
             {
                 worldBase.SetSystemsLookup(_systemMap);
-                worldBase.SetEntityCommandBufferSystemsLookup(_systemMap.Values.OfType<EntityCommandBufferSystem>().ToList());
                 worldBase.SetReactiveSystems(
                     _systemMap.Values
                         .OfType<IReact>()
@@ -99,17 +97,6 @@ namespace Nanory.Lex
                         .ToDictionary(g => g.Key, g => g.Select(x => x.Sys).ToList())
                 );
 
-            }
-
-            foreach (var cbs in _systemMap.Values.OfType<EntityCommandBufferSystem>())
-                cbs.SetDstWorld(_world);
-
-            foreach (var lookup in _systemMap.Values.OfType<IEcsEntityCommandBufferLookup>())
-            {
-                lookup.SetEntityCommandBufferSystemsLookup(_systemMap.Values.OfType<EntityCommandBufferSystem>().ToList());
-
-                if (lookup is EcsSystemBase systemBase)
-                    systemBase.Later = _systemMap.Values.OfType<BeginSimulationECBSystem>().First().GetBuffer();
             }
             
         }

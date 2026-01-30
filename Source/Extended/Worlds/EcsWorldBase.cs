@@ -3,11 +3,10 @@ using System.Collections.Generic;
 
 namespace Nanory.Lex
 {
-    public class EcsWorldBase : EcsWorld, IEcsEntityCommandBufferLookup
+    public class EcsWorldBase : EcsWorld
     {
         private readonly string _name;
 
-        private List<EntityCommandBufferSystem> _entityCommandBufferSystems;
         private Dictionary<Type, IEcsSystem> _systemsByTypes;
         private Dictionary<Type, List<IReact>> _reactiveSystems;
 
@@ -36,24 +35,8 @@ namespace Nanory.Lex
             return _reactiveSystems.TryGetValue(typeof(TComponent), out reactions);
         }
 
-        public EntityCommandBuffer GetCommandBufferFrom<TSystem>() where TSystem : EntityCommandBufferSystem
-        {
-            foreach (var system in _entityCommandBufferSystems)
-            {
-                if (system is TSystem)
-                    return system.GetBuffer();
-            }
-
-            throw new MissingCommandBufferSystemException<TSystem>(this);
-        }
 
         public string Name => _name;
-
-        public IEcsEntityCommandBufferLookup SetEntityCommandBufferSystemsLookup(List<EntityCommandBufferSystem> systems)
-        {
-            _entityCommandBufferSystems = systems;
-            return this;
-        }
 
         public void SetSystemsLookup(IEnumerable<IEcsSystem> systems)
         {

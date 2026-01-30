@@ -7,15 +7,7 @@ namespace Nanory.Lex
     {
         public static Type[] Values = new Type[]
         {
-            typeof(BeginUiBindingEcbSystem),
-            typeof(BeginUiUnbindingEcbSystem),
-            typeof(EndUiEcbSystemGroup),
-            typeof(BeginUiEcbSystemGroup),
-            typeof(EndUiBindingEcbSystem),
-            typeof(EndUiUnbindingEcbSystem),
-            typeof(EndPresentationEntityCommandBufferSystem),
             typeof(ScreenSystemGroup),
-            typeof(UiSystemGroup)
         };
     }
 }
