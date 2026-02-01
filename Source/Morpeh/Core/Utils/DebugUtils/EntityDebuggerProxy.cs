@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     public sealed class EntityDebuggerProxy {
         private readonly Entity entity;
 

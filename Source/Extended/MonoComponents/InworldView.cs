@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Nanory.Lex
@@ -6,26 +7,24 @@ namespace Nanory.Lex
     /// Provides a reference to the gameObject that
     /// represents a primary tangible view in the game world. 
     /// </summary>
-    public struct InworldView : IEcsAutoReset<InworldView>
-    {
+    public struct InworldView : IComponent, IDisposable
+ {
         public GameObject Value;
 
-        public void AutoReset(ref InworldView c)
+        public void Dispose()
         {
-            c.Value = null;
+            Value = null;
         }
     }
 }
 
 namespace Nanory.Lex.View
 {
-    [OneFrame]
-    public struct InworldViewBindEvent : IEmit
-    {
+    public struct InworldViewBindEvent : IComponent, IEmit
+ {
     }
 
-    [OneFrame] 
-    public struct InworldViewUnbindEvent : IEmit
-    {
+    public struct InworldViewUnbindEvent : IComponent, IEmit
+ {
     }
 }

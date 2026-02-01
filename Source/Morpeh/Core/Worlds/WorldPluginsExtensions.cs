@@ -1,8 +1,8 @@
 ﻿using JetBrains.Annotations;
 
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     using System.Runtime.CompilerServices;
-    using Scellecs.Morpeh.Collections;
+    using Nanory.Lex.Collections;
     
     public static class WorldPluginsExtensions {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

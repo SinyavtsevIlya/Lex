@@ -1,4 +1,4 @@
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     using System;
 
     [Obsolete("Will be removed in future versions")]

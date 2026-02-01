@@ -1,12 +1,14 @@
+using System;
+
 namespace Nanory.Lex
 {
-    public struct View<TView> : IEcsAutoReset<View<TView>>
+    public struct View<TView> : IComponent, IDisposable
     {
         public TView Value;
 
-        public void AutoReset(ref View<TView> c)
+        public void Dispose()
         {
-            c.Value = default;
+            Value = default;
         }
     }
 }

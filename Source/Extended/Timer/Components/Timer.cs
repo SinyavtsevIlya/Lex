@@ -1,23 +1,21 @@
 ﻿namespace Nanory.Lex.Timer
 {
-    public struct Timer
-    {
+    public struct Timer : IComponent {
         public float CurrentTime;
         public float Duration;
         public int IsInfinity;
-        public int TimerContextComponentIndex;
+        public IStash TimerContextStash;
 
-        public Timer(float duration, bool isInfinity, int timerContextComponentIndex)
+        public Timer(float duration, bool isInfinity, IStash timerContextStash)
         {
             Duration = duration;
             CurrentTime = duration;
-            TimerContextComponentIndex = timerContextComponentIndex;
+            TimerContextStash = timerContextStash;
             IsInfinity = isInfinity ? 1 : 0;
         }
     }
 
-    public struct TimerOwnerLink
-    {
-        public EcsPackedEntity Value;
+    public struct TimerOwnerLink : IComponent {
+        public Entity Value;
     }
 }

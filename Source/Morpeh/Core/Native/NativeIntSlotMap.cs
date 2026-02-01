@@ -1,9 +1,9 @@
 ﻿#if MORPEH_BURST
-using Scellecs.Morpeh.Collections;
+using Nanory.Lex.Collections;
 using System.Runtime.InteropServices;
 using Unity.Collections.LowLevel.Unsafe;
 
-namespace Scellecs.Morpeh.Native {
+namespace Nanory.Lex.Native {
     /// <summary>
     /// Reduced version to fit NativeStash into cache line size
     /// </summary>

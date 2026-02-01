@@ -1,4 +1,4 @@
-﻿namespace Scellecs.Morpeh {
+﻿namespace Nanory.Lex {
     using System;
     using System.Collections.Generic;
     using System.Reflection;

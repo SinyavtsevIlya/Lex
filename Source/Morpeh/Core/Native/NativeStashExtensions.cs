@@ -1,5 +1,5 @@
 ﻿#if MORPEH_BURST
-namespace Scellecs.Morpeh.Native {
+namespace Nanory.Lex.Native {
     using System.Runtime.CompilerServices;
     using Unity.Burst.CompilerServices;
     using Unity.IL2CPP.CompilerServices;

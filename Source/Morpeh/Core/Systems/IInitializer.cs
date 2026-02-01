@@ -1,4 +1,4 @@
-﻿namespace Scellecs.Morpeh {
+﻿namespace Nanory.Lex {
     using System;
     
     public interface IInitializer : IDisposable {

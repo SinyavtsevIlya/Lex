@@ -1,4 +1,4 @@
-﻿namespace Scellecs.Morpeh {
+﻿namespace Nanory.Lex {
     using Unity.IL2CPP.CompilerServices;
     
     [Il2CppSetOption(Option.NullChecks, false)]

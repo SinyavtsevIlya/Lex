@@ -73,6 +73,6 @@ namespace Unity.Collections {
 #endif
 }
 
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     
 }

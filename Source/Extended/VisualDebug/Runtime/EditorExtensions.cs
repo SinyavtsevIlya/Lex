@@ -31,9 +31,9 @@ namespace Nanory.Lex.UnityEditorIntegration
     public sealed class EcsEntityDebugView : MonoBehaviour
     {
         [NonSerialized]
-        public EcsWorld World;
+        public World World;
         [NonSerialized]
-        public int Entity;
+        public Entity entity;
         [NonSerialized]
         public string DebugName;
     }

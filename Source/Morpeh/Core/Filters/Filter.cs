@@ -5,7 +5,7 @@
 #define MORPEH_DEBUG_DISABLED
 #endif
 
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     using System;
     using System.Runtime.CompilerServices;
     using Collections;

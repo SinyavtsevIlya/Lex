@@ -1,6 +1,6 @@
 ﻿namespace Nanory.Lex
 {
-    public class ScreenSystemGroup : EcsSystemGroup
+    public class ScreenSystemGroup : SystemsGroupPosition
     {
     }
 }

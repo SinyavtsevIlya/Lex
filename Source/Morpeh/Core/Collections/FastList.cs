@@ -1,4 +1,4 @@
-namespace Scellecs.Morpeh.Collections {
+namespace Nanory.Lex.Collections {
     using System;
     using System.Collections.Generic;
     using System.Runtime.CompilerServices;

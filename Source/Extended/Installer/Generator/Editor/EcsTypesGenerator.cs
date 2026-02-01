@@ -78,22 +78,16 @@ public static class {featureName}SystemTypesLookup
         private static string GenerateSystemTypes(Type featureType, EcsTypesScanner scanner)
         {
             var worldSystemTypes = scanner.GetSystemTypesByFeature(new[] { featureType });
-            var oneFrameSystemTypes = scanner.GetOneFrameSystemTypesGenericArgumentsByFeature(new[] { featureType });
-            var eventSystemTypes = GetEventSystemTypes(worldSystemTypes);
 
             var baseSystems = FormatSystemTypes("// Base Systems", worldSystemTypes);
-            var oneFrameSystems = FormatSystemTypes("// OneFrame Systems", oneFrameSystemTypes, isGeneric: true);
-            var eventSystems = FormatSystemTypes("// Event/Request Systems", eventSystemTypes);
 
             var allNamespaces = worldSystemTypes
-                .Union(oneFrameSystemTypes)
-                .Union(eventSystemTypes)
                 .SelectMany(GetNamespacesRecursive)
                 .Where(ns => ns != null)
                 .Distinct();
 
             var namespaceString = string.Join(Format.NewLine(), allNamespaces.Select(ns => $"using {ns};"));
-            var systemTypesString = string.Join("," + Format.NewLine(2), new[] { baseSystems, oneFrameSystems, eventSystems }.Where(s => !string.IsNullOrEmpty(s)));
+            var systemTypesString = string.Join("," + Format.NewLine(2), new[] { baseSystems  }.Where(s => !string.IsNullOrEmpty(s)));
             var featureName = featureType.Namespace.SolidifyNamespace();
 
             return FeatureTemplate
@@ -113,17 +107,6 @@ public static class {featureName}SystemTypesLookup
             });
 
             return comment + Format.NewLine(2) + string.Join("," + Format.NewLine(2), formatted);
-        }
-
-        private static IEnumerable<Type> GetEventSystemTypes(IEnumerable<Type> types)
-        {
-            return types.SelectMany(type => type.GetCustomAttributes()
-                .Where(attr => attr is EventSystemAttribute or RequestSystemAttribute)
-                .Select(attr =>
-                {
-                    var componentType = attr is EventSystemAttribute e ? e.EventComponentType : ((RequestSystemAttribute)attr).RequestComponentType;
-                    return typeof(OneFrameSystem<>).MakeGenericType(componentType);
-                }));
         }
 
         private static IEnumerable<string> GetNamespacesRecursive(Type type)

@@ -97,8 +97,7 @@ namespace Nanory.Lex
         if (invalidTypes.Any())
             throw new ArgumentException("Invalid feature types passed to ScanSystemTypes.");
 
-        return GetSystemTypesByFeature(targetFeatureTypes)
-            .Union(GetOneFrameSystemTypesFeaturesGeneric(targetFeatureTypes));
+        return GetSystemTypesByFeature(targetFeatureTypes);
     }
 
     public IEnumerable<Type> GetSystemTypesByFeature(IEnumerable<Type> featureTypes)
@@ -114,28 +113,11 @@ namespace Nanory.Lex
             return Enumerable.Empty<Type>();
         });
 
-        var ecsSystemTypes = GetTypesByFeature(typeof(IEcsSystem), featureTypes);
+        var ecsSystemTypes = GetTypesByFeature(typeof(EcsSystemBase), featureTypes);
 
         return ecsSystemTypes.Union(providedSystemTypes);
     }
 
-    public IEnumerable<Type> GetOneFrameSystemTypesFeaturesGeneric(IEnumerable<Type> featureTypes)
-    {
-        var genericArgs = GetOneFrameSystemTypesGenericArgumentsByFeature(featureTypes);
-
-        foreach (var arg in genericArgs)
-        {
-            yield return typeof(OneFrameSystem<>).MakeGenericType(arg);
-        }
-    }
-
-    public List<Type> GetOneFrameSystemTypesGenericArgumentsByFeature(IEnumerable<Type> featureTypes)
-    {
-        return GetAssignableTypes(typeof(IComponentContract))
-            .FilterGenericTypesByAttribute<OneFrame>()
-            .FilterTypesByFeature(featureTypes)
-            .ToList();
-    }
 
     private IEnumerable<Type> GetTypesByFeature(Type baseType, IEnumerable<Type> featureTypes)
     {

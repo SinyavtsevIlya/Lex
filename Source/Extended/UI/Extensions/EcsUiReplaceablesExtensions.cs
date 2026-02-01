@@ -5,7 +5,7 @@ namespace Nanory.Lex
 {
     public static class EcsUiReplaceablesExtensions
     {
-        public static void Replace<TReplaceable>(this EcsSystemBase system, TReplaceable replaceable, int ownerEntity,
+        public static void Replace<TReplaceable>(this EcsSystemBase system, TReplaceable replaceable, Entity ownerEntity,
             ref Replaceables replaceables) where TReplaceable : MonoBehaviour
         {
             replaceables.Deactivation?.Invoke();
@@ -17,7 +17,7 @@ namespace Nanory.Lex
             
             replaceables.Deactivation = () =>
             {
-                if (!system.World.IsAlive())
+                if (system.World.IsDisposed)
                     return;
 
                 if (replaceable == null)

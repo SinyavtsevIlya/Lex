@@ -14,12 +14,12 @@ namespace Nanory.Lex
         public TWidget Value;
     }
 
-    public struct CloseScreenEvent : IEmit
-    {
+    public struct CloseScreenEvent : IComponent, IEmit
+ {
     }
 
-    public struct Replaceables : IEcsAutoReset<Replaceables>
-    {
+    public struct Replaceables : IComponent, IDisposable
+ {
         public List<MonoBehaviour> Elements;
         public MonoBehaviour ActiveElement;
         public Action Deactivation;
@@ -31,33 +31,33 @@ namespace Nanory.Lex
             Deactivation = null;
         }
 
-        public void AutoReset(ref Replaceables c)
+        public void Dispose()
         {
-            c.Elements = null;
-            c.ActiveElement = null;
-            c.Deactivation?.Invoke();
-            c.Deactivation = null;
+            Elements = null;
+            ActiveElement = null;
+            Deactivation?.Invoke();
+            Deactivation = null;
         }
     }
 
-    public struct Screens : IEcsAutoReset<Screens>
-    {
+    public struct Screens : IComponent, IDisposable
+ {
         public Replaceables Value;
-        public void AutoReset(ref Screens c)
+        public void Dispose()
         {
-            c.Value.AutoReset(ref c.Value);
+            Value.Dispose();
         }
     }
     
-    public struct ScreensAdded : IEmit {}
+    public struct ScreensAdded : IComponent, IEmit {}
     
-    public struct Tabs : IEcsAutoReset<Tabs>
-    {
+    public struct Tabs : IComponent, IDisposable
+ {
         public Replaceables Value;
         
-        public void AutoReset(ref Tabs c)
+        public void Dispose()
         {
-            c.Value.AutoReset(ref c.Value);
+            Value.Dispose();
         }
     }
 }

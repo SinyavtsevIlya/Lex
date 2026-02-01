@@ -1,4 +1,4 @@
-﻿namespace Scellecs.Morpeh.Logging {
+﻿namespace Nanory.Lex.Logging {
     public interface IMorpehLogger {
         void Log(string message);
         void LogWarning(string message);

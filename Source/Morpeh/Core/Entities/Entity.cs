@@ -1,4 +1,4 @@
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     using System;
     using Unity.IL2CPP.CompilerServices;
     using System.Runtime.CompilerServices;

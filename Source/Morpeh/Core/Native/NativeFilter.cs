@@ -1,5 +1,5 @@
 ﻿#if MORPEH_BURST
-namespace Scellecs.Morpeh.Native {
+namespace Nanory.Lex.Native {
     using Unity.Collections;
 
     // TODO: Add Enumerator

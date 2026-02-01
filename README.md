@@ -106,7 +106,7 @@ namespace Client.Some // note: the namespace is the same
 ```c#
 class CoreStartup // can be a monobehavior or whatever you like.
 {
-    private EcsWorld _world;
+    private World _world;
     private EcsSystems _systems;
     private EcsSystemSorter _sorter;
     
@@ -121,7 +121,7 @@ class CoreStartup // can be a monobehavior or whatever you like.
 
     private void Start()
     {
-        _world = new EcsWorldBase(default, "Core");
+        _world = new World(default, "Core");
         _systems = new EcsSystems(_world);
 
         // create a scanner - a special class that finds all user-defined ecs-data types.
@@ -191,7 +191,7 @@ These objects can be anything (Poco objects, Scriptable objects, Gameobjects/mon
     {
         [SerializeField] int _value;
 
-        public void Convert(int entity, ConvertToEntitySystem converstionSystem)
+        public void Convert(Entity entity, ConvertToEntitySystem converstionSystem)
         {
             converstionSystem.World.Emit(entity, new Attack { Value = _value });
         }

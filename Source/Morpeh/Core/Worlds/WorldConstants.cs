@@ -1,4 +1,4 @@
-﻿namespace Scellecs.Morpeh {
+﻿namespace Nanory.Lex {
     public class WorldConstants {
         internal const int MAX_WORLDS_COUNT = 256;
         internal const int DEFAULT_ENTITIES_CAPACITY = 256;

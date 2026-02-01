@@ -3,7 +3,7 @@
 #endif
 
 #if MORPEH_UNITY
-namespace Scellecs.Morpeh.Logging {
+namespace Nanory.Lex.Logging {
     internal class MorpehUnityLogger : IMorpehLogger {
         void IMorpehLogger.Log(string message)                      => UnityEngine.Debug.Log(message);
         void IMorpehLogger.LogWarning(string message)               => UnityEngine.Debug.LogWarning(message);

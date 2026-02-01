@@ -10,7 +10,7 @@
 #define MORPEH_UNITY
 #endif
 
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     using System;
     using System.Diagnostics;
     using Logging;

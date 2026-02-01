@@ -4,7 +4,7 @@
 #define MORPEH_UNITY
 #endif
 
-namespace Scellecs.Morpeh.Collections {
+namespace Nanory.Lex.Collections {
     using System;
     using System.Runtime.CompilerServices;
 #if MORPEH_UNITY

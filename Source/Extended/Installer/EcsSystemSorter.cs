@@ -2,33 +2,34 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Nanory.Lex.Collections;
 
 namespace Nanory.Lex
 {
     public class EcsSystemSorter : IDisposable
     {
-        private EcsWorld _world;
-        private Dictionary<Type, IEcsSystem> _systemMap;
-        private Func<Type, IEcsSystem> _creator;
+        private World _world;
+        private Dictionary<Type, ISystem> _systemMap;
+        private Func<Type, ISystem> _creator;
         
-        private EcsSystemGroup _rootSystemGroup;
+        private SystemsGroup _rootSystemGroup;
         private Type[] _systemTypes;
 
         private readonly Dictionary<(Type type, Type attrType), Attribute> _attributeCache = new();
 
-        public EcsSystemSorter(EcsWorld world, Func<Type, IEcsSystem> creator = null)
+        public EcsSystemSorter(World world, Func<Type, ISystem> creator = null)
         {
             _world = world;
-            _systemMap = new Dictionary<Type, IEcsSystem>();
+            _systemMap = new Dictionary<Type, ISystem>();
             _creator = creator;
         }
 
-        public EcsSystemGroup GetSortedSystems(IEnumerable<Type> systemTypes)
+        public SystemsGroup GetSortedSystems(IEnumerable<Type> systemTypes)
         {
             InitializeSystemTypes(systemTypes);
 
             var handledSystems = new HashSet<Type>();
-            _rootSystemGroup = (EcsSystemGroup)GetSystemByType(typeof(RootSystemGroup));
+            _rootSystemGroup = (SystemsGroup) GetSystemByType(typeof(RootSystemGroup));
             handledSystems.Add(typeof(RootSystemGroup));
 
             foreach (var systemType in _systemTypes)
@@ -64,13 +65,14 @@ namespace Nanory.Lex
                 var targetGroupType = updateInGroup?.TargetGroupType ?? typeof(SimulationSystemGroup);
 
                 var instance = GetSystemByType(systemType);
-                var parentInstance = (EcsSystemGroup)GetSystemByType(targetGroupType);
+                var parentInstance = (SystemsGroup)GetSystemByType(targetGroupType);
 
 #if DEBUG
-                if (instance is EcsSystemGroup group && group.Systems.Contains(parentInstance)) throw new Exception($"<b>{instance}</b> and <b>{parentInstance}</b> have circular dependency.");
+                if (instance is SystemsGroup group && group.systems.data.Contains(parentInstance))
+                    throw new Exception($"<b>{instance}</b> and <b>{parentInstance}</b> have circular dependency.");
 #endif
 
-                parentInstance.Add(instance);
+                parentInstance.AddSystem(instance);
 
                 systemType = targetGroupType;
             }
@@ -78,35 +80,30 @@ namespace Nanory.Lex
 
         private void SetupWorldReactives()
         {
-            if (_world is EcsWorldBase worldBase)
-            {
-                worldBase.SetSystemsLookup(_systemMap);
-                worldBase.SetReactiveSystems(
-                    _systemMap.Values
-                        .OfType<IReact>()
-                        .SelectMany(sys =>
-                            sys.GetType()
-                                .GetInterfaces()
-                                .Where(i => i.IsGenericType &&
-                                            i.GetGenericTypeDefinition() == typeof(IReact<>))
-                                .Select(i => new {
-                                    Sys = sys,
-                                    Arg = i.GetGenericArguments()[0]
-                                }))
-                        .GroupBy(x => x.Arg)
-                        .ToDictionary(g => g.Key, g => g.Select(x => x.Sys).ToList())
-                );
-
-            }
-            
+            _world.SetReactiveSystems(
+                _systemMap.Values
+                    .OfType<IReact>()
+                    .SelectMany(sys =>
+                        sys.GetType()
+                            .GetInterfaces()
+                            .Where(i => i.IsGenericType &&
+                                        i.GetGenericTypeDefinition() == typeof(IReact<>))
+                            .Select(i => new {
+                                Sys = sys,
+                                Arg = i.GetGenericArguments()[0]
+                            }))
+                    .GroupBy(x => x.Arg)
+                    .ToDictionary(g => g.Key, g => g.Select(x => x.Sys).ToList())
+            );
         }
 
-
-        private IEcsSystem GetSystemByType(Type systemType)
+        private ISystem GetSystemByType(Type systemType)
         {
             if (!_systemMap.TryGetValue(systemType, out var system))
             {
-                system = _creator?.Invoke(systemType) ?? (IEcsSystem)Activator.CreateInstance(systemType);
+                system = systemType == typeof(SystemsGroupPosition) ? 
+                    _world.CreateSystemsGroup() :
+                    (ISystem) Activator.CreateInstance(systemType);
                 _systemMap[systemType] = system;
             }
 

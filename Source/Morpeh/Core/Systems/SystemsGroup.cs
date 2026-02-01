@@ -1,3 +1,4 @@
+
 #if UNITY_EDITOR
 #define MORPEH_DEBUG
 #endif
@@ -5,15 +6,16 @@
 #define MORPEH_DEBUG_DISABLED
 #endif
 
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     using System;
     using Collections;
+    using System.Collections.Generic;
     using Unity.IL2CPP.CompilerServices;
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     [Il2CppSetOption(Option.DivideByZeroChecks, false)]
-    public sealed class SystemsGroup : IDisposable {
+    public sealed class SystemsGroup : ISystem {
         internal FastList<ISystem> systems;
         internal FastList<ISystem> fixedSystems;
         internal FastList<ISystem> lateSystems;
@@ -30,6 +32,7 @@ namespace Scellecs.Morpeh {
 
         internal World  world;
         internal Action delayedAction;
+        internal Dictionary<Type, IInitializer> systemsMap;  
 
         private SystemsGroup() {
         }
@@ -155,6 +158,18 @@ namespace Scellecs.Morpeh {
 
             this.disposables.Clear();
             this.disposables = null;
+        }
+
+        public void OnUpdate(float deltaTime)
+        {
+            this.Update(deltaTime);
+        }
+
+        public World World { get; set; }
+
+        public void OnAwake()
+        {
+            this.Initialize();
         }
     }
 }

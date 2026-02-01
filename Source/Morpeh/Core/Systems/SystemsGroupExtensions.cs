@@ -6,7 +6,7 @@
 #define MORPEH_DEBUG_DISABLED
 #endif
 
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     using System;
     using System.Diagnostics;
     using System.Runtime.CompilerServices;
@@ -271,6 +271,7 @@ namespace Scellecs.Morpeh {
             initializer.World = systemsGroup.world;
 
             systemsGroup.newInitializers.Add(initializer);
+            systemsGroup.world.systemsMap.Add(typeof(T), initializer);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

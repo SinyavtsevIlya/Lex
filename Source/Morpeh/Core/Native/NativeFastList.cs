@@ -1,5 +1,5 @@
 ﻿#if MORPEH_BURST
-namespace Scellecs.Morpeh.Native {
+namespace Nanory.Lex.Native {
     using Unity.Collections.LowLevel.Unsafe;
 
     public struct NativeFastList<TNative> where TNative : unmanaged {

@@ -91,11 +91,13 @@ namespace Nanory.Lex
         }
     }
 
-    public static class GuardEcsPackedEntityExtensions
+    public static class GuardEntityExtensions
     {
-        public static void UnpackOrThrow(this EcsPackedEntity packedEntity, EcsWorld world, out int entity, string message = null, string paramName = null)
+        public static void UnpackOrThrow(this Entity packedEntity, World world, out Entity entity, string message = null, string paramName = null)
         {
-            if (packedEntity.Unpack(world, out entity))
+            entity = default;
+            
+            if (packedEntity.IsDisposed())
                 return;
             
             var entityName = paramName ?? entity.ToString();

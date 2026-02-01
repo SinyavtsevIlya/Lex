@@ -1,11 +1,13 @@
+using System;
+
 namespace Nanory.Lex.Lifecycle
 {
-    public struct LinkedEntities : IEcsAutoReset<LinkedEntities>
-    {
-        public Buffer<EcsPackedEntity> Buffer;
-        public void AutoReset(ref LinkedEntities c)
+    public struct LinkedEntities : IComponent, IDisposable
+ {
+        public Buffer<Entity> Buffer;
+        public void Dispose()
         {
-            c.Buffer.AutoReset(ref c.Buffer);
+            Buffer.Dispose();
         }
     }
 }

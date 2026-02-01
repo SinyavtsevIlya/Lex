@@ -5,7 +5,7 @@
 #define MORPEH_DEBUG_DISABLED
 #endif
 
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     using System;
     using System.Collections.Generic;
     using System.Runtime.CompilerServices;
@@ -115,6 +115,8 @@ namespace Scellecs.Morpeh {
         internal ComponentsToFiltersRelation componentsFiltersWith;
         internal ComponentsToFiltersRelation componentsFiltersWithout;
 
+        internal Dictionary<System.Type, IInitializer> systemsMap;
+
         [PublicAPI]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static World Create() {
@@ -139,6 +141,7 @@ namespace Scellecs.Morpeh {
 
             this.filtersLookup = new LongHashMap<LongHashMap<Filter>>();
             this.freeFilterIDs = new IntStack();
+            this.systemsMap = new Dictionary<Type, IInitializer>();
         }
 
         [PublicAPI]
@@ -252,6 +255,7 @@ namespace Scellecs.Morpeh {
             
             this.archetypePool.Dispose();
             this.archetypePool = default;
+            this.systemsMap = null;
             
             this.IsDisposed = true;
 

@@ -123,7 +123,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\nusing Nanory.Lex.Lifecycle;\nusing
     Nanory.Lex.Conversion;\r\n\nnamespace {namespace}\r\n{\r\n    public class {itemname}Authoring
-    : MonoBehaviour, IConvertGameObjectToEntity\r\n    {\r\n        public void Convert(int
+    : MonoBehaviour, IConvertGameObjectToEntity\r\n    {\r\n        public void Convert(Entity
     entity, GameObjectConversionSystem converstionSystem)\r\n        {\r\n           
     $\r\n        }\r\n    }\r\n}\r\n"
 --- !u!1 &813085216399293143
@@ -1392,7 +1392,7 @@ MonoBehaviour:
   Content: "using UnityEngine;\r\nusing Nanory.Lex;\r\nusing Nanory.Lex.Lifecycle;\nusing
     Nanory.Lex.Conversion;\r\n\r\nnamespace {namespace}\r\n{\r\n    public class
     {itemname}Authoring : MonoBehaviour, IConvertGameObjectToEntity\r\n    {\r\n       
-    public void Convert(int entity, GameObjectConversionSystem converstionSystem)\r\n       
+    public void Convert(Entity entity, GameObjectConversionSystem converstionSystem)\r\n       
     {\r\n            $\r\n        }\r\n    }\r\n}\r\n"
 --- !u!1 &6320431403272297797
 GameObject:

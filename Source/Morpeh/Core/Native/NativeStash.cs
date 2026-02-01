@@ -2,7 +2,7 @@
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
 
-namespace Scellecs.Morpeh.Native {
+namespace Nanory.Lex.Native {
     public struct NativeStash<TNative> where TNative : unmanaged, IComponent {
         [NativeDisableParallelForRestriction]
         [NativeDisableUnsafePtrRestriction]

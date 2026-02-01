@@ -5,7 +5,7 @@
 #define MORPEH_DEBUG_DISABLED
 #endif
 
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     using System;
     using System.Runtime.CompilerServices;
     using Collections;
@@ -18,9 +18,8 @@ namespace Scellecs.Morpeh {
     [Obsolete("Entity extensions are obsolete and will be removed in future versions of Morpeh.")]
     public static class EntityExtensions {
 #if !MORPEH_STRICT_MODE
-        [Obsolete("[MORPEH] Use Stash.Add() instead.")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref T AddComponent<T>(this Entity entity) where T : struct, IComponent {
+        public static ref T Add<T>(this Entity entity) where T : struct, IComponent {
 #if MORPEH_DEBUG
             if (entity.IsNullOrDisposed()) {
                 InvalidAddOperationException.ThrowDisposedEntity(entity, typeof(T));
@@ -29,9 +28,8 @@ namespace Scellecs.Morpeh {
             return ref entity.GetWorld().GetStash<T>().Add(entity);
         }
 
-        [Obsolete("[MORPEH] Use Stash.Add() instead.")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref T AddComponent<T>(this Entity entity, out bool exist) where T : struct, IComponent {
+        public static ref T Add<T>(this Entity entity, out bool exist) where T : struct, IComponent {
 #if MORPEH_DEBUG
             if (entity.IsNullOrDisposed()) {
                 InvalidAddOperationException.ThrowDisposedEntity(entity, typeof(T));
@@ -40,7 +38,6 @@ namespace Scellecs.Morpeh {
             return ref entity.GetWorld().GetStash<T>().Add(entity, out exist);
         }
 
-        [Obsolete("[MORPEH] Use Stash.Get() instead.")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref T GetComponent<T>(this Entity entity) where T : struct, IComponent {
 #if MORPEH_DEBUG
@@ -51,7 +48,6 @@ namespace Scellecs.Morpeh {
             return ref entity.GetWorld().GetStash<T>().Get(entity);
         }
 
-        [Obsolete("[MORPEH] Use Stash.Get() instead.")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref T GetComponent<T>(this Entity entity, out bool exist) where T : struct, IComponent {
 #if MORPEH_DEBUG
@@ -62,7 +58,6 @@ namespace Scellecs.Morpeh {
             return ref entity.GetWorld().GetStash<T>().Get(entity, out exist);
         }
 
-        [Obsolete("[MORPEH] Use Stash.Set() instead.")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void SetComponent<T>(this Entity entity, in T value) where T : struct, IComponent {
 #if MORPEH_DEBUG
@@ -73,7 +68,6 @@ namespace Scellecs.Morpeh {
             entity.GetWorld().GetStash<T>().Set(entity, value);
         }
 
-        [Obsolete("[MORPEH] Use Stash.Remove() instead.")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool RemoveComponent<T>(this Entity entity) where T : struct, IComponent {
 #if MORPEH_DEBUG
@@ -84,7 +78,6 @@ namespace Scellecs.Morpeh {
             return entity.GetWorld().GetStash<T>().Remove(entity);
         }
 
-        [Obsolete("[MORPEH] Use Stash.Migrate() instead.")]
         public static void Migrate<T>(this Entity from, Entity to, bool overwrite = true) where T : struct, IComponent {
 #if MORPEH_DEBUG
             if (from.IsNullOrDisposed()) {
@@ -153,7 +146,6 @@ namespace Scellecs.Morpeh {
             }
         }
 
-        [Obsolete("[MORPEH] Use Stash.Has() instead.")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool Has<T>(this Entity entity) where T : struct, IComponent {
 #if MORPEH_DEBUG
@@ -165,13 +157,11 @@ namespace Scellecs.Morpeh {
         }
 #endif
 
-        [Obsolete("[MORPEH] Use World.RemoveEntity() instead.")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Dispose(this Entity entity) {
             entity.GetWorld()?.RemoveEntity(entity);
         }
         
-        [Obsolete("[MORPEH] Use World.IsDisposed() instead.")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsDisposed(this Entity entity) {
             if (entity == default) {
@@ -182,7 +172,6 @@ namespace Scellecs.Morpeh {
             return world == null || world.IsDisposed(entity);
         }
 
-        [Obsolete("[MORPEH] Use World.IsDisposed() instead. This is the same as IsDisposed() but with a different name for compatibility.")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsNullOrDisposed(this Entity entity) {
             return entity.IsDisposed();

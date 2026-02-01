@@ -28,11 +28,11 @@ namespace Nanory.Lex
     
     public abstract class EcsReactiveSystemBase<TReaction> : EcsReactiveSystemBase
     {
-        public virtual void React(int entity, in TReaction component)
+        public virtual void React(Entity entity, in TReaction component)
         {
             OnReact(entity, in component);
         }
         
-        protected abstract void OnReact(int entity, in TReaction component);
+        protected abstract void OnReact(Entity entity, in TReaction component);
     }
 }

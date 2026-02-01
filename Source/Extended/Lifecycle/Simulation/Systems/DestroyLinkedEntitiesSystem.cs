@@ -3,7 +3,7 @@ namespace Nanory.Lex.Lifecycle
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public class DestroyLinkedEntitiesSystem : EcsSystemBase, IReact<DestroyedEvent>
     {
-        public void React(DestroyedEvent _, int entity)
+        public void React(DestroyedEvent _, Entity entity)
         {
             if (!Has<LinkedEntities>(entity))
                 return;
@@ -12,7 +12,7 @@ namespace Nanory.Lex.Lifecycle
 
         }
 
-        private static void TryDestroyLinkedEntities(EcsSystemBase system, int entity)
+        private static void TryDestroyLinkedEntities(EcsSystemBase system, Entity entity)
         {
             if (!system.TryGet<LinkedEntities>(entity, out var linkedEntities))
                 return;

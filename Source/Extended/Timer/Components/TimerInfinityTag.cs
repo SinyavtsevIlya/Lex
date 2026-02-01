@@ -1,7 +1,6 @@
 ﻿namespace Nanory.Lex.Timer
 {
-    public struct TimerInfinityTag
-    {
+    public struct TimerInfinityTag : IComponent {
 
     }
 }

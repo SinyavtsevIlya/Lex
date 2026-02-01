@@ -1,8 +1,8 @@
 ﻿namespace Nanory.Lex.Lifecycle
 {
-    [OneFrame]
-    public struct DestroyedEvent : IEmit
-    {
+    
+    public struct DestroyedEvent : IComponent, IEmit
+ {
 
     }
 }

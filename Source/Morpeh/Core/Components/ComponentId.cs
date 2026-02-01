@@ -2,7 +2,7 @@
 #define MORPEH_GENERATE_ALL_EXTENDED_IDS
 #endif
 
-namespace Scellecs.Morpeh {
+namespace Nanory.Lex {
     using System;
     using System.Collections.Generic;
     using Unity.IL2CPP.CompilerServices;

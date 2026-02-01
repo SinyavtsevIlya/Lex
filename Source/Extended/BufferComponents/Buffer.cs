@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Nanory.Lex
 {
@@ -11,11 +12,11 @@ namespace Nanory.Lex
     /// <list type="number">
     /// <item>As a component field: 
     ///     <code>
-    ///         public struct SomeComponent { public <see cref="Buffer{TElement}"/> Buffer; }
+    ///         public struct SomeComponent : IComponent { public <see cref="Buffer{TElement}"/> Buffer; }
     ///     </code></item>   
     /// <item>As a component itself (Just by using Add-Component methods)    
     ///     <code>
-    ///         <see cref="EcsBufferExtensions.AddBuffer{TElement}(EcsWorld, int)"/>
+    ///         <see cref="EcsBufferExtensions.AddBuffer{TElement}(World, int)"/>
     ///     </code></item>  
     /// <item>As a standalone helping temporary collection</item>
     /// </list>
@@ -25,26 +26,26 @@ namespace Nanory.Lex
     /// </summary>
     /// <typeparam name="TElement"></typeparam>
     [System.Serializable]
-    public struct Buffer<TElement> : IEcsAutoReset<Buffer<TElement>>
+    public struct Buffer<TElement> : IComponent, IDisposable
     {
         public List<TElement> Values;
 
-        public void AutoReset(ref Buffer<TElement> c)
+        public void Dispose()
         {
-            if (c.Values == null)
+            if (Values == null)
             {
-                c.Values = Pool.Pop();
+                Values = Pool.Pop();
 
 #if DEBUG
-                if (c.Values.Count > 0)
-                    throw new System.Exception($"Buffer<{typeof(TElement).Name}> Values are not cleared. Values: {System.Environment.NewLine} {c}");
+                if (Values.Count > 0)
+                    throw new Exception($"Buffer<{typeof(TElement).Name}> Values are not cleared. Values: {System.Environment.NewLine} {this}");
 #endif
             }
             else
             {
-                c.Values.Clear();
-                Pool.Recycle(c.Values);
-                c.Values = null;
+                Values.Clear();
+                Pool.Recycle(Values);
+                Values = null;
             }
         }
 
@@ -88,22 +89,10 @@ namespace Nanory.Lex
 
     public static class EcsBufferExtensions
     {
-        public static ref Buffer<TElement> AddBuffer<TElement>(this EcsWorld world, int entity) where TElement : struct
+        public static ref Buffer<TElement> AddBuffer<TElement>(this World world, Entity entity) where TElement : struct
         {
-            ref var buffer = ref world.GetPool<Buffer<TElement>>().Add(entity);
+            ref var buffer = ref world.GetStash<Buffer<TElement>>().Add(entity);
             return ref buffer;
-        }
-
-        public static ref Buffer<TElement> AddBuffer<TElement>(this EcsWorld world, int entity, TElement initialElement) where TElement : struct
-        {
-            ref var buffer = ref AddBuffer<TElement>(world, entity);
-            buffer.Values.Add(initialElement);
-            return ref buffer;
-        }
-
-        public static void RemoveBuffer<TElement>(this EcsWorld world, int entity) where TElement : struct
-        {
-            world.GetPool<Buffer<TElement>>().Del(entity);
         }
     }
 }
