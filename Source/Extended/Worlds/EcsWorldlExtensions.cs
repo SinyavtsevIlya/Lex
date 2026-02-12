@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using Nanory.Lex.Collections;
+using UnityEngine;
 
 namespace Nanory.Lex
 {
@@ -85,7 +86,10 @@ namespace Nanory.Lex
             foreach (var reaction in reactions)
             {
                 ((IReact<TEmission>)reaction).React(emission, entity);
+                //Debug.Log($"Reaction: {reaction}");
             }
+            
+            //Debug.Log($"Reactions: {reactions.length}");
         }
 
         public static void SetReactiveSystems(this World world, Dictionary<Type, List<IReact>> reactions)

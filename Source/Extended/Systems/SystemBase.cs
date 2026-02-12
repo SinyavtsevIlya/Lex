@@ -67,6 +67,16 @@ namespace Nanory.Lex
             return World.CreateEntity();
         }
 
+        public bool IsDisposed(in Entity entity)
+        {
+            return World.IsDisposed(entity);
+        }
+        
+        public bool Has(in Entity entity)
+        {
+            return !World.IsDisposed(entity);
+        }
+
         public ref TComponent Get<TComponent>(Entity entity) where TComponent : struct, IComponent
         {
             return ref World.GetStash<TComponent>().Get(entity);

@@ -8,8 +8,6 @@ namespace Nanory.Lex
     {
         internal List<TElement> _values;
 
-        public List<TElement> Values => this.Values();
-
         public void Dispose()
         {
             _values.Clear();
@@ -95,7 +93,7 @@ namespace Nanory.Lex
             return ref buffer;
         }
 
-        public static List<TElement> Values<TElement>(this Buffer<TElement> buffer)
+        public static List<TElement> Values<TElement>(this ref Buffer<TElement> buffer)
         {
             if (buffer._values == null)
             {
@@ -105,7 +103,7 @@ namespace Nanory.Lex
             return buffer._values;
         }
         
-        private static List<TElement> InitializeBuffer<TElement>(this Buffer<TElement> buffer)
+        private static List<TElement> InitializeBuffer<TElement>(this ref Buffer<TElement> buffer)
         {
             var values = Buffer<TElement>.Pool.Pop();
             buffer._values = values;

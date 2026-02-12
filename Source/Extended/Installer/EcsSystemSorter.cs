@@ -68,10 +68,10 @@ namespace Nanory.Lex
         
         private void SetupDisposableStashes()
         {
-            var worldType = typeof(World);
+            var worldType = typeof(WorldStashExtensions);
             var getStashMethod = worldType
                 .GetMethods()
-                .First(m => m.Name == "GetStash" && m.IsGenericMethod && m.GetParameters().Length == 0);
+                .First(m => m.Name == "GetStash");
 
             var asDisposableMethod = typeof(StashExtensions)
                 .GetMethods(BindingFlags.Static | BindingFlags.Public)
@@ -83,13 +83,15 @@ namespace Nanory.Lex
                 .Where(t =>
                     t.IsValueType &&
                     !t.IsAbstract &&
+                    !t.ContainsGenericParameters &&
                     typeof(IComponent).IsAssignableFrom(t) &&
                     typeof(IDisposable).IsAssignableFrom(t));
+
 
             foreach (var type in componentTypes)
             {
                 var genericGetStash = getStashMethod.MakeGenericMethod(type);
-                var stash = genericGetStash.Invoke(_world, null);
+                var stash = genericGetStash.Invoke(null, new object[]{ _world });
 
                 var genericAsDisposable = asDisposableMethod.MakeGenericMethod(type);
                 genericAsDisposable.Invoke(null, new[] { stash });
