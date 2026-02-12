@@ -2,7 +2,7 @@ namespace Nanory.Lex
 {
     public interface IReact<in TReaction> : IReact where TReaction : struct, IEmit
     {
-        public void React(TReaction reaction, Entity entity);
+        public void React(TReaction emission, Entity entity);
 
         internal bool IsMatch(Entity entity, World world)
         {

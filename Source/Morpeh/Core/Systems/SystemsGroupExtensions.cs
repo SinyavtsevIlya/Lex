@@ -271,7 +271,11 @@ namespace Nanory.Lex {
             initializer.World = systemsGroup.world;
 
             systemsGroup.newInitializers.Add(initializer);
-            systemsGroup.world.systemsMap.Add(typeof(T), initializer);
+            
+            if (systemsGroup.world.systemsMap.TryGetValue(initializer.GetType(), out _))
+                throw new Exception($"Initializer {initializer.GetType().Name} was already added");
+            
+            systemsGroup.world.systemsMap.Add(initializer.GetType(), initializer);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

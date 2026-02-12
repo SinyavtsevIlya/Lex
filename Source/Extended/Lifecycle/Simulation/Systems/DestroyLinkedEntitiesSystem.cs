@@ -17,7 +17,7 @@ namespace Nanory.Lex.Lifecycle
             if (!system.TryGet<LinkedEntities>(entity, out var linkedEntities))
                 return;
             
-            foreach (var linkedPackedEntity in linkedEntities.Buffer.Values)
+            foreach (var linkedPackedEntity in linkedEntities.Buffer)
             {
                 if (!system.TryUnpack(linkedPackedEntity, out var linkedEntity)) 
                     continue;

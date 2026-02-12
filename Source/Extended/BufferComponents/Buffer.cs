@@ -3,71 +3,70 @@ using System.Collections.Generic;
 
 namespace Nanory.Lex
 {
-    /// <summary>
-    /// Buffer - is a pool-able collection type.
-    /// <list type="bullet">
-    /// <item>Wraps a <see cref="List{T}"/> inside it.</item>
-    /// <item>Implements an automated pooling mechanism, to prevent allocations.</item>
-    /// <item>Can be used:</item>
-    /// <list type="number">
-    /// <item>As a component field: 
-    ///     <code>
-    ///         public struct SomeComponent : IComponent { public <see cref="Buffer{TElement}"/> Buffer; }
-    ///     </code></item>   
-    /// <item>As a component itself (Just by using Add-Component methods)    
-    ///     <code>
-    ///         <see cref="EcsBufferExtensions.AddBuffer{TElement}(World, int)"/>
-    ///     </code></item>  
-    /// <item>As a standalone helping temporary collection</item>
-    /// </list>
-    /// <item>If the buffer is used as a component field, then this component must implement an <see cref="IEcsAutoReset{T}"/>, and call Buffer's <see cref="AutoReset(ref Buffer{TElement}) inside it."/></item>
-    /// <item>NOTE: All <see cref="Values"/> will be overwritten when the component is added to the entity.</item>
-    /// </list>
-    /// </summary>
-    /// <typeparam name="TElement"></typeparam>
-    [System.Serializable]
+    [Serializable]
     public struct Buffer<TElement> : IComponent, IDisposable
     {
-        public List<TElement> Values;
+        internal List<TElement> _values;
+
+        public List<TElement> Values => this.Values();
 
         public void Dispose()
         {
-            if (Values == null)
-            {
-                Values = Pool.Pop();
-
-#if DEBUG
-                if (Values.Count > 0)
-                    throw new Exception($"Buffer<{typeof(TElement).Name}> Values are not cleared. Values: {System.Environment.NewLine} {this}");
-#endif
-            }
-            else
-            {
-                Values.Clear();
-                Pool.Recycle(Values);
-                Values = null;
-            }
+            _values.Clear();
+            Pool.Recycle(_values);
+            _values = null;
         }
 
         public override string ToString()
         {
-            if (Values == null)
+            if (_values == null)
                 return ("Recycled buffer");
 
-            if (Values.Count == 0)
+            if (_values.Count == 0)
                 return ("Empty buffer");
 
             var result = string.Empty;
 
-            foreach (var item in Values)
+            foreach (var item in _values)
             {
                 result += item;
                 result += System.Environment.NewLine;
             }
             return result;
         }
+        
+        public Enumerator GetEnumerator()
+        {
+            if (_values == null)
+            {
+                _values = Pool.Pop();
+#if DEBUG
+                if (_values.Count > 0)
+                    throw new Exception(
+                        $"Buffer<{typeof(TElement).Name}> Values are not cleared.");
+#endif
+            }
 
-        public static implicit operator List<TElement>(Buffer<TElement> buffer) => buffer.Values;
+            return new Enumerator(_values);
+        }
+
+        public struct Enumerator
+        {
+            private List<TElement>.Enumerator _enumerator;
+
+            internal Enumerator(List<TElement> values)
+            {
+                _enumerator = values != null
+                    ? values.GetEnumerator()
+                    : default;
+            }
+
+            public TElement Current => _enumerator.Current;
+
+            public bool MoveNext() => _enumerator.MoveNext();
+        }
+
+        public static implicit operator List<TElement>(Buffer<TElement> buffer) => buffer._values;
 
         public static class Pool
         {
@@ -92,7 +91,30 @@ namespace Nanory.Lex
         public static ref Buffer<TElement> AddBuffer<TElement>(this World world, Entity entity) where TElement : struct
         {
             ref var buffer = ref world.GetStash<Buffer<TElement>>().Add(entity);
+            buffer.InitializeBuffer();
             return ref buffer;
+        }
+
+        public static List<TElement> Values<TElement>(this Buffer<TElement> buffer)
+        {
+            if (buffer._values == null)
+            {
+                buffer.InitializeBuffer();
+            }
+
+            return buffer._values;
+        }
+        
+        private static List<TElement> InitializeBuffer<TElement>(this Buffer<TElement> buffer)
+        {
+            var values = Buffer<TElement>.Pool.Pop();
+            buffer._values = values;
+#if DEBUG
+            if (values.Count > 0)
+                throw new Exception(
+                    $"Buffer<{typeof(TElement).Name}> Values are not cleared. Values: {Environment.NewLine} {buffer}");
+#endif
+            return values;
         }
     }
 }

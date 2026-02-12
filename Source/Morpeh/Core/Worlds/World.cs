@@ -114,8 +114,10 @@ namespace Nanory.Lex {
         
         internal ComponentsToFiltersRelation componentsFiltersWith;
         internal ComponentsToFiltersRelation componentsFiltersWithout;
-
-        internal Dictionary<System.Type, IInitializer> systemsMap;
+        
+        internal Dictionary<int, Dictionary<long, FastList<IReact>>> reactions;
+        internal Dictionary<int, FastList<IReact>> allReactions;
+        internal Dictionary<Type, IInitializer> systemsMap;
 
         [PublicAPI]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -126,7 +128,7 @@ namespace Nanory.Lex {
 #endif
                 return null;
             }
-
+            
             return new World().Initialize();
         }
 
