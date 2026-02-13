@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Nanory.Lex.Collections;
+using Nanory.Lex.View;
 
 namespace Nanory.Lex
 {
@@ -50,7 +52,16 @@ namespace Nanory.Lex
 
         private void SetupWorldReactions(List<IReact> reactions)
         {
-            var dict = reactions
+            var customSortings = new Dictionary<(Type systemType, Type emissionType), int>();
+
+            foreach (var system in reactions)
+            {
+                var attr = system.GetType().GetCustomAttribute<ReactionOrderAttribute>();
+                if (attr != null)
+                    customSortings[(system.GetType(), attr.EmissionType)] = attr.Order;
+            }
+
+            var map = reactions
                 .SelectMany(sys =>
                     sys.GetType()
                         .GetInterfaces()
@@ -63,7 +74,29 @@ namespace Nanory.Lex
                     g => g.Select(x => x.Sys).Distinct().ToList()
                 );
 
-            _world.SetReactiveSystems(dict);
+            _world.allReactions = new Dictionary<int, FastList<IReact>>();
+
+            foreach (var reaction in map)
+            {
+                var emitIdType = typeof(EmitId<>).MakeGenericType(reaction.Key);
+                var field = emitIdType.GetField("Id", BindingFlags.Public | BindingFlags.Static);
+                var id = (int)field!.GetValue(null);
+
+                var sortedReactions = reaction.Value
+                    .OrderBy(r =>
+                    {
+                        var key = (r.GetType(), reaction.Key);
+                        return customSortings.GetValueOrDefault(key, 0);
+                    })
+                    .ToList();
+
+                var reactionsList = new FastList<IReact>();
+                
+                foreach (var react in sortedReactions) 
+                    reactionsList.Add(react);
+
+                _world.allReactions[id] = reactionsList;
+            }
         }
         
         private void SetupDisposableStashes()

@@ -20,11 +20,11 @@ namespace Nanory.Lex
                 if (system.World.IsDisposed)
                     return;
 
-                if (replaceable == null)
-                {
-                    Debug.LogError("Unable to unbind widget. Replaceable is destroyed");
+                if (system.World.IsDisposed(ownerEntity))
                     return;
-                }
+
+                if (replaceable == null)
+                    return;
                 
                 system.UnbindWidget(ownerEntity, replaceable);
                 replaceable.GetComponent<Canvas>().enabled = false;

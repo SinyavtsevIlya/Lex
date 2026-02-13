@@ -53,12 +53,12 @@ namespace Nanory.Lex
     public class ReactionOrderAttribute : Attribute
     {
         public Type EmissionType;
-        public int Priority;
+        public int Order;
 
-        public ReactionOrderAttribute(Type emissionType, int priority)
+        public ReactionOrderAttribute(Type emissionType, int order)
         {
             EmissionType = emissionType;
-            Priority = priority;
+            Order = order;
         }
     }
 }

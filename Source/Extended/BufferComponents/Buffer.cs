@@ -10,6 +10,9 @@ namespace Nanory.Lex
 
         public void Dispose()
         {
+            if (_values == null)
+                return;
+            
             _values.Clear();
             Pool.Recycle(_values);
             _values = null;
