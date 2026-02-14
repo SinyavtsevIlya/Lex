@@ -81,7 +81,11 @@ namespace Nanory.Lex
         {
             return ref World.GetStash<TComponent>().Get(entity);
         }
-     
+        
+        public ref TComponent Get<TComponent>(Entity entity, out bool has) where TComponent : struct, IComponent
+        {
+            return ref World.GetStash<TComponent>().Get(entity, out has);
+        }
 
         public ref TComponent Set<TComponent>(Entity entity) where TComponent : struct, IComponent
         {
