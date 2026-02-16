@@ -14,7 +14,7 @@ namespace Nanory.Lex
         public TWidget Value;
     }
 
-    public struct CloseScreenEvent : IComponent, IEmit
+    public struct CloseScreenEvent : IEmit
  {
     }
 
@@ -49,7 +49,7 @@ namespace Nanory.Lex
         }
     }
     
-    public struct ScreensAdded : IComponent, IEmit {}
+    public struct ScreensAdded : IEmit {}
     
     public struct Tabs : IComponent, IDisposable
  {

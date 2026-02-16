@@ -20,11 +20,15 @@ namespace Nanory.Lex
 
 namespace Nanory.Lex.View
 {
-    public struct InworldViewBindEvent : IComponent, IEmit
- {
+    public struct InworldViewEarlyBindEvent : IEmit
+    {
+    }
+    
+    public struct InworldViewBindEvent : IEmit
+    {
     }
 
-    public struct InworldViewUnbindEvent : IComponent, IEmit
- {
+    public struct InworldViewUnbindEvent : IEmit
+    {
     }
 }
