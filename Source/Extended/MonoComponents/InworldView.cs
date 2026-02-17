@@ -31,4 +31,8 @@ namespace Nanory.Lex.View
     public struct InworldViewUnbindEvent : IEmit
     {
     }
+
+    public struct InworldViewEarlyUnbindEvent : IEmit
+    {
+    }
 }
