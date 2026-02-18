@@ -132,6 +132,11 @@ namespace Nanory.Lex
                 
         public void Emit<TEmission>(Entity entity, in TEmission emission = default) where TEmission : struct, IEmit
         {
+#if DEBUG
+            if (World.IsDisposed(entity))
+                throw new Exception($"Disposed entity {entity} while emiting {emission}");
+#endif
+            
             World.Emit(entity, emission);
         }
 
