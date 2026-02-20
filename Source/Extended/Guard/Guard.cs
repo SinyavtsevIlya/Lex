@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using UnityEditor.VersionControl;
 
 namespace Nanory.Lex
 {
@@ -90,29 +92,6 @@ namespace Nanory.Lex
                 throw new GuardArgumentNullException(paramName, message);
         }
     }
-
-    public static class GuardEntityExtensions
-    {
-        public static void UnpackOrThrow(this Entity packedEntity, World world, out Entity entity, string message = null, string paramName = null)
-        {
-            entity = default;
-            
-            if (packedEntity.IsDisposed())
-                return;
-            
-            var entityName = paramName ?? entity.ToString();
-            throw new EntityUnpackException(paramName ?? 
-                                            $"Failed to unpack entity {entityName}", message);
-        }
-    }
-
-    public class EntityUnpackException : ArgumentException
-    {
-        public EntityUnpackException(string paramName, string message) : base(message, paramName)
-        {
-            
-        }
-    }
     
     public class GuardBadConditionException : ArgumentException
     {
@@ -127,6 +106,36 @@ namespace Nanory.Lex
         public GuardArgumentNullException(string paramName, string message) : base(paramName, message)
         {
             
+        }
+    }
+
+    public class EntityDisposedException : Exception
+    {
+        private readonly Entity _entity;
+        private readonly string _operationContext;
+        
+        public EntityDisposedException(Entity entity, string operationContext = null)
+        {
+            _entity = entity;
+            _operationContext = operationContext;
+        }
+
+        public override string Message
+        {
+            get
+            {
+                var arguments = new List<string>
+                {
+                    $"Disposed entity {_entity}"
+                };
+                
+                if (_operationContext != null)
+                {
+                    arguments.Add($"doing {_operationContext}");
+                }
+                
+                return string.Join(" while ", arguments);
+            }
         }
     }
 }

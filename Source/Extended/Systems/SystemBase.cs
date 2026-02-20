@@ -79,16 +79,31 @@ namespace Nanory.Lex
 
         public ref TComponent Get<TComponent>(Entity entity) where TComponent : struct, IComponent
         {
+#if DEBUG
+            if (World.IsDisposed(entity))
+                throw new EntityDisposedException(entity, nameof(Get));
+#endif
+            
             return ref World.GetStash<TComponent>().Get(entity);
         }
         
         public ref TComponent Get<TComponent>(Entity entity, out bool has) where TComponent : struct, IComponent
         {
+#if DEBUG
+            if (World.IsDisposed(entity))
+                throw new EntityDisposedException(entity, nameof(Get));
+#endif
+            
             return ref World.GetStash<TComponent>().Get(entity, out has);
         }
 
         public ref TComponent Set<TComponent>(Entity entity) where TComponent : struct, IComponent
         {
+#if DEBUG
+            if (World.IsDisposed(entity))
+                throw new EntityDisposedException(entity);
+#endif
+            
             var stash = World.GetStash<TComponent>();
             
             if (stash.Has(entity))
@@ -101,6 +116,11 @@ namespace Nanory.Lex
 
         public bool TryGet<T>(Entity entity, out T component) where T : struct, IComponent
         {
+#if DEBUG
+            if (World.IsDisposed(entity))
+                throw new EntityDisposedException(entity);
+#endif
+            
             if (World.GetStash<T>().Has(entity))
             {
                 component = World.GetStash<T>().Get(entity);
@@ -112,21 +132,41 @@ namespace Nanory.Lex
 
         public ref TComponent Add<TComponent>(Entity entity) where TComponent : struct, IComponent
         {
+#if DEBUG
+            if (World.IsDisposed(entity))
+                throw new EntityDisposedException(entity);
+#endif
+            
             return ref World.GetStash<TComponent>().Add(entity);
         }
 
         public bool Has<TComponent>(Entity entity) where TComponent : struct, IComponent
         {
+#if DEBUG
+            if (World.IsDisposed(entity))
+                throw new EntityDisposedException(entity);
+#endif
+            
             return World.GetStash<TComponent>().Has(entity);
         }
 
         public bool Del<TComponent>(Entity entity) where TComponent : struct, IComponent
         {
+#if DEBUG
+            if (World.IsDisposed(entity))
+                throw new EntityDisposedException(entity);
+#endif
+            
             return World.GetStash<TComponent>().Remove(entity);
         }
 
         public ref Buffer<TComponent> AddBuffer<TComponent>(Entity entity) where TComponent : struct, IComponent
         {
+#if DEBUG
+            if (World.IsDisposed(entity))
+                throw new EntityDisposedException(entity);
+#endif
+            
             return ref Add<Buffer<TComponent>>(entity);
         }
                 

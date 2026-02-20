@@ -6,7 +6,6 @@ namespace Nanory.Lex
 {
     public static class EcsUiScreenExtensions
     {
-        #region API
         public static void InitializeScreens(this World world, Entity ownerEntity, IEnumerable<MonoBehaviour> screenInstances)
         {
             ref var screens = ref world.Add<Screens>(ownerEntity);
@@ -42,6 +41,5 @@ namespace Nanory.Lex
         {
             system.Emit<CloseScreenEvent>(ownerEntity);
         }
-        #endregion
     }
 }
