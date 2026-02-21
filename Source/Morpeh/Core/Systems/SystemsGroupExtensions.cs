@@ -167,11 +167,11 @@ namespace Nanory.Lex {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SystemThrowException(this SystemsGroup systemsGroup, ISystem system, Exception exception) {
             if (systemsGroup.world.DoNotDisableSystemOnException) {
-                MLogger.LogError($"Can not update {system.GetType()}.");
+                //MLogger.LogError($"Can not update {system.GetType()}.");
                 MLogger.LogException(exception);
             }
             else {
-                MLogger.LogError($"Can not update {system.GetType()}. System will be disabled.");
+                //MLogger.LogError($"Can not update {system.GetType()}. System will be disabled.");
                 MLogger.LogException(exception);
                 systemsGroup.delayedAction += () => systemsGroup.DisableSystem(system);
             }
