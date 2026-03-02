@@ -3,10 +3,10 @@ using System.Collections.Generic;
 
 namespace Nanory.Lex
 {
-    internal static class EmitId<T> where T : struct, IEmit {
+    public static class IdEmit<T> where T : struct, IEmit {
         public static readonly int Id;
 
-        static EmitId() {
+        static IdEmit() {
             Id = EmitTypeRegistry.Register(typeof(T));
         }
     }

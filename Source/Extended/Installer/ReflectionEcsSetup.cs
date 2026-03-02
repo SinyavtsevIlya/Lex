@@ -1,26 +1,40 @@
-﻿using System;
+#define TYPES_CACHING_ENABLED
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Nanory.Lex.Collections;
-using Nanory.Lex.View;
 
 namespace Nanory.Lex
 {
-    public class EcsSystemSorter : IDisposable
+    public class ReflectionEcsSetup : IEcsSetup
     {
+        private IFeatureCollection _featureCollection;
+        private SystemsGroup _rootSystemGroup;
         private World _world;
         
-        private SystemsGroup _rootSystemGroup;
+        private static List<Type> _typesCache;
 
-        public EcsSystemSorter(World world, Func<Type, ISystem> creator = null)
+        public ReflectionEcsSetup(IFeatureCollection featureCollection)
+        {
+            _featureCollection = featureCollection;
+        }
+        
+        public void SetupWorld(World world)
         {
             _world = world;
-        }
-
-        public SystemsGroup GetSortedSystems(IEnumerable<Type> systemTypes)
-        {
+            
             _rootSystemGroup = _world.CreateSystemsGroup();
+            
+            var scanner = new EcsTypesScanner();
+            
+#if TYPES_CACHING_ENABLED
+            _typesCache ??= scanner.ScanSystemTypes(_featureCollection.FeatureTypes).ToList();
+            var systemTypes = _typesCache;
+#else
+            var systemTypes = scanner.ScanSystemTypes(_featureCollection.FeatureTypes).ToList();
+#endif
 
             var reactions = new List<IReact>();
 
@@ -46,10 +60,10 @@ namespace Nanory.Lex
             SetupWorldReactions(reactions);
             
             SetupDisposableStashes();
-
-            return _rootSystemGroup;
+            
+            _world.AddSystemsGroup(0, _rootSystemGroup);
         }
-
+        
         private void SetupWorldReactions(List<IReact> reactions)
         {
             var customSortings = new Dictionary<(Type systemType, Type emissionType), int>();
@@ -78,7 +92,7 @@ namespace Nanory.Lex
 
             foreach (var reaction in map)
             {
-                var emitIdType = typeof(EmitId<>).MakeGenericType(reaction.Key);
+                var emitIdType = typeof(IdEmit<>).MakeGenericType(reaction.Key);
                 var field = emitIdType.GetField("Id", BindingFlags.Public | BindingFlags.Static);
                 var id = (int)field!.GetValue(null);
 
@@ -129,12 +143,6 @@ namespace Nanory.Lex
                 var genericAsDisposable = asDisposableMethod.MakeGenericMethod(type);
                 genericAsDisposable.Invoke(null, new[] { stash });
             }
-        }
-
-        public void Dispose()
-        {
-            _world = null;
-            _rootSystemGroup = null;
         }
     }
 }

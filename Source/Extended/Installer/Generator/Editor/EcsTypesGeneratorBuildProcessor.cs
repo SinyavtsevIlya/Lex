@@ -9,11 +9,11 @@ namespace Nanory.Lex.Generation
     {
         public int callbackOrder => 0;
 
-        private EcsTypesGenerator _generator;
+        private EcsSetupGenerator _generator;
 
         public void OnPreprocessBuild(BuildReport report)
         {
-            _generator = new EcsTypesGenerator(generationPath: "Assets/");
+            _generator = new EcsSetupGenerator(generationPath: "Assets/");
             _generator.Generate();
             Debug.Log("Nanory.Lex.Generator : SystemTypes code generated.");
         }

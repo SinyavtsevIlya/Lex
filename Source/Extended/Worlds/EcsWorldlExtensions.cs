@@ -54,7 +54,7 @@ namespace Nanory.Lex
         
         public static void Emit<TEmission>(this World world, Entity entity, in TEmission emission = default) where TEmission : struct, IEmit
         {
-            var emissionId = EmitId<TEmission>.Id;
+            var emissionId = IdEmit<TEmission>.Id;
 
             if (!world.reactions.TryGetValue(emissionId, out var reactionsByArchetype))
             {
@@ -92,23 +92,9 @@ namespace Nanory.Lex
             //Debug.Log($"Reactions: {reactions.length}");
         }
 
-        public static void SetReactiveSystems(this World world, Dictionary<Type, List<IReact>> reactions)
+        public static void SetupReactions(this World world, Dictionary<int, FastList<IReact>> reactions)
         {
-            world.allReactions = new Dictionary<int, FastList<IReact>>();
-
-            foreach (var reaction in reactions)
-            {
-                var emitIdType = typeof(EmitId<>).MakeGenericType(reaction.Key);
-                var field = emitIdType.GetField("Id", BindingFlags.Public | BindingFlags.Static);
-                var id = (int)field!.GetValue(null);
-
-                var reactionsList = new FastList<IReact>();
-                world.allReactions[id] = reactionsList;
-                foreach (var react in reaction.Value)
-                {
-                    reactionsList.Add(react);
-                }
-            }
+            world.allReactions = reactions;
         }
 
         public static bool Unpack(this Entity inEntity, World world, out Entity entity)

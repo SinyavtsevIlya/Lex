@@ -1,61 +1,86 @@
 ﻿#if UNITY_EDITOR
-using Nanory.Lex.AssetsManagement;
 using System;
-using System.Reflection;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Nanory.Lex.UnityEditorIntegration;
+using System.Reflection;
+using Nanory.Lex.AssetsManagement;
 using UnityEditor;
 using UnityEngine;
 
 namespace Nanory.Lex.Generation
 {
-    public class EcsTypesGenerator
+    public sealed class EcsSetupGenerator
     {
         private readonly string _generationPath;
-        private const string FeatureTemplate = 
-            @"using System;
+
+        private const string Template =
+@"using System;
+using System.Collections.Generic;
 using Nanory.Lex;
+using Nanory.Lex.Collections;
 {namespaces}
 
-public static class {featureName}SystemTypesLookup
+public sealed class {setupName} : IEcsSetup
 {
-    private static Type[] _types = 
+    public void SetupWorld(World world)
     {
-        {systemTypes}
-    };
+        var root = world.CreateSystemsGroup();
 
-    public static Type[] GetTypes() => _types;
+{systems}
+
+{initializers}
+
+        var reactionsMap = new Dictionary<int, FastList<IReact>>();
+
+{reactions}
+
+        world.SetupReactions(reactionsMap);
+
+{disposable}
+
+        world.AddSystemsGroup(0, root);
+    }
+
+    [UnityEngine.RuntimeInitializeOnLoadMethod]
+    static void Register()
+    {
+        GeneratedEcsSetupLookup.Values[typeof({collectionType})] =
+            new {setupName}();
+    }
 }";
 
-        public EcsTypesGenerator(string generationPath)
+        public EcsSetupGenerator(string generationPath)
         {
-            _generationPath = Path.Combine(generationPath, "GeneratedCode/");
+            _generationPath = Path.Combine(generationPath, "GeneratedCode/EcsSetups/");
         }
-
+        
         public void Generate()
         {
             EnsureDirectoryExists();
+
             var scanner = new EcsTypesScanner();
 
-            var featureTypes = scanner.GetAssignableTypes(typeof(FeatureBase))
-                .Where(type => type != typeof(FeatureBase) && type != typeof(Feature));
+            var collections = GetAllFeatureCollections();
 
-            foreach (var featureType in featureTypes)
+            foreach (var collectionType in collections)
             {
-                var content = GenerateSystemTypes(featureType, scanner);
-                var name = featureType.Namespace.SolidifyNamespace();
-                WriteOnDisk(content, name);
+                var content = GenerateSetup(collectionType, scanner);
+                WriteOnDisk(content, collectionType.Name + "EcsSetup");
             }
+
+            AssetDatabase.Refresh();
         }
 
+        [MenuItem("Tools/Lex/Generate Code")]
         public void Clear()
         {
             var path = _generationPath.ToGlobalPath();
             var meta = path.TrimEnd('/') + ".meta";
+
             FileUtil.DeleteFileOrDirectory(path);
             FileUtil.DeleteFileOrDirectory(meta);
+
             AssetDatabase.Refresh();
         }
 
@@ -63,67 +88,223 @@ public static class {featureName}SystemTypesLookup
         {
             var path = _generationPath.ToGlobalPath();
             if (!Directory.Exists(path))
-            {
                 Directory.CreateDirectory(path);
-            }
         }
 
         private void WriteOnDisk(string content, string name)
         {
             var filePath = Path.Combine(_generationPath.ToGlobalPath(), name + ".cs");
             File.WriteAllText(filePath, content);
-            AssetDatabase.Refresh();
         }
 
-        private static string GenerateSystemTypes(Type featureType, EcsTypesScanner scanner)
+        // =======================================================
+        // Core generation logic
+        // =======================================================
+
+        private static IEnumerable<Type> GetAllFeatureCollections()
         {
-            var worldSystemTypes = scanner.GetSystemTypesByFeature(new[] { featureType });
-
-            var baseSystems = FormatSystemTypes("// Base Systems", worldSystemTypes);
-
-            var allNamespaces = worldSystemTypes
-                .SelectMany(GetNamespacesRecursive)
-                .Where(ns => ns != null)
-                .Distinct();
-
-            var namespaceString = string.Join(Format.NewLine(), allNamespaces.Select(ns => $"using {ns};"));
-            var systemTypesString = string.Join("," + Format.NewLine(2), new[] { baseSystems  }.Where(s => !string.IsNullOrEmpty(s)));
-            var featureName = featureType.Namespace.SolidifyNamespace();
-
-            return FeatureTemplate
-                .Replace("{featureName}", featureName)
-                .Replace("{namespaces}", namespaceString)
-                .Replace("{systemTypes}", systemTypesString);
+            return AppDomain.CurrentDomain
+                .GetAssemblies()
+                .SelectMany(a => a.GetTypes())
+                .Where(t =>
+                    !t.IsAbstract &&
+                    !t.IsInterface &&
+                    typeof(IFeatureCollection).IsAssignableFrom(t));
         }
 
-        private static string FormatSystemTypes(string comment, IEnumerable<Type> types, bool isGeneric = false)
+        private static string GenerateSetup(Type collectionType, EcsTypesScanner scanner)
         {
-            if (!types.Any()) return null;
+            var collectionInstance =
+                (IFeatureCollection)Activator.CreateInstance(collectionType);
 
-            var formatted = types.Select(type =>
+            var systemTypes = scanner
+                .ScanSystemTypes(collectionInstance.FeatureTypes)
+                .Distinct()
+                .ToList();
+
+            var setupName = collectionType.Name + "EcsSetup";
+
+            var systems = GenerateSystems(systemTypes);
+            var initializers = GenerateInitializers(systemTypes);
+            var reactions = GenerateReactions(systemTypes);
+            var disposable = GenerateDisposable();
+            var namespaces = CollectNamespaces(systemTypes);
+
+            return Template
+                .Replace("{setupName}", setupName)
+                .Replace("{collectionType}", FormatType(collectionType))
+                .Replace("{systems}", systems)
+                .Replace("{initializers}", initializers)
+                .Replace("{reactions}", reactions)
+                .Replace("{disposable}", disposable)
+                .Replace("{namespaces}", namespaces);
+        }
+
+        private static string GenerateSystems(List<Type> types)
+        {
+            var systemTypes = types
+                .Where(t => typeof(ISystem).IsAssignableFrom(t))
+                .ToList();
+
+            return string.Join(Environment.NewLine,
+                systemTypes.Select(t =>
+@$"        var {GetVariableName(t)} = new {FormatType(t)}();
+root.AddSystem({GetVariableName(t)});"));
+        }
+
+        private static string GenerateInitializers(List<Type> types)
+        {
+            var systemTypes = types
+                .Where(t => typeof(ISystem).IsAssignableFrom(t))
+                .ToHashSet();
+
+            var initializerTypes = types
+                .Where(t =>
+                    !systemTypes.Contains(t) &&
+                    typeof(IInitializer).IsAssignableFrom(t));
+
+            return string.Join(Environment.NewLine,
+                initializerTypes.Select(t =>
+@$"        var {GetVariableName(t)} = new {FormatType(t)}();
+root.AddInitializer({GetVariableName(t)});"));
+        }
+
+        private static string GenerateReactions(List<Type> types)
+        {
+            var grouped = new Dictionary<Type, List<(Type system, int order)>>();
+
+            foreach (var type in types)
             {
-                var typeName = type.IsGenericType ? type.ToGenericTypeString() : type.FullName.Replace("+", ".");
-                return isGeneric ? $"typeof(OneFrameSystem<{typeName}>)" : $"typeof({typeName})";
-            });
+                var attr = type.GetCustomAttribute<ReactionOrderAttribute>();
 
-            return comment + Format.NewLine(2) + string.Join("," + Format.NewLine(2), formatted);
+                var interfaces = type.GetInterfaces()
+                    .Where(i => i.IsGenericType &&
+                                i.GetGenericTypeDefinition() == typeof(IReact<>));
+
+                foreach (var iface in interfaces)
+                {
+                    var arg = iface.GetGenericArguments()[0];
+
+                    var order = 0;
+
+                    if (attr != null && attr.EmissionType == arg)
+                        order = attr.Order;
+
+                    if (!grouped.TryGetValue(arg, out var list))
+                    {
+                        list = new List<(Type, int)>();
+                        grouped[arg] = list;
+                    }
+
+                    list.Add((type, order));
+                }
+            }
+
+            var lines = new List<string>();
+
+            foreach (var pair in grouped)
+            {
+                var arg = pair.Key;
+
+                var sorted = pair.Value
+                    .OrderBy(x => x.order)
+                    .ToList();
+
+                lines.Add(
+                    $@"        {{
+            var id = IdEmit<{FormatType(arg)}>.Id;
+            var list = new FastList<IReact>();");
+
+                foreach (var (system, _) in sorted)
+                {
+                    lines.Add(
+                        $@"            list.Add({GetVariableName(system)});");
+                }
+
+                lines.Add(
+                    @"            reactionsMap[id] = list;
+        }");
+            }
+
+            return string.Join(Environment.NewLine, lines);
+        }
+        
+        private static string GenerateDisposable()
+        {
+            var componentTypes = AppDomain.CurrentDomain
+                .GetAssemblies()
+                .SelectMany(a => a.GetTypes())
+                .Where(t =>
+                    t.IsValueType &&
+                    !t.IsAbstract &&
+                    !t.ContainsGenericParameters &&
+                    typeof(IComponent).IsAssignableFrom(t) &&
+                    typeof(IDisposable).IsAssignableFrom(t));
+
+            return string.Join(Environment.NewLine,
+                componentTypes.Select(t =>
+                    $"        world.GetStash<{FormatType(t)}>().AsDisposable();"));
+        }
+
+        private static string CollectNamespaces(IEnumerable<Type> types)
+        {
+            var namespaces = types
+                .SelectMany(GetNamespacesRecursive)
+                .Where(ns => !string.IsNullOrEmpty(ns))
+                .Distinct()
+                .Select(ns => $"using {ns};");
+
+            return string.Join(Environment.NewLine, namespaces);
         }
 
         private static IEnumerable<string> GetNamespacesRecursive(Type type)
         {
-            return type.IsGenericType
-                ? type.GetGenericArguments().SelectMany(GetNamespacesRecursive)
-                : new[] { type.Namespace };
+            if (type == null)
+                yield break;
+
+            if (!string.IsNullOrEmpty(type.Namespace))
+                yield return type.Namespace;
+
+            if (!type.IsGenericType)
+                yield break;
+
+            foreach (var arg in type.GetGenericArguments())
+            {
+                foreach (var ns in GetNamespacesRecursive(arg))
+                    yield return ns;
+            }
         }
-    }
 
-    public static class Format
-    {
-        private const int TabLength = 4;
+        private static string FormatType(Type type, bool includeNamespace = true)
+        {
+            if (!type.IsGenericType)
+                return GetName(type, includeNamespace).Replace("+", ".");
 
-        public static string SolidifyNamespace(this string namespaceName) => namespaceName.Replace(".", "");
+            var genericDef = GetName(type.GetGenericTypeDefinition(), includeNamespace);
+            genericDef = genericDef[..genericDef.IndexOf('`')];
 
-        public static string NewLine(int tabs = 0) => Environment.NewLine + new string(' ', TabLength * tabs);
+            var args = string.Join(", ",
+                type.GetGenericArguments().Select(tt => FormatType(tt, includeNamespace)));
+
+            return genericDef.Replace("+", ".") + "<" + args + ">";
+
+            string GetName(Type t, bool includeNamspace)
+            {
+                return includeNamespace ? t.FullName : t.Name;
+            }
+        }
+
+        private static string GetVariableName(Type type)
+        {
+            var formatType = FormatType(type, false);
+            var s = KeepLetters(formatType);
+            return s.ToLower();
+        }
+        
+        public static string KeepLetters(string input) =>
+            string.IsNullOrEmpty(input)
+                ? input
+                : new string(input.Where(char.IsLetter).ToArray());
     }
 }
 
