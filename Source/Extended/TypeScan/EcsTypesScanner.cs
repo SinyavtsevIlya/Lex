@@ -53,12 +53,7 @@ namespace Nanory.Lex
 
         private IEnumerable<Type> GetComponentTypesInternal()
         {
-            return _cachedTypes.Where(type =>
-                type.IsValueType &&
-                !type.IsPrimitive &&
-                type.Namespace != null &&
-                !type.Namespace.StartsWith("System") &&
-                !type.IsEnum);
+            return _cachedTypes.Where(type => typeof(IComponent).IsAssignableFrom(type) && type.IsValueType);
         }
 
         public IEnumerable<Type> GetAssignableTypes(params Type[] baseTypes)

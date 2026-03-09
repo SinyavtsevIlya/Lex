@@ -11,15 +11,15 @@ namespace Nanory.Lex.Generation
 
         public static void Generate()
         {
-            var generator = new EcsSetupGenerator(_generationPath);
-            generator.Generate();
+            var setupGenerator = new EcsSetupGenerator(_generationPath);
+            setupGenerator.Generate();
         }
         
         [MenuItem("Tools/Lex/CodeGen/Clear")]
         public static void Clear()
         {
-            var generator = new EcsSetupGenerator(_generationPath);
-            generator.Clear();
+            var setupGenerator = new EcsSetupGenerator(_generationPath);
+            setupGenerator.Clear();
         }
     }
 }

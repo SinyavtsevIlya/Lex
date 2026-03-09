@@ -4,6 +4,7 @@ using System.Net.NetworkInformation;
 using System.Reflection;
 using Nanory.Lex.Collections;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace Nanory.Lex
 {
@@ -82,7 +83,7 @@ namespace Nanory.Lex
                 
                 reactionsByArchetype[archetypeId] = reactions;
             }
-
+            
             foreach (var reaction in reactions)
             {
                 ((IReact<TEmission>)reaction).React(emission, entity);
@@ -92,6 +93,9 @@ namespace Nanory.Lex
             //Debug.Log($"Reactions: {reactions.length}");
         }
 
+        public static int GetComponentTypeId(this Type type) => ComponentId.Get(type).id;
+
+        [Preserve]
         public static void SetupReactions(this World world, Dictionary<int, FastList<IReact>> reactions)
         {
             world.allReactions = reactions;
