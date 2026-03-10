@@ -23,5 +23,7 @@ namespace Nanory.Lex
             _ids[type] = id;
             return id;
         }
+
+        public static int GetLength() => _nextId;
     }
 }

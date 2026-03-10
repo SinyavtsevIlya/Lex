@@ -60,7 +60,6 @@ namespace Nanory.Lex {
             world.componentsFiltersWith = new ComponentsToFiltersRelation(128);
             world.componentsFiltersWithout = new ComponentsToFiltersRelation(128);
 
-            world.reactions = new Dictionary<int, Dictionary<long, FastList<IReact>>>();
             world.allReactions = new Dictionary<int, FastList<IReact>>(); 
 
             if (World.plugins != null) {

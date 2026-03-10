@@ -115,7 +115,7 @@ namespace Nanory.Lex {
         internal ComponentsToFiltersRelation componentsFiltersWith;
         internal ComponentsToFiltersRelation componentsFiltersWithout;
         
-        internal Dictionary<int, Dictionary<long, FastList<IReact>>> reactions;
+        internal Dictionary<long, FastList<IReact>>[] reactions;
         internal Dictionary<int, FastList<IReact>> allReactions;
         internal Dictionary<Type, IInitializer> systemsMap;
 
