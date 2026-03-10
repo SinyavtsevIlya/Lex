@@ -88,7 +88,7 @@ namespace Nanory.Lex
                     g => g.Select(x => x.Sys).Distinct().ToList()
                 );
 
-            _world.allReactions = new Dictionary<int, FastList<IReact>>();
+            var allReactions = new Dictionary<int, FastList<IReact>>();
 
             foreach (var reaction in map)
             {
@@ -109,8 +109,10 @@ namespace Nanory.Lex
                 foreach (var react in sortedReactions) 
                     reactionsList.Add(react);
 
-                _world.allReactions[id] = reactionsList;
+                allReactions[id] = reactionsList;
             }
+            
+            _world.SetupReactions(allReactions);
         }
         
         private void SetupDisposableStashes()

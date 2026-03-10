@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using Nanory.Lex.AssetsManagement;
 using UnityEditor;
-using UnityEngine;
 
 namespace Nanory.Lex.Generation
 {
@@ -308,16 +307,5 @@ root.AddInitializer({GetVariableName(t)});"));
     }
 }
 
-namespace Nanory.Lex.AssetsManagement
-{
-    public static class AssetManagementExtensions
-    {
-        public static string ToGlobalPath(this string localPath)
-        {
-            var basePath = Application.dataPath[..^"/Assets".Length];
-            return Path.Combine(basePath, localPath);
-        }
-    }
-}
 
 #endif

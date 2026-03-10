@@ -19,8 +19,17 @@ namespace Nanory.Lex.AssetsManagement
             if (guids.Length == 0)
                 throw new FileNotFoundException($"{filename}.cs not found in project!");
 
-            var path = AssetDatabase.GUIDToAssetPath(guids[0]);
-            return Path.GetFullPath(path);
+            foreach (var guid in guids)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+
+                if (AssetDatabase.LoadAssetAtPath<Object>(path).name != filename)
+                    continue;
+                
+                return Path.GetFullPath(path);
+            }
+
+            return null;
         }
     }
 }
