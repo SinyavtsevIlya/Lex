@@ -57,7 +57,12 @@ namespace Nanory.Lex
         {
             var emissionId = IdEmit<TEmission>.Id;
 
-            if (!world.reactions.TryGetValue(emissionId, out var reactionsByArchetype))
+            if (world.reactions.Length <= emissionId)
+                return;
+
+            var reactionsByArchetype = world.reactions[emissionId];
+            
+            if (reactionsByArchetype == null)
             {
                 reactionsByArchetype = new Dictionary<long, FastList<IReact>>();
                 world.reactions[emissionId] = reactionsByArchetype;
@@ -69,9 +74,7 @@ namespace Nanory.Lex
             if (!reactionsByArchetype.TryGetValue(archetypeId, out var reactions))
             {
                 if (!world.allReactions.TryGetValue(emissionId, out var matchedByEmissionReactions))
-                {
                     return;
-                }
                 
                 reactions = new FastList<IReact>();
 
@@ -87,10 +90,7 @@ namespace Nanory.Lex
             foreach (var reaction in reactions)
             {
                 ((IReact<TEmission>)reaction).React(emission, entity);
-                //Debug.Log($"Reaction: {reaction}");
             }
-            
-            //Debug.Log($"Reactions: {reactions.length}");
         }
 
         public static int GetComponentTypeId(this Type type) => ComponentId.Get(type).id;
@@ -98,6 +98,7 @@ namespace Nanory.Lex
         [Preserve]
         public static void SetupReactions(this World world, Dictionary<int, FastList<IReact>> reactions)
         {
+            world.reactions = new Dictionary<long, FastList<IReact>>[EmitTypeRegistry.GetLength()];
             world.allReactions = reactions;
         }
 
