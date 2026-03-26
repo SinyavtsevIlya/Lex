@@ -176,7 +176,6 @@ namespace Nanory.Lex
             if (World.IsDisposed(entity))
                 throw new Exception($"Disposed entity {entity} while emiting {emission}");
 #endif
-            
             World.Emit(entity, emission);
         }
 
