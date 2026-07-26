@@ -89,8 +89,18 @@ namespace Nanory.Lex
             
             foreach (var reaction in reactions)
             {
+                if (world.propagationStopped)
+                    break;
+                
                 ((IReact<TEmission>)reaction).React(emission, entity);
             }
+
+            world.propagationStopped = false;
+        }
+
+        public static void StopPropagation(this World world)
+        {
+            world.propagationStopped = true;
         }
 
         public static int GetComponentTypeId(this Type type) => ComponentId.Get(type).id;

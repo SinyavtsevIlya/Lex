@@ -40,6 +40,9 @@ namespace Nanory.Lex
 
             foreach (var systemType in systemTypes)
             {
+                if (systemType.IsAbstract && systemType.IsSealed) // static
+                    continue;
+                
                 var instance = Activator.CreateInstance(systemType);
 
                 if (instance is ISystem system)
@@ -135,7 +138,6 @@ namespace Nanory.Lex
                     !t.ContainsGenericParameters &&
                     typeof(IComponent).IsAssignableFrom(t) &&
                     typeof(IDisposable).IsAssignableFrom(t));
-
 
             foreach (var type in componentTypes)
             {

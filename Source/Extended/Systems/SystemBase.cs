@@ -179,6 +179,11 @@ namespace Nanory.Lex
             World.Emit(entity, emission);
         }
 
+        public void StopPropagation()
+        {
+            World.StopPropagation();
+        }
+
         public List<int> Q(in Type[] filterTypes)
         {
             return new List<int>();

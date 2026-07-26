@@ -118,6 +118,7 @@ namespace Nanory.Lex {
         internal Dictionary<long, FastList<IReact>>[] reactions;
         internal Dictionary<int, FastList<IReact>> allReactions;
         internal Dictionary<Type, IInitializer> systemsMap;
+        internal bool propagationStopped;
 
         [PublicAPI]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
